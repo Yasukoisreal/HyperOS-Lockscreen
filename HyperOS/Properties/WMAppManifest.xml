@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<Deployment xmlns="http://schemas.microsoft.com/windowsphone/2014/deployment" AppPlatformVersion="8.1">
+  <DefaultLanguage xmlns="" code="en-US"/>
+  <App xmlns="" ProductID="{d07b4623-ef8d-425d-9d79-23e30ac7c3b1}" Title="HyperOS Lockscreen" RuntimeType="Silverlight" Version="1.0.0.0" Genre="apps.normal"  Author="HyperOS" Description="HyperOS Lockscreen - Custom lock screen for Windows Phone 8.1" SDOptOut ="false" BackUpOptOut ="false" Publisher="HyperOS" PublisherID="{90ac6b85-475a-4dfd-8bf7-00ba0e3700b6}">
+    <IconPath IsRelative="true" IsResource="false">Assets\ApplicationIcon.png</IconPath>
+    <Capabilities>
+      <Capability Name="ID_CAP_NETWORKING"/>
+      <Capability Name="ID_CAP_MEDIALIB_AUDIO"/>
+      <Capability Name="ID_CAP_MEDIALIB_PLAYBACK"/>
+      <Capability Name="ID_CAP_SENSORS"/>
+      <Capability Name="ID_CAP_WEBBROWSERCOMPONENT"/>
+      <Capability Name="ID_CAP_SHELL_DEVICE_LOCK_UI_API"/>
+      <Capability Name="ID_CAP_IDENTITY_DEVICE"/>
+      <Capability Name="ID_CAP_IDENTITY_USER"/>
+      <Capability Name="ID_CAP_LOCATION"/>
+      <Capability Name="ID_CAP_MAP"/>
+    </Capabilities>
+    <Tasks>
+      <DefaultTask Name ="_default" NavigationPage="LockScreenPage.xaml" ActivationPolicy="Resume"/>
+    </Tasks>
+    <Tokens>
+      <PrimaryToken TokenID="HyperOSToken" TaskName="_default">
+        <TemplateFlip>
+          <SmallImageURI IsRelative="true" IsResource="false">Assets\Tiles\FlipCycleTileSmall.png</SmallImageURI>
+          <Count>0</Count>
+          <BackgroundImageURI IsRelative="true" IsResource="false">Assets\Tiles\FlipCycleTileMedium.png</BackgroundImageURI>
+          <Title>HyperOS</Title>
+          <BackContent></BackContent>
+          <BackBackgroundImageURI></BackBackgroundImageURI>
+          <BackTitle></BackTitle>
+          <DeviceLockImageURI></DeviceLockImageURI>
+          <HasLarge></HasLarge>
+        </TemplateFlip>
+      </PrimaryToken>
+    </Tokens>
+    <Extensions>
+      <Extension ExtensionName="LockScreen_Application"
+                 ConsumerID="{CD4601F6-351B-43C7-9087-6B12BD98ED63}"
+                 TaskID="_default"
+                 ExtraFile="Extensions\\LockAppExtension.xml" />
+      <Extension ExtensionName="LockScreen_Background"
+                 ConsumerID="{111DFF24-AA15-4A96-8006-2BFF8122084F}"
+                 TaskID="_default" />
+    </Extensions>
+    <ActivatableClasses>
+      <InProcessServer>
+        <Path>Lumia.InteropServices.WindowsRuntime.dll</Path>
+        <ActivatableClass ActivatableClassId="Lumia.InteropServices.WindowsRuntime.BufferFactory" ThreadingModel="both" />
+      </InProcessServer>
+      <InProcessServer>
+        <Path>Lumia.Imaging.dll</Path>
+        <ActivatableClass ActivatableClassId="Lumia.Imaging.Adjustments.BlurFilter" ThreadingModel="both" />
+        <ActivatableClass ActivatableClassId="Lumia.Imaging.FilterEffect" ThreadingModel="both" />
+        <ActivatableClass ActivatableClassId="Lumia.Imaging.BitmapRenderer" ThreadingModel="both" />
+        <ActivatableClass ActivatableClassId="Lumia.Imaging.BitmapImageSource" ThreadingModel="both" />
+        <ActivatableClass ActivatableClassId="Lumia.Imaging.BufferImageSource" ThreadingModel="both" />
+        <ActivatableClass ActivatableClassId="Lumia.Imaging.JpegRenderer" ThreadingModel="both" />
+        <ActivatableClass ActivatableClassId="Lumia.Imaging.Adjustments.BrightnessFilter" ThreadingModel="both" />
+        <ActivatableClass ActivatableClassId="Lumia.Imaging.Adjustments.ContrastFilter" ThreadingModel="both" />
+      </InProcessServer>
+    </ActivatableClasses>
+    <ScreenResolutions>
+      <ScreenResolution Name="ID_RESOLUTION_WVGA"/>
+      <ScreenResolution Name="ID_RESOLUTION_WXGA"/>
+      <ScreenResolution Name="ID_RESOLUTION_HD720P"/>
+    </ScreenResolutions>
+  </App>
+</Deployment>

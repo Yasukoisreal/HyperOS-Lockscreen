@@ -1,0 +1,564 @@
+<phone:PhoneApplicationPage
+    x:Class="HyperOS.Pages.LockScreen"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:phone="clr-namespace:Microsoft.Phone.Controls;assembly=Microsoft.Phone"
+    xmlns:shell="clr-namespace:Microsoft.Phone.Shell;assembly=Microsoft.Phone"
+    xmlns:toolkit="clr-namespace:Microsoft.Phone.Controls;assembly=Microsoft.Phone.Controls.Toolkit"
+    xmlns:controls="clr-namespace:HyperOS.Controls"
+    SupportedOrientations="Portrait" Orientation="Portrait"
+    shell:SystemTray.IsVisible="False"
+    BackKeyPress="PhoneApplicationPage_BackKeyPress"
+    Loaded="PhoneApplicationPage_Loaded">
+
+    <phone:PhoneApplicationPage.Resources>
+        <!-- Battery flash animation -->
+        <Storyboard x:Name="FlashBattery" AutoReverse="True" RepeatBehavior="Forever">
+            <DoubleAnimationUsingKeyFrames
+                Storyboard.TargetProperty="(UIElement.Opacity)"
+                Storyboard.TargetName="BatteryLowIcon">
+                <EasingDoubleKeyFrame KeyTime="0" Value="1"/>
+                <EasingDoubleKeyFrame KeyTime="0:0:0.40" Value="0"/>
+            </DoubleAnimationUsingKeyFrames>
+        </Storyboard>
+
+        <!-- Charging pulse animation -->
+        <Storyboard x:Name="ChargingPulse" AutoReverse="True" RepeatBehavior="Forever">
+            <DoubleAnimationUsingKeyFrames
+                Storyboard.TargetProperty="(UIElement.Opacity)"
+                Storyboard.TargetName="ChargingIcon">
+                <EasingDoubleKeyFrame KeyTime="0" Value="1"/>
+                <EasingDoubleKeyFrame KeyTime="0:0:1.5" Value="0.3">
+                    <EasingDoubleKeyFrame.EasingFunction>
+                        <SineEase EasingMode="EaseInOut"/>
+                    </EasingDoubleKeyFrame.EasingFunction>
+                </EasingDoubleKeyFrame>
+            </DoubleAnimationUsingKeyFrames>
+        </Storyboard>
+
+        <!-- Unlock fade-out + scale animation -->
+        <Storyboard x:Name="UnlockAnim" Completed="UnlockAnim_Completed">
+            <DoubleAnimation Storyboard.TargetName="OverlayInformationPanel"
+                Storyboard.TargetProperty="Opacity"
+                From="1" To="0" Duration="0:0:0.3">
+                <DoubleAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseIn"/>
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+            <DoubleAnimation Storyboard.TargetName="OverlayInformationPanel"
+                Storyboard.TargetProperty="(UIElement.RenderTransform).(CompositeTransform.ScaleX)"
+                From="1" To="1.05" Duration="0:0:0.3"/>
+            <DoubleAnimation Storyboard.TargetName="OverlayInformationPanel"
+                Storyboard.TargetProperty="(UIElement.RenderTransform).(CompositeTransform.ScaleY)"
+                From="1" To="1.05" Duration="0:0:0.3"/>
+        </Storyboard>
+
+        <!-- Clock fade-in animation -->
+        <Storyboard x:Key="TimeAnim">
+            <DoubleAnimationUsingKeyFrames
+                Storyboard.TargetProperty="(UIElement.Opacity)"
+                Storyboard.TargetName="HourText">
+                <EasingDoubleKeyFrame KeyTime="0" Value="0"/>
+                <EasingDoubleKeyFrame KeyTime="0:0:0.600" Value="1">
+                    <EasingDoubleKeyFrame.EasingFunction>
+                        <CubicEase EasingMode="EaseOut"/>
+                    </EasingDoubleKeyFrame.EasingFunction>
+                </EasingDoubleKeyFrame>
+            </DoubleAnimationUsingKeyFrames>
+            <DoubleAnimationUsingKeyFrames
+                Storyboard.TargetProperty="(UIElement.RenderTransform).(CompositeTransform.TranslateY)"
+                Storyboard.TargetName="HourText">
+                <EasingDoubleKeyFrame KeyTime="0" Value="30"/>
+                <EasingDoubleKeyFrame KeyTime="0:0:0.600" Value="0">
+                    <EasingDoubleKeyFrame.EasingFunction>
+                        <CubicEase EasingMode="EaseOut"/>
+                    </EasingDoubleKeyFrame.EasingFunction>
+                </EasingDoubleKeyFrame>
+            </DoubleAnimationUsingKeyFrames>
+        </Storyboard>
+
+        <!-- Date slide-in animation -->
+        <Storyboard x:Key="DayAnim">
+            <DoubleAnimationUsingKeyFrames
+                Storyboard.TargetProperty="(UIElement.Opacity)"
+                Storyboard.TargetName="DateInfoPanel">
+                <EasingDoubleKeyFrame KeyTime="0" Value="0"/>
+                <EasingDoubleKeyFrame KeyTime="0:0:0.500" Value="1">
+                    <EasingDoubleKeyFrame.EasingFunction>
+                        <CubicEase EasingMode="EaseOut"/>
+                    </EasingDoubleKeyFrame.EasingFunction>
+                </EasingDoubleKeyFrame>
+            </DoubleAnimationUsingKeyFrames>
+            <DoubleAnimationUsingKeyFrames
+                Storyboard.TargetProperty="(UIElement.RenderTransform).(CompositeTransform.TranslateY)"
+                Storyboard.TargetName="DateInfoPanel">
+                <EasingDoubleKeyFrame KeyTime="0" Value="20"/>
+                <EasingDoubleKeyFrame KeyTime="0:0:0.500" Value="0">
+                    <EasingDoubleKeyFrame.EasingFunction>
+                        <CubicEase EasingMode="EaseOut"/>
+                    </EasingDoubleKeyFrame.EasingFunction>
+                </EasingDoubleKeyFrame>
+            </DoubleAnimationUsingKeyFrames>
+        </Storyboard>
+
+        <!-- DateAnim removed — duplicate of DayAnim -->
+
+        <!-- PIN pad show -->
+        <Storyboard x:Key="PassAnim">
+            <DoubleAnimationUsingKeyFrames
+                Storyboard.TargetProperty="(UIElement.Opacity)"
+                Storyboard.TargetName="PassGrid">
+                <EasingDoubleKeyFrame KeyTime="0" Value="0"/>
+                <EasingDoubleKeyFrame KeyTime="0:0:0.350" Value="1">
+                    <EasingDoubleKeyFrame.EasingFunction>
+                        <CubicEase EasingMode="EaseOut"/>
+                    </EasingDoubleKeyFrame.EasingFunction>
+                </EasingDoubleKeyFrame>
+            </DoubleAnimationUsingKeyFrames>
+        </Storyboard>
+
+        <!-- PIN pad hide -->
+        <Storyboard x:Key="PassAnimR">
+            <DoubleAnimationUsingKeyFrames
+                Storyboard.TargetProperty="(UIElement.Opacity)"
+                Storyboard.TargetName="PassGrid">
+                <EasingDoubleKeyFrame KeyTime="0" Value="1"/>
+                <EasingDoubleKeyFrame KeyTime="0:0:0.300" Value="0"/>
+            </DoubleAnimationUsingKeyFrames>
+        </Storyboard>
+
+        <!-- Pattern grid show -->
+        <Storyboard x:Key="PatternGridAnim">
+            <DoubleAnimationUsingKeyFrames
+                Storyboard.TargetProperty="(UIElement.Opacity)"
+                Storyboard.TargetName="PatternGrid">
+                <EasingDoubleKeyFrame KeyTime="0" Value="0"/>
+                <EasingDoubleKeyFrame KeyTime="0:0:0.350" Value="1"/>
+            </DoubleAnimationUsingKeyFrames>
+        </Storyboard>
+
+        <!-- Pattern grid hide -->
+        <Storyboard x:Key="PatternGridAnimR">
+            <DoubleAnimationUsingKeyFrames
+                Storyboard.TargetProperty="(UIElement.Opacity)"
+                Storyboard.TargetName="PatternGrid">
+                <EasingDoubleKeyFrame KeyTime="0" Value="1"/>
+                <EasingDoubleKeyFrame KeyTime="0:0:0.300" Value="0"/>
+            </DoubleAnimationUsingKeyFrames>
+        </Storyboard>
+
+        <!-- Recover grid show -->
+        <Storyboard x:Key="RecoverGridAnim">
+            <DoubleAnimationUsingKeyFrames
+                Storyboard.TargetProperty="(UIElement.Opacity)"
+                Storyboard.TargetName="RecoverGrid">
+                <EasingDoubleKeyFrame KeyTime="0" Value="0"/>
+                <EasingDoubleKeyFrame KeyTime="0:0:0.400" Value="1"/>
+            </DoubleAnimationUsingKeyFrames>
+        </Storyboard>
+
+        <!-- Recover grid hide -->
+        <Storyboard x:Key="RecoverGridAnimR">
+            <DoubleAnimationUsingKeyFrames
+                Storyboard.TargetProperty="(UIElement.Opacity)"
+                Storyboard.TargetName="RecoverGrid">
+                <EasingDoubleKeyFrame KeyTime="0" Value="1"/>
+                <EasingDoubleKeyFrame KeyTime="0:0:0.400" Value="0"/>
+            </DoubleAnimationUsingKeyFrames>
+        </Storyboard>
+
+        <!-- Song name animation -->
+        <Storyboard x:Key="SongAnim">
+            <DoubleAnimationUsingKeyFrames
+                Storyboard.TargetProperty="(UIElement.Opacity)"
+                Storyboard.TargetName="SongName">
+                <EasingDoubleKeyFrame KeyTime="0" Value="0"/>
+                <EasingDoubleKeyFrame KeyTime="0:0:0.700" Value="1"/>
+            </DoubleAnimationUsingKeyFrames>
+        </Storyboard>
+
+        <!-- Artist animation -->
+        <Storyboard x:Key="ArtistAnim">
+            <DoubleAnimationUsingKeyFrames
+                Storyboard.TargetProperty="(UIElement.Opacity)"
+                Storyboard.TargetName="Artist">
+                <EasingDoubleKeyFrame KeyTime="0" Value="0"/>
+                <EasingDoubleKeyFrame KeyTime="0:0:0.700" Value="1"/>
+            </DoubleAnimationUsingKeyFrames>
+        </Storyboard>
+
+
+
+        <!-- HyperOS-style PIN button -->
+        <Style x:Key="KeyboardButtonStyle" TargetType="Button">
+            <Setter Property="Width" Value="105"/>
+            <Setter Property="Height" Value="105"/>
+            <Setter Property="FontFamily" Value="/Assets/Fonts/MiSans-Demibold.ttf#MiSans"/>
+            <Setter Property="FontSize" Value="36"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Background" Value="#33FFFFFF"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="ButtonBorder"
+                                CornerRadius="100"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </phone:PhoneApplicationPage.Resources>
+
+    <Grid x:Name="LayoutRoot" Background="Black">
+        <VisualStateManager.VisualStateGroups>
+            <VisualStateGroup x:Name="VisualStateGroup">
+                <VisualStateGroup.Transitions>
+                    <VisualTransition GeneratedDuration="0:0:0.3">
+                        <VisualTransition.GeneratedEasingFunction>
+                            <CubicEase EasingMode="EaseInOut"/>
+                        </VisualTransition.GeneratedEasingFunction>
+                    </VisualTransition>
+                </VisualStateGroup.Transitions>
+                <VisualState x:Name="PassEnter">
+                    <Storyboard>
+                        <DoubleAnimation Duration="0:0:0.3" To="0"
+                            Storyboard.TargetProperty="(UIElement.Opacity)"
+                            Storyboard.TargetName="OverlayInformationPanel"/>
+                    </Storyboard>
+                </VisualState>
+                <VisualState x:Name="PassClose"/>
+            </VisualStateGroup>
+        </VisualStateManager.VisualStateGroups>
+
+        <!-- ============ LOCK SCREEN PANEL ============ -->
+        <Grid x:Name="LockScreenPanel">
+
+            <!-- Background Image — Full screen -->
+            <Border x:Name="BackgroundImage" CacheMode="BitmapCache">
+                <Border.Background>
+                    <ImageBrush x:Name="BackgroundBrush" ImageSource="/Assets/BlurBackground.jpg" Stretch="UniformToFill"/>
+                </Border.Background>
+            </Border>
+
+            <!-- Bottom gradient overlay for text readability -->
+            <Rectangle VerticalAlignment="Bottom" Height="420" CacheMode="BitmapCache">
+                <Rectangle.Fill>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                        <GradientStop Color="#00000000" Offset="0"/>
+                        <GradientStop Color="#99000000" Offset="0.5"/>
+                        <GradientStop Color="#CC000000" Offset="1"/>
+                    </LinearGradientBrush>
+                </Rectangle.Fill>
+            </Rectangle>
+
+            <!-- ⚡ OVERLAY PANEL — Swipe up to unlock -->
+            <Grid x:Name="OverlayInformationPanel"
+                  Background="Transparent"
+                  ManipulationStarted="OverlayInformationPanel_ManipulationStarted"
+                  ManipulationDelta="OverlayInformationPanel_ManipulationDelta"
+                  ManipulationCompleted="OverlayInformationPanel_ManipulationCompleted">
+                <Grid.RenderTransform><CompositeTransform/></Grid.RenderTransform>
+
+                <!-- HyperOS Clock & Info -->
+                <StackPanel x:Name="ClockPanel" VerticalAlignment="Center" HorizontalAlignment="Center"
+                            Margin="0,0,0,40">
+
+                    <!-- Date & Day info line (centered above clock) -->
+                    <StackPanel x:Name="DateInfoPanel" Orientation="Horizontal"
+                                HorizontalAlignment="Center" Margin="0,0,0,4">
+                        <StackPanel.RenderTransform><CompositeTransform/></StackPanel.RenderTransform>
+                        <TextBlock x:Name="DayPanel" Text="Saturday"
+                            FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"
+                            FontSize="20" Foreground="#CCFFFFFF"/>
+                        <TextBlock Text=" · " FontSize="20" Foreground="#88FFFFFF"
+                            FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"/>
+                        <TextBlock x:Name="DatePanel" Text="June 21"
+                            FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"
+                            FontSize="20" Foreground="#CCFFFFFF"/>
+                    </StackPanel>
+
+                    <!-- Large Time — centered HyperOS style -->
+                    <TextBlock x:Name="HourText" Text="20:05"
+                        FontFamily="/Assets/Fonts/MiSans-Demibold.ttf#MiSans"
+                        FontSize="105" Foreground="White"
+                        HorizontalAlignment="Center" Margin="0,0,0,0">
+                        <TextBlock.RenderTransform><CompositeTransform/></TextBlock.RenderTransform>
+                    </TextBlock>
+
+                    <!-- Weather widget -->
+                    <TextBlock x:Name="WeatherText" Text=""
+                        FontSize="18" Foreground="#BBFFFFFF"
+                        FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"
+                        HorizontalAlignment="Center" Margin="0,6,0,0"
+                        Visibility="Collapsed"/>
+
+                    <!-- Countdown widget -->
+                    <TextBlock x:Name="CountdownText" Text=""
+                        FontSize="16" Foreground="#99FFFFFF"
+                        FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"
+                        HorizontalAlignment="Center" Margin="0,4,0,0"
+                        Visibility="Collapsed"/>
+
+                    <!-- Music compact (if playing) -->
+                    <StackPanel x:Name="PlayPanel" Orientation="Horizontal"
+                                HorizontalAlignment="Center"
+                                Margin="0,10,0,0" Visibility="Collapsed">
+                        <StackPanel.Projection><PlaneProjection/></StackPanel.Projection>
+                        <TextBlock Text="♪ " FontSize="18" Foreground="#AAFFFFFF" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="SongName" Text=""
+                            FontSize="18" Foreground="#CCFFFFFF"
+                            FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"
+                            VerticalAlignment="Center" MaxWidth="280" TextTrimming="WordEllipsis">
+                            <TextBlock.RenderTransform><CompositeTransform/></TextBlock.RenderTransform>
+                        </TextBlock>
+                        <TextBlock Text=" — " FontSize="18" Foreground="#66FFFFFF" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="Artist" Text=""
+                            FontSize="18" Foreground="#88FFFFFF"
+                            FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"
+                            VerticalAlignment="Center" MaxWidth="120" TextTrimming="WordEllipsis">
+                            <TextBlock.RenderTransform><CompositeTransform/></TextBlock.RenderTransform>
+                        </TextBlock>
+                    </StackPanel>
+
+                    <!-- Owner info text -->
+                    <TextBlock x:Name="OwnerInfoText" Text=""
+                        FontSize="16" Foreground="#88FFFFFF"
+                        FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"
+                        HorizontalAlignment="Center" Margin="0,12,0,0"
+                        TextWrapping="Wrap" MaxWidth="350"
+                        Visibility="Collapsed"/>
+                </StackPanel>
+
+                <!-- Battery & Charging info — top right -->
+                <StackPanel Orientation="Horizontal"
+                            HorizontalAlignment="Right" VerticalAlignment="Top"
+                            Margin="0,5,12,0">
+                    <!-- Charging icon -->
+                    <TextBlock x:Name="ChargingIcon" Text="⚡" FontSize="16" Foreground="#AAFFCC00"
+                        VerticalAlignment="Center" Margin="0,0,2,0" Visibility="Collapsed"/>
+                    <Image x:Name="BatteryLowIcon"
+                        Source="/Assets/Battery/appbar.battery.1.png"
+                        Width="24" Height="24"
+                        VerticalAlignment="Center"
+                        Opacity="0" Visibility="Collapsed" Margin="0,0,4,0"/>
+                    <TextBlock x:Name="BatteryText" Text=""
+                        FontSize="14" Foreground="#AAFFFFFF"
+                        FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"
+                        VerticalAlignment="Center" Visibility="Collapsed"/>
+                </StackPanel>
+
+
+                <!-- Unlock button (invisible touch target) -->
+                <Border x:Name="UnlockButton" Background="Transparent"
+                    Width="120" Height="120"
+                    HorizontalAlignment="Center" VerticalAlignment="Bottom"
+                    Tap="UnlockButton_Tap" Margin="0,0,0,60">
+                    <Border.Projection><PlaneProjection/></Border.Projection>
+                    <Border.RenderTransform><CompositeTransform/></Border.RenderTransform>
+                </Border>
+
+                <!-- Music playback controls (hidden - swipe left to access) -->
+                <StackPanel x:Name="MusicControlPanel" Orientation="Horizontal"
+                            HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                            Margin="0,0,20,100" Visibility="Collapsed">
+                    <Button x:Name="BtnPrev" Click="PlayPrev" Width="52" Height="52"
+                            Background="Transparent" BorderThickness="0">
+                        <TextBlock Text="⏮" FontSize="18" Foreground="White"/>
+                    </Button>
+                    <Button x:Name="BtnPlayPause" Click="PlayPause" Width="52" Height="52"
+                            Background="Transparent" BorderThickness="0">
+                        <TextBlock x:Name="PlayPauseIcon" Text="▶" FontSize="18" Foreground="White"/>
+                    </Button>
+                    <Button x:Name="BtnNext" Click="PlayNext" Width="52" Height="52"
+                            Background="Transparent" BorderThickness="0">
+                        <TextBlock Text="⏭" FontSize="18" Foreground="White"/>
+                    </Button>
+                </StackPanel>
+
+                <!-- Hidden slider for code compatibility -->
+                <Slider x:Name="PlaySlider" Minimum="0" Maximum="100" Value="0"
+                        Visibility="Collapsed" ValueChanged="PlaySlider_ValueChanged"/>
+
+                <!-- Quick shortcuts — bottom corners (HyperOS style) -->
+                <!-- Flashlight (left) -->
+                <Border VerticalAlignment="Bottom" HorizontalAlignment="Left"
+                        Margin="24,0,0,24" Width="44" Height="44"
+                        CornerRadius="22" Background="#22FFFFFF"
+                        Tap="FlashlightShortcut_Tap">
+                    <Canvas Width="16" Height="20" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <Rectangle Canvas.Left="2" Canvas.Top="0" Width="12" Height="7"
+                                   RadiusX="2" RadiusY="2"
+                                   Stroke="White" StrokeThickness="1.3" Fill="Transparent"/>
+                        <Rectangle Canvas.Left="4" Canvas.Top="7" Width="8" Height="10"
+                                   RadiusX="1" RadiusY="1"
+                                   Stroke="White" StrokeThickness="1.3" Fill="Transparent"/>
+                        <Ellipse Canvas.Left="6.5" Canvas.Top="10" Width="3" Height="3"
+                                 Fill="White"/>
+                    </Canvas>
+                </Border>
+                <!-- Camera (right) -->
+                <Border VerticalAlignment="Bottom" HorizontalAlignment="Right"
+                        Margin="0,0,24,24" Width="44" Height="44"
+                        CornerRadius="22" Background="#22FFFFFF"
+                        Tap="CameraShortcut_Tap">
+                    <Canvas Width="22" Height="18" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <Rectangle Canvas.Left="1" Canvas.Top="4" Width="20" Height="13"
+                                   RadiusX="2" RadiusY="2"
+                                   Stroke="White" StrokeThickness="1.2" Fill="Transparent"/>
+                        <Ellipse Canvas.Left="7" Canvas.Top="6" Width="8" Height="8"
+                                 Stroke="White" StrokeThickness="1.2" Fill="Transparent"/>
+                        <Path Data="M7,4 L9,1 L13,1 L15,4"
+                              Stroke="White" StrokeThickness="1.2" Fill="Transparent"/>
+                    </Canvas>
+                </Border>
+            </Grid>
+
+            <!-- Depth Effect — foreground overlay (above clock) -->
+            <Border x:Name="ForegroundOverlay" IsHitTestVisible="False" Visibility="Collapsed">
+                <Border.Background>
+                    <ImageBrush x:Name="ForegroundBrush" Stretch="UniformToFill"/>
+                </Border.Background>
+            </Border>
+        </Grid>
+
+        <!-- Hidden password box for PIN input -->
+        <TextBox x:Name="PassBox" Visibility="Collapsed"
+                 InputScope="Number" MaxLength="4"
+                 TextChanged="PassBox_TextChanged"/>
+
+        <!-- ============ PIN PAD (HyperOS Style) ============ -->
+        <Grid x:Name="PassGrid" Visibility="Collapsed" CacheMode="BitmapCache">
+            <Grid.Background>
+                <SolidColorBrush Color="Black" Opacity="0.92"/>
+            </Grid.Background>
+
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                <!-- PIN header -->
+                <TextBlock Text="Enter PIN" FontSize="26"
+                    Foreground="White"
+                    FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"
+                    HorizontalAlignment="Center" Margin="0,0,0,24"/>
+
+                <!-- 4 dot indicators -->
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,30">
+                    <Border x:Name="Char1" Width="14" Height="14" CornerRadius="7"
+                            BorderBrush="#55FFFFFF" BorderThickness="1.5" Margin="12,0"
+                            Background="Transparent"/>
+                    <Border x:Name="Char2" Width="14" Height="14" CornerRadius="7"
+                            BorderBrush="#55FFFFFF" BorderThickness="1.5" Margin="12,0"
+                            Background="Transparent"/>
+                    <Border x:Name="Char3" Width="14" Height="14" CornerRadius="7"
+                            BorderBrush="#55FFFFFF" BorderThickness="1.5" Margin="12,0"
+                            Background="Transparent"/>
+                    <Border x:Name="Char4" Width="14" Height="14" CornerRadius="7"
+                            BorderBrush="#55FFFFFF" BorderThickness="1.5" Margin="12,0"
+                            Background="Transparent"/>
+                </StackPanel>
+
+                <!-- Incorrect password text -->
+                <TextBlock x:Name="Inc_Pass" Text="Incorrect PIN"
+                    Foreground="#FF6B6B" FontSize="16"
+                    FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"
+                    HorizontalAlignment="Center"
+                    Visibility="Collapsed" Margin="0,0,0,15"/>
+
+                <!-- Number pad row 1 -->
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,6">
+                    <Button Content="1" Style="{StaticResource KeyboardButtonStyle}" Click="_1_Click" Margin="8,0"/>
+                    <Button Content="2" Style="{StaticResource KeyboardButtonStyle}" Click="_2_Click" Margin="8,0"/>
+                    <Button Content="3" Style="{StaticResource KeyboardButtonStyle}" Click="_3_Click" Margin="8,0"/>
+                </StackPanel>
+
+                <!-- Number pad row 2 -->
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,6">
+                    <Button Content="4" Style="{StaticResource KeyboardButtonStyle}" Click="_4_Click" Margin="8,0"/>
+                    <Button Content="5" Style="{StaticResource KeyboardButtonStyle}" Click="_5_Click" Margin="8,0"/>
+                    <Button Content="6" Style="{StaticResource KeyboardButtonStyle}" Click="_6_Click" Margin="8,0"/>
+                </StackPanel>
+
+                <!-- Number pad row 3 -->
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,6">
+                    <Button Content="7" Style="{StaticResource KeyboardButtonStyle}" Click="_7_Click" Margin="8,0"/>
+                    <Button Content="8" Style="{StaticResource KeyboardButtonStyle}" Click="_8_Click" Margin="8,0"/>
+                    <Button Content="9" Style="{StaticResource KeyboardButtonStyle}" Click="_9_Click" Margin="8,0"/>
+                </StackPanel>
+
+                <!-- Number pad row 4 -->
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,6">
+                    <Border Width="105" Height="105" Background="Transparent" Margin="8,0"/>
+                    <Button Content="0" Style="{StaticResource KeyboardButtonStyle}" Click="_0_Click" Margin="8,0"/>
+                    <Button x:Name="OK_Button" Content="⌫" Style="{StaticResource KeyboardButtonStyle}"
+                            Click="OK_Button_Click" Margin="8,0"/>
+                </StackPanel>
+            </StackPanel>
+        </Grid>
+
+        <!-- ============ PATTERN LOCK ============ -->
+        <Grid x:Name="PatternGrid" Visibility="Collapsed" CacheMode="BitmapCache">
+            <Grid.Background>
+                <SolidColorBrush Color="Black" Opacity="0.92"/>
+            </Grid.Background>
+
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                <TextBlock Text="Draw Pattern" FontSize="26"
+                    Foreground="White"
+                    FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"
+                    HorizontalAlignment="Center" Margin="0,0,0,24"/>
+
+                <controls:PatternLockMetroControl x:Name="pattLoc"
+                    Width="320" Height="320"
+                    IsRegisterationMode="False"
+                    PatternMatchSuccess="PatternLockMetroControl_PatternMatchSuccess"
+                    PatternMatchUnsuccess="pattLoc_PatternMatchUnsuccess"/>
+
+                <TextBlock x:Name="PatternErrorText" Text="Wrong pattern"
+                    Foreground="#FF6B6B" FontSize="16"
+                    FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"
+                    HorizontalAlignment="Center"
+                    Visibility="Collapsed" Margin="0,15,0,0"/>
+
+                <TextBlock x:Name="CaptionTextNoTries" Text="Too many attempts"
+                    Foreground="#FF6B6B" FontSize="16"
+                    FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"
+                    HorizontalAlignment="Center"
+                    Visibility="Collapsed" Margin="0,10,0,0"/>
+            </StackPanel>
+        </Grid>
+
+        <!-- ============ RECOVERY ============ -->
+        <Grid x:Name="RecoverGrid" Visibility="Collapsed" CacheMode="BitmapCache">
+            <Grid.Background>
+                <SolidColorBrush Color="Black" Opacity="0.95"/>
+            </Grid.Background>
+
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="40">
+                <TextBlock Text="Account Recovery" FontSize="28"
+                    Foreground="White"
+                    FontFamily="/Assets/Fonts/MiSans-Demibold.ttf#MiSans"
+                    HorizontalAlignment="Center" Margin="0,0,0,20"/>
+
+                <TextBlock Text="Too many failed attempts. Enter your recovery email to reset."
+                    Foreground="#BBFFFFFF" FontSize="16"
+                    FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"
+                    TextWrapping="Wrap" TextAlignment="Center"
+                    Margin="0,0,0,20"/>
+
+                <toolkit:PhoneTextBox x:Name="RecoverEmail" Hint="Email address"
+                    FontSize="20" Margin="0,0,0,15"/>
+
+                <Button x:Name="RecoverButton" Content="Recover"
+                    HorizontalAlignment="Stretch"
+                    Background="#3B82F6" Foreground="White"
+                    BorderThickness="0"
+                    FontFamily="/Assets/Fonts/MiSans-Demibold.ttf#MiSans"
+                    Click="RecoverButton_Click"/>
+            </StackPanel>
+        </Grid>
+    </Grid>
+
+</phone:PhoneApplicationPage>

@@ -1,0 +1,10 @@
+<phone:PhoneApplicationPage
+    x:Class="HyperOS.LockScreenPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:phone="clr-namespace:Microsoft.Phone.Controls;assembly=Microsoft.Phone"
+    xmlns:shell="clr-namespace:Microsoft.Phone.Shell;assembly=Microsoft.Phone"
+    SupportedOrientations="Portrait"
+    shell:SystemTray.IsVisible="False">
+    <Grid Background="Black"/>
+</phone:PhoneApplicationPage>

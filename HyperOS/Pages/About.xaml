@@ -1,0 +1,94 @@
+<phone:PhoneApplicationPage
+    x:Class="HyperOS.Pages.About"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:phone="clr-namespace:Microsoft.Phone.Controls;assembly=Microsoft.Phone"
+    xmlns:shell="clr-namespace:Microsoft.Phone.Shell;assembly=Microsoft.Phone"
+    SupportedOrientations="Portrait" Orientation="Portrait"
+    shell:SystemTray.IsVisible="True"
+    shell:SystemTray.BackgroundColor="#FF1A1A2E">
+
+    <Grid Background="#FF1A1A2E">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <StackPanel Grid.Row="0" Margin="20,20,20,10">
+            <TextBlock Text="HyperOS" FontSize="20" Foreground="#AAFFFFFF"
+                FontFamily="Segoe WP SemiLight"/>
+            <TextBlock Text="about" FontSize="48" Foreground="White"
+                FontFamily="Segoe WP Light" Margin="0,-8,0,0"/>
+        </StackPanel>
+
+        <ScrollViewer Grid.Row="1" Margin="20,0,20,0">
+            <StackPanel>
+                <!-- App Info -->
+                <Border Background="#33FFFFFF" CornerRadius="4" Padding="20" Margin="0,10,0,0">
+                    <StackPanel HorizontalAlignment="Center">
+                        <Image Source="/Assets/ApplicationIcon.png"
+                            Width="100" Height="100" Margin="0,0,0,15"/>
+
+                        <TextBlock Text="HyperOS Lockscreen" FontSize="28"
+                            Foreground="White" FontFamily="Segoe WP SemiLight"
+                            HorizontalAlignment="Center"/>
+
+                        <TextBlock Text="Version 1.0.0.0" FontSize="18"
+                            Foreground="#AAFFFFFF" HorizontalAlignment="Center"
+                            Margin="0,5,0,0"/>
+
+                        <TextBlock Text="Custom lock screen for Windows Phone 8.1"
+                            FontSize="16" Foreground="#88FFFFFF"
+                            HorizontalAlignment="Center" TextAlignment="Center"
+                            TextWrapping="Wrap" Margin="0,10,0,0"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Features -->
+                <TextBlock Text="FEATURES" FontSize="18" Foreground="#FF4081"
+                    FontFamily="Segoe WP SemiLight" Margin="0,25,0,10"/>
+
+                <Border Background="#33FFFFFF" CornerRadius="4" Padding="15">
+                    <StackPanel>
+                        <TextBlock Text="• HyperOS style lock screen" FontSize="16"
+                            Foreground="White" Margin="0,3"/>
+                        <TextBlock Text="• Swipe up to unlock" FontSize="16"
+                            Foreground="White" Margin="0,3"/>
+                        <TextBlock Text="• 3D zoom animations" FontSize="16"
+                            Foreground="White" Margin="0,3"/>
+                        <TextBlock Text="• PIN code protection" FontSize="16"
+                            Foreground="White" Margin="0,3"/>
+                        <TextBlock Text="• Pattern lock" FontSize="16"
+                            Foreground="White" Margin="0,3"/>
+                        <TextBlock Text="• Music controls" FontSize="16"
+                            Foreground="White" Margin="0,3"/>
+                        <TextBlock Text="• Weather information" FontSize="16"
+                            Foreground="White" Margin="0,3"/>
+                        <TextBlock Text="• Custom wallpaper" FontSize="16"
+                            Foreground="White" Margin="0,3"/>
+                        <TextBlock Text="• Battery indicator" FontSize="16"
+                            Foreground="White" Margin="0,3"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Credits -->
+                <TextBlock Text="CREDITS" FontSize="18" Foreground="#FF4081"
+                    FontFamily="Segoe WP SemiLight" Margin="0,25,0,10"/>
+
+                <Border Background="#33FFFFFF" CornerRadius="4" Padding="15" Margin="0,0,0,30">
+                    <StackPanel>
+                        <TextBlock Text="Inspired by Xiaomi HyperOS"
+                            FontSize="16" Foreground="White" Margin="0,3"/>
+                        <TextBlock Text="Based on Lollipop Lockscreen by Flydream"
+                            FontSize="16" Foreground="White" Margin="0,3"/>
+                        <TextBlock Text="Weather data by Forecast.io"
+                            FontSize="16" Foreground="#AAFFFFFF" Margin="0,3"/>
+                        <TextBlock Text="© 2026 HyperOS"
+                            FontSize="16" Foreground="#88FFFFFF" Margin="0,10,0,0"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</phone:PhoneApplicationPage>

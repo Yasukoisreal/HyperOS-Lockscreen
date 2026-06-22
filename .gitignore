@@ -1,0 +1,24 @@
+# Build outputs
+[Bb]in/
+[Oo]bj/
+*.xap
+*.suo
+*.user
+*.sln.docstates
+
+# VS settings
+.vs/
+
+# NuGet packages (restore from packages.config)
+packages/
+
+# NuGet binary
+nuget.exe
+
+# OS files
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Gemini / analysis artifacts
+analysis_results.md

@@ -1,0 +1,108 @@
+<phone:PhoneApplicationPage
+    x:Class="HyperOS.Pages.AdvancedSettings"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:phone="clr-namespace:Microsoft.Phone.Controls;assembly=Microsoft.Phone"
+    xmlns:shell="clr-namespace:Microsoft.Phone.Shell;assembly=Microsoft.Phone"
+    xmlns:toolkit="clr-namespace:Microsoft.Phone.Controls;assembly=Microsoft.Phone.Controls.Toolkit"
+    SupportedOrientations="Portrait" Orientation="Portrait"
+    shell:SystemTray.IsVisible="True"
+    shell:SystemTray.BackgroundColor="#FF1A1A2E"
+    Loaded="AdvancedSettings_Loaded">
+
+    <Grid Background="#FF1A1A2E">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <StackPanel Grid.Row="0" Margin="20,20,20,10">
+            <TextBlock Text="HyperOS" FontSize="20" Foreground="#AAFFFFFF"
+                FontFamily="Segoe WP SemiLight"/>
+            <TextBlock Text="advanced" FontSize="48" Foreground="White"
+                FontFamily="Segoe WP Light" Margin="0,-8,0,0"/>
+        </StackPanel>
+
+        <ScrollViewer Grid.Row="1" Margin="20,0,20,0">
+            <StackPanel>
+                <!-- Animation Settings -->
+                <TextBlock Text="ANIMATION STYLE" FontSize="18" Foreground="#FF4081"
+                    FontFamily="Segoe WP SemiLight" Margin="0,10,0,10"/>
+
+                <Border Background="#33FFFFFF" CornerRadius="4" Padding="15">
+                    <StackPanel>
+                        <TextBlock Text="Select animation set:" FontSize="18"
+                            Foreground="#CCFFFFFF" Margin="0,0,0,10"/>
+                        <toolkit:ListPicker x:Name="AnimPicker"
+                            SelectionChanged="AnimPicker_SelectionChanged">
+                            <toolkit:ListPickerItem Content="3D Zoom (Default)"/>
+                            <toolkit:ListPickerItem Content="Slide Up"/>
+                            <toolkit:ListPickerItem Content="Fade In"/>
+                            <toolkit:ListPickerItem Content="Scale"/>
+                            <toolkit:ListPickerItem Content="Rotate"/>
+                        </toolkit:ListPicker>
+                    </StackPanel>
+                </Border>
+
+                <!-- Weather Settings -->
+                <TextBlock Text="WEATHER" FontSize="18" Foreground="#FF4081"
+                    FontFamily="Segoe WP SemiLight" Margin="0,25,0,10"/>
+
+                <Border Background="#33FFFFFF" CornerRadius="4" Padding="15">
+                    <StackPanel>
+                        <TextBlock Text="City name:" FontSize="18"
+                            Foreground="#CCFFFFFF" Margin="0,0,0,5"/>
+                        <toolkit:PhoneTextBox x:Name="CityInput" Hint="Enter city name"
+                            FontSize="22"/>
+                        <Button Content="Save Location" Click="SaveLocation_Click"
+                            Background="#FF4081" Foreground="White"
+                            BorderThickness="0" Margin="0,10,0,0"/>
+
+                        <Rectangle Height="1" Fill="#22FFFFFF" Margin="0,15,0,15"/>
+
+                        <!-- WiFi only toggle -->
+                        <Grid Margin="0,5">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="WiFi Only" FontSize="22" Foreground="White"/>
+                                <TextBlock Text="Only update weather over WiFi" FontSize="14"
+                                    Foreground="#AAFFFFFF"/>
+                            </StackPanel>
+                            <toolkit:ToggleSwitch x:Name="WiFiOnlyToggle" Grid.Column="1"
+                                Checked="WiFiOnlyToggle_Checked"
+                                Unchecked="WiFiOnlyToggle_Unchecked"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- Shortcuts -->
+                <TextBlock Text="APP SHORTCUTS" FontSize="18" Foreground="#FF4081"
+                    FontFamily="Segoe WP SemiLight" Margin="0,25,0,10"/>
+
+                <Border Background="#33FFFFFF" CornerRadius="4" Padding="15" Margin="0,0,0,30">
+                    <StackPanel>
+                        <TextBlock Text="Quick access apps on lock screen"
+                            FontSize="18" Foreground="#CCFFFFFF" Margin="0,0,0,10"/>
+
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <Image Source="/Assets/AppsIcons/appbar.connection.wifi.variant.png"
+                                Width="48" Height="48" Margin="10"/>
+                            <Image Source="/Assets/AppsIcons/appbar.connection.bluetooth.png"
+                                Width="48" Height="48" Margin="10"/>
+                            <Image Source="/Assets/AppsIcons/appbar.social.facebook.png"
+                                Width="48" Height="48" Margin="10"/>
+                            <Image Source="/Assets/AppsIcons/appbar.social.twitter.png"
+                                Width="48" Height="48" Margin="10"/>
+                            <Image Source="/Assets/AppsIcons/appbar.youtube.png"
+                                Width="48" Height="48" Margin="10"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</phone:PhoneApplicationPage>
