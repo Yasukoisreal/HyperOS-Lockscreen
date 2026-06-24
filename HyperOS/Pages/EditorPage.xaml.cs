@@ -953,8 +953,132 @@ namespace HyperOS.Pages
                 MessageBox.Show("Nhập tên thành phố.", "Thiếu thông tin", MessageBoxButton.OK);
                 return;
             }
-            Save("WeatherCity", city);
-            MessageBox.Show("Đã lưu: " + city, "Thời tiết", MessageBoxButton.OK);
+            WeatherStatus.Text = "⏳ Đang tìm...";
+            // Geocode city name to lat/lon using open-meteo
+            string url = string.Format(
+                "https://geocoding-api.open-meteo.com/v1/search?name={0}&count=1&language=vi",
+                Uri.EscapeDataString(city));
+            var wc = new System.Net.WebClient();
+            wc.DownloadStringCompleted += (s2, ev) =>
+            {
+                if (ev.Error != null)
+                {
+                    WeatherStatus.Text = "❌ Lỗi: " + ev.Error.Message;
+                    return;
+                }
+                try
+                {
+                    string json = ev.Result;
+                    // Parse lat/lon from {"results":[{"latitude":..., "longitude":..., "name":"..."}]}
+                    double lat = ParseJsonDouble(json, "latitude");
+                    double lon = ParseJsonDouble(json, "longitude");
+                    string name = ParseJsonString(json, "name");
+                    if (lat == 0 && lon == 0)
+                    {
+                        WeatherStatus.Text = "❌ Không tìm thấy: " + city;
+                        return;
+                    }
+                    Save("WeatherLat", lat);
+                    Save("WeatherLon", lon);
+                    Save("WeatherCity", name);
+                    EdWeatherCity.Text = name;
+                    WeatherStatus.Text = "✅ " + name + " (" + lat.ToString("F2") + ", " + lon.ToString("F2") + ")";
+                }
+                catch { WeatherStatus.Text = "❌ Không tìm thấy: " + city; }
+            };
+            wc.DownloadStringAsync(new Uri(url));
+        }
+
+        private void EdWeatherGps_Click(object sender, RoutedEventArgs e)
+        {
+            WeatherStatus.Text = "📡 Đang lấy GPS...";
+            var watcher = new System.Device.Location.GeoCoordinateWatcher(
+                System.Device.Location.GeoPositionAccuracy.Default);
+            watcher.StatusChanged += (s2, ev) =>
+            {
+                if (ev.Status == System.Device.Location.GeoPositionStatus.Disabled)
+                {
+                    Dispatcher.BeginInvoke(() =>
+                        WeatherStatus.Text = "❌ GPS bị tắt. Bật Location trong Settings.");
+                    watcher.Stop();
+                }
+            };
+            watcher.PositionChanged += (s2, ev) =>
+            {
+                double lat = ev.Position.Location.Latitude;
+                double lon = ev.Position.Location.Longitude;
+                watcher.Stop();
+
+                Dispatcher.BeginInvoke(() =>
+                {
+                    Save("WeatherLat", lat);
+                    Save("WeatherLon", lon);
+                    WeatherStatus.Text = "✅ GPS: " + lat.ToString("F4") + ", " + lon.ToString("F4");
+
+                    // Reverse geocode to get city name
+                    string url = string.Format(
+                        "https://geocoding-api.open-meteo.com/v1/search?name={0},{1}&count=1&language=vi",
+                        lat.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                        lon.ToString(System.Globalization.CultureInfo.InvariantCulture));
+                    // Use nominatim for reverse geocoding
+                    string revUrl = string.Format(
+                        "https://nominatim.openstreetmap.org/reverse?format=json&lat={0}&lon={1}&accept-language=vi",
+                        lat.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                        lon.ToString(System.Globalization.CultureInfo.InvariantCulture));
+                    var wc = new System.Net.WebClient();
+                    wc.Headers["User-Agent"] = "HyperOS/1.0";
+                    wc.DownloadStringCompleted += (s3, ev3) =>
+                    {
+                        if (ev3.Error == null)
+                        {
+                            try
+                            {
+                                string city = ParseJsonString(ev3.Result, "city");
+                                if (string.IsNullOrEmpty(city))
+                                    city = ParseJsonString(ev3.Result, "town");
+                                if (string.IsNullOrEmpty(city))
+                                    city = ParseJsonString(ev3.Result, "state");
+                                if (!string.IsNullOrEmpty(city))
+                                {
+                                    Save("WeatherCity", city);
+                                    EdWeatherCity.Text = city;
+                                    WeatherStatus.Text = "✅ " + city + " (" + lat.ToString("F2") + ", " + lon.ToString("F2") + ")";
+                                }
+                            }
+                            catch { }
+                        }
+                    };
+                    wc.DownloadStringAsync(new Uri(revUrl));
+                });
+            };
+            watcher.Start();
+        }
+
+        private double ParseJsonDouble(string json, string key)
+        {
+            string search = "\"" + key + "\":";
+            int idx = json.IndexOf(search);
+            if (idx < 0) return 0;
+            idx += search.Length;
+            int end = idx;
+            while (end < json.Length && (char.IsDigit(json[end]) || json[end] == '.' || json[end] == '-'))
+                end++;
+            double val;
+            double.TryParse(json.Substring(idx, end - idx),
+                System.Globalization.NumberStyles.Any,
+                System.Globalization.CultureInfo.InvariantCulture, out val);
+            return val;
+        }
+
+        private string ParseJsonString(string json, string key)
+        {
+            string search = "\"" + key + "\":\"";
+            int idx = json.IndexOf(search);
+            if (idx < 0) return "";
+            idx += search.Length;
+            int end = json.IndexOf("\"", idx);
+            if (end < 0) return "";
+            return json.Substring(idx, end - idx);
         }
 
         #endregion

@@ -405,8 +405,20 @@
                                 BorderThickness="0" FontSize="14"
                                 FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"
                                 InputScope="Maps"/>
-                            <Button Content="📍 Save Location" Click="EdWeatherLocation_Click"
-                                Style="{StaticResource EditorActionBtn}" Margin="0,4,0,0"/>
+                            <Grid Margin="0,4,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="4"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Button Content="📍 Save" Click="EdWeatherLocation_Click"
+                                    Style="{StaticResource EditorActionBtn}"/>
+                                <Button Content="📡 GPS" Click="EdWeatherGps_Click" Grid.Column="2"
+                                    Style="{StaticResource EditorActionBtn}"/>
+                            </Grid>
+                            <TextBlock x:Name="WeatherStatus" Text="" FontSize="12"
+                                Foreground="#88FFFFFF" HorizontalAlignment="Center" Margin="0,4,0,0"
+                                FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"/>
                         </StackPanel>
 
                         <!-- ══ COUNTDOWN PROPERTIES ══ -->
