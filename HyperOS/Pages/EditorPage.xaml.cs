@@ -80,6 +80,9 @@ namespace HyperOS.Pages
         // Which preset slot we are editing (-1 = none/direct)
         private int editingPreset = -1;
 
+        // Snapshot of settings at editor open, for restoring on discard
+        private System.Collections.Generic.Dictionary<string, object> settingsSnapshot;
+
         public EditorPage()
         {
             InitializeComponent();
@@ -95,6 +98,7 @@ namespace HyperOS.Pages
             ApplyPreview();
             SelectTab("Clock");
             isLoading = false;
+            TakeSettingsSnapshot();
 
             // If no saved positions, center elements after layout is computed
             if (!hasSavedPositions)
@@ -274,6 +278,7 @@ namespace HyperOS.Pages
         {
             UnsavedDialog.Visibility = Visibility.Collapsed;
             hasUnsavedChanges = false;
+            RestoreSettingsSnapshot();
             if (NavigationService.CanGoBack)
                 NavigationService.GoBack();
         }
@@ -1132,7 +1137,32 @@ namespace HyperOS.Pages
             "ShowWeather", "ShowCountdown", "UseDepthEffect",
             "DepthHourBehind", "DepthColonBehind", "DepthMinuteBehind",
             "ClockX", "ClockY", "WeatherX", "WeatherY", "CountdownX", "CountdownY",
-            "bIsAnimOn" };
+            "bIsAnimOn", "DateAlign", "CountdownName", "CountdownTarget", "OwnerInfo" };
+
+        private void TakeSettingsSnapshot()
+        {
+            settingsSnapshot = new System.Collections.Generic.Dictionary<string, object>();
+            var s = IsolatedStorageSettings.ApplicationSettings;
+            foreach (var key in SetKeys)
+            {
+                if (s.Contains(key))
+                    settingsSnapshot[key] = s[key];
+            }
+        }
+
+        private void RestoreSettingsSnapshot()
+        {
+            if (settingsSnapshot == null) return;
+            var s = IsolatedStorageSettings.ApplicationSettings;
+            foreach (var key in SetKeys)
+            {
+                if (settingsSnapshot.ContainsKey(key))
+                    s[key] = settingsSnapshot[key];
+                else if (s.Contains(key))
+                    s.Remove(key);
+            }
+            s.Save();
+        }
 
         private void SaveSet(int n)
         {
