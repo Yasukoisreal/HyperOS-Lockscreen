@@ -16,6 +16,7 @@ namespace HyperOS.Pages
     public partial class EditorPage : PhoneApplicationPage
     {
         private bool isLoading = true;
+        private bool hasUnsavedChanges = false;
 
         // Current selections
         private string selectedTab = "Clock";
@@ -244,6 +245,31 @@ namespace HyperOS.Pages
             }
         }
 
+        protected override void OnBackKeyPress(System.ComponentModel.CancelEventArgs e)
+        {
+            if (hasUnsavedChanges)
+            {
+                e.Cancel = true;
+                var result = MessageBox.Show(
+                    "Bạn có thay đổi chưa lưu. Bạn muốn lưu trước khi thoát không?",
+                    "Chưa lưu",
+                    MessageBoxButton.OKCancel);
+                if (result == MessageBoxResult.OK)
+                {
+                    // User wants to save → trigger save and back
+                    SaveAndBack_Tap(null, null);
+                }
+                else
+                {
+                    // Discard and go back
+                    hasUnsavedChanges = false;
+                    if (NavigationService.CanGoBack)
+                        NavigationService.GoBack();
+                }
+            }
+            base.OnBackKeyPress(e);
+        }
+
         #endregion
 
         #region Settings I/O
@@ -330,6 +356,7 @@ namespace HyperOS.Pages
             var s = IsolatedStorageSettings.ApplicationSettings;
             s[key] = val;
             s.Save();
+            if (!isLoading) hasUnsavedChanges = true;
         }
 
         #endregion
@@ -572,6 +599,7 @@ namespace HyperOS.Pages
                 case "Weather":  weatherX = newX; weatherY = newY; break;
                 case "Countdown": countdownX = newX; countdownY = newY; break;
             }
+            hasUnsavedChanges = true;
 
             e.Handled = true;
         }
@@ -706,6 +734,8 @@ namespace HyperOS.Pages
                 }
                 catch { }
             }
+
+            hasUnsavedChanges = false;
 
             // Navigate back
             if (NavigationService.CanGoBack)
@@ -974,6 +1004,7 @@ namespace HyperOS.Pages
                             wb.SaveJpeg(stream, wb.PixelWidth, wb.PixelHeight, 0, 90);
                         }
                         PreviewBgBrush.ImageSource = bmp;
+                        hasUnsavedChanges = true;
                     }
                     catch (Exception ex)
                     {
