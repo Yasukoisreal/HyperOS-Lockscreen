@@ -625,6 +625,10 @@ namespace HyperOS.Pages
             double h = handle.ActualHeight;
             ShowGuides(handle, liveX, liveY, w, h);
 
+            // Update depth front layer in real-time while dragging clock
+            if ((string)handle.Tag == "Clock")
+                UpdateDepthFrontLayer();
+
             e.Handled = true;
         }
 
