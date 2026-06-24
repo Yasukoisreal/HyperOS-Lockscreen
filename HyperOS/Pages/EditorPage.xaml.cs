@@ -1197,12 +1197,7 @@ namespace HyperOS.Pages
             }
         }
 
-        private void EdLoadSet1(object sender, RoutedEventArgs e) { LoadSet(1); }
-        private void EdLoadSet2(object sender, RoutedEventArgs e) { LoadSet(2); }
-        private void EdLoadSet3(object sender, RoutedEventArgs e) { LoadSet(3); }
-        private void EdSaveSet1(object sender, System.Windows.Input.GestureEventArgs e) { SaveSet(1); }
-        private void EdSaveSet2(object sender, System.Windows.Input.GestureEventArgs e) { SaveSet(2); }
-        private void EdSaveSet3(object sender, System.Windows.Input.GestureEventArgs e) { SaveSet(3); }
+
 
         #endregion
 
