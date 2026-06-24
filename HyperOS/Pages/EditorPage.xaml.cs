@@ -144,6 +144,9 @@ namespace HyperOS.Pages
             double resClockX = 0, resClockY = 0;
             double resWeatherX = 0, resWeatherY = 0;
             double resCountdownX = 0, resCountdownY = 0;
+            int resClockStyle = 0, resClockSize = 2, resClockColor = 0, resClockBlend = 0, resDateAlign = 1;
+            bool resShowWeather = false, resShowCountdown = false;
+            bool resDepth = false, resDepthH = true, resDepthC = true, resDepthM = true;
             if (state.ContainsKey("EdClockX"))
             {
                 restoredFromState = true;
@@ -153,10 +156,22 @@ namespace HyperOS.Pages
                 resWeatherY = (double)state["EdWeatherY"];
                 resCountdownX = (double)state["EdCountdownX"];
                 resCountdownY = (double)state["EdCountdownY"];
+                resClockStyle = (int)state["EdClockStyle"];
+                resClockSize = (int)state["EdClockSize"];
+                resClockColor = (int)state["EdClockColor"];
+                resClockBlend = (int)state["EdClockBlend"];
+                resDateAlign = (int)state["EdDateAlign"];
+                resShowWeather = (bool)state["EdShowWeather"];
+                resShowCountdown = (bool)state["EdShowCountdown"];
+                resDepth = (bool)state["EdDepth"];
+                resDepthH = (bool)state["EdDepthH"];
+                resDepthC = (bool)state["EdDepthC"];
+                resDepthM = (bool)state["EdDepthM"];
                 // Clean up
-                state.Remove("EdClockX"); state.Remove("EdClockY");
-                state.Remove("EdWeatherX"); state.Remove("EdWeatherY");
-                state.Remove("EdCountdownX"); state.Remove("EdCountdownY");
+                string[] stateKeys = { "EdClockX","EdClockY","EdWeatherX","EdWeatherY","EdCountdownX","EdCountdownY",
+                    "EdClockStyle","EdClockSize","EdClockColor","EdClockBlend","EdDateAlign",
+                    "EdShowWeather","EdShowCountdown","EdDepth","EdDepthH","EdDepthC","EdDepthM" };
+                foreach (var k in stateKeys) state.Remove(k);
             }
 
             // Check if we're editing a specific preset
@@ -204,12 +219,18 @@ namespace HyperOS.Pages
                 LoadAllSettings();
                 LoadPreviewImages();
 
-                // Override with restored positions if returning from photo picker
+                // Override with restored state if returning from photo picker
                 if (restoredFromState)
                 {
                     clockX = resClockX; clockY = resClockY;
                     weatherX = resWeatherX; weatherY = resWeatherY;
                     countdownX = resCountdownX; countdownY = resCountdownY;
+                    clockStyle = resClockStyle; clockSize = resClockSize;
+                    clockColor = resClockColor; clockBlend = resClockBlend;
+                    dateAlign = resDateAlign;
+                    showWeather = resShowWeather; showCountdown = resShowCountdown;
+                    useDepthEffect = resDepth;
+                    depthHourBehind = resDepthH; depthColonBehind = resDepthC; depthMinuteBehind = resDepthM;
                     hasSavedPositions = true;
                 }
 
@@ -924,11 +945,17 @@ namespace HyperOS.Pages
 
         private void EdWallpaper_Click(object sender, RoutedEventArgs e)
         {
-            // Save current positions to transient state before tombstoning
+            // Save ALL current editor state to transient state before tombstoning
             var state = Microsoft.Phone.Shell.PhoneApplicationService.Current.State;
             state["EdClockX"] = clockX; state["EdClockY"] = clockY;
             state["EdWeatherX"] = weatherX; state["EdWeatherY"] = weatherY;
             state["EdCountdownX"] = countdownX; state["EdCountdownY"] = countdownY;
+            state["EdClockStyle"] = clockStyle; state["EdClockSize"] = clockSize;
+            state["EdClockColor"] = clockColor; state["EdClockBlend"] = clockBlend;
+            state["EdDateAlign"] = dateAlign;
+            state["EdShowWeather"] = showWeather; state["EdShowCountdown"] = showCountdown;
+            state["EdDepth"] = useDepthEffect;
+            state["EdDepthH"] = depthHourBehind; state["EdDepthC"] = depthColonBehind; state["EdDepthM"] = depthMinuteBehind;
 
             var chooser = new PhotoChooserTask();
             chooser.ShowCamera = true;
