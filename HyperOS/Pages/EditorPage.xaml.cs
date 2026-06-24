@@ -504,6 +504,7 @@ namespace HyperOS.Pages
                 FrontHour.Visibility = Visibility.Collapsed;
                 FrontColon.Visibility = Visibility.Collapsed;
                 FrontMinute.Visibility = Visibility.Collapsed;
+                FrontDate.Visibility = Visibility.Collapsed;
                 return;
             }
 
@@ -511,11 +512,25 @@ namespace HyperOS.Pages
             PHour.Opacity = depthHourBehind ? 1 : 0;
             PColon.Opacity = depthColonBehind ? 1 : 0;
             PMinute.Opacity = depthMinuteBehind ? 1 : 0;
+            PDatePanel.Opacity = 0; // Date always in front
 
             // Position front-layer copies using TransformToVisual
             PositionFrontText(FrontHour, PHour, !depthHourBehind);
             PositionFrontText(FrontColon, PColon, !depthColonBehind);
             PositionFrontText(FrontMinute, PMinute, !depthMinuteBehind);
+
+            // Date always in front
+            try
+            {
+                var dt = PDatePanel.TransformToVisual(PreviewArea);
+                var dp = dt.Transform(new Point(0, 0));
+                FrontDay.Text = PDay.Text;
+                FrontDateText.Text = PDate.Text;
+                FrontDate.Visibility = Visibility.Visible;
+                Canvas.SetLeft(FrontDate, dp.X);
+                Canvas.SetTop(FrontDate, dp.Y);
+            }
+            catch { FrontDate.Visibility = Visibility.Collapsed; }
         }
 
         private void PositionFrontText(TextBlock front, TextBlock source, bool show)

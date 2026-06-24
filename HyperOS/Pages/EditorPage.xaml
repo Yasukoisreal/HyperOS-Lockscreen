@@ -148,6 +148,16 @@
 
             <!-- Depth front layer: clock parts that appear IN FRONT of foreground -->
             <Canvas x:Name="DepthFrontCanvas" IsHitTestVisible="False">
+                <StackPanel x:Name="FrontDate" Orientation="Horizontal" Visibility="Collapsed">
+                    <TextBlock x:Name="FrontDay"
+                        FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"
+                        FontSize="20" Foreground="#CCFFFFFF"/>
+                    <TextBlock Text=" · " FontSize="20" Foreground="#88FFFFFF"
+                        FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"/>
+                    <TextBlock x:Name="FrontDateText"
+                        FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"
+                        FontSize="20" Foreground="#CCFFFFFF"/>
+                </StackPanel>
                 <TextBlock x:Name="FrontHour" Visibility="Collapsed"
                     FontFamily="/Assets/Fonts/MiSans-Demibold.ttf#MiSans"
                     FontSize="105" Foreground="White"/>
