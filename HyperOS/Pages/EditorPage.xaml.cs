@@ -905,6 +905,7 @@ namespace HyperOS.Pages
             PHour.FontFamily = Fonts[fi];
             PColon.FontFamily = Fonts[fi];
             PMinute.FontFamily = Fonts[fi];
+            UpdateDepthFrontLayer();
         }
 
         private void FontNext_Tap(object sender, System.Windows.Input.GestureEventArgs e)
@@ -916,6 +917,7 @@ namespace HyperOS.Pages
             PHour.FontFamily = Fonts[fi];
             PColon.FontFamily = Fonts[fi];
             PMinute.FontFamily = Fonts[fi];
+            UpdateDepthFrontLayer();
         }
 
         private void Size_Tap(object sender, System.Windows.Input.GestureEventArgs e)
@@ -929,6 +931,7 @@ namespace HyperOS.Pages
             PColon.FontSize = sz;
             PMinute.FontSize = sz;
             PTimePanel.Margin = new Thickness(0, -sz * 0.16, 0, 0);
+            UpdateDepthFrontLayer();
         }
 
         private void UpdateSizeSelection()
@@ -953,6 +956,7 @@ namespace HyperOS.Pages
             UpdateColorSelection();
             UpdateBlendSelection();
             ApplyClockColor();
+            UpdateDepthFrontLayer();
         }
 
         private void UpdateColorSelection()
@@ -973,6 +977,7 @@ namespace HyperOS.Pages
             UpdateBlendSelection();
             UpdateColorSelection();
             ApplyClockColor();
+            UpdateDepthFrontLayer();
         }
 
         private void UpdateBlendSelection()
