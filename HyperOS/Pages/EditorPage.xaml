@@ -146,22 +146,18 @@
                 </Border.Background>
             </Border>
 
-            <!-- Front-layer clock parts (rendered ABOVE foreground for depth effect) -->
-            <Border x:Name="FrontClockPanel" IsHitTestVisible="False"
-                    HorizontalAlignment="Left" VerticalAlignment="Top" Visibility="Collapsed">
-                <Border.RenderTransform><CompositeTransform/></Border.RenderTransform>
-                <StackPanel Orientation="Horizontal">
-                    <TextBlock x:Name="PHourFront" Text="21"
-                        FontFamily="/Assets/Fonts/MiSans-Demibold.ttf#MiSans"
-                        FontSize="105" Foreground="White"/>
-                    <TextBlock x:Name="PColonFront" Text=":"
-                        FontFamily="/Assets/Fonts/MiSans-Demibold.ttf#MiSans"
-                        FontSize="105" Foreground="White"/>
-                    <TextBlock x:Name="PMinuteFront" Text="30"
-                        FontFamily="/Assets/Fonts/MiSans-Demibold.ttf#MiSans"
-                        FontSize="105" Foreground="White"/>
-                </StackPanel>
-            </Border>
+            <!-- Depth front layer: clock parts that appear IN FRONT of foreground -->
+            <Canvas x:Name="DepthFrontCanvas" IsHitTestVisible="False">
+                <TextBlock x:Name="FrontHour" Visibility="Collapsed"
+                    FontFamily="/Assets/Fonts/MiSans-Demibold.ttf#MiSans"
+                    FontSize="105" Foreground="White"/>
+                <TextBlock x:Name="FrontColon" Visibility="Collapsed"
+                    FontFamily="/Assets/Fonts/MiSans-Demibold.ttf#MiSans"
+                    FontSize="105" Foreground="White"/>
+                <TextBlock x:Name="FrontMinute" Visibility="Collapsed"
+                    FontFamily="/Assets/Fonts/MiSans-Demibold.ttf#MiSans"
+                    FontSize="105" Foreground="White"/>
+            </Canvas>
 
             <!-- Battery indicator (non-draggable, top-right) -->
             <StackPanel Orientation="Horizontal"

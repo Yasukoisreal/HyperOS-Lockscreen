@@ -411,7 +411,6 @@ namespace HyperOS.Pages
                 }
             }
             catch { }
-            UpdateDepthPreview();
         }
 
         private void ApplyPreview()
@@ -492,6 +491,56 @@ namespace HyperOS.Pages
             catch
             {
                 PBattery.Text = "🔋 --";
+            }
+
+            // Depth front layer: must run after layout pass
+            Dispatcher.BeginInvoke(() => UpdateDepthFrontLayer());
+        }
+
+        private void UpdateDepthFrontLayer()
+        {
+            if (!useDepthEffect || PreviewFg.Visibility != Visibility.Visible)
+            {
+                FrontHour.Visibility = Visibility.Collapsed;
+                FrontColon.Visibility = Visibility.Collapsed;
+                FrontMinute.Visibility = Visibility.Collapsed;
+                return;
+            }
+
+            // Hide originals that should be in front (they'll be replaced by front-layer copies)
+            PHour.Opacity = depthHourBehind ? 1 : 0;
+            PColon.Opacity = depthColonBehind ? 1 : 0;
+            PMinute.Opacity = depthMinuteBehind ? 1 : 0;
+
+            // Position front-layer copies using TransformToVisual
+            PositionFrontText(FrontHour, PHour, !depthHourBehind);
+            PositionFrontText(FrontColon, PColon, !depthColonBehind);
+            PositionFrontText(FrontMinute, PMinute, !depthMinuteBehind);
+        }
+
+        private void PositionFrontText(TextBlock front, TextBlock source, bool show)
+        {
+            if (!show)
+            {
+                front.Visibility = Visibility.Collapsed;
+                return;
+            }
+            try
+            {
+                var transform = source.TransformToVisual(PreviewArea);
+                var pos = transform.Transform(new Point(0, 0));
+
+                front.Text = source.Text;
+                front.FontFamily = source.FontFamily;
+                front.FontSize = source.FontSize;
+                front.Foreground = source.Foreground;
+                front.Visibility = Visibility.Visible;
+                Canvas.SetLeft(front, pos.X);
+                Canvas.SetTop(front, pos.Y);
+            }
+            catch
+            {
+                front.Visibility = Visibility.Collapsed;
             }
         }
 
@@ -576,17 +625,6 @@ namespace HyperOS.Pages
             double h = handle.ActualHeight;
             ShowGuides(handle, liveX, liveY, w, h);
 
-            // Keep front clock layer in sync during drag
-            if ((string)handle.Tag == "Clock" && FrontClockPanel.Visibility == Visibility.Visible)
-            {
-                var fct = FrontClockPanel.RenderTransform as CompositeTransform;
-                if (fct != null)
-                {
-                    fct.TranslateX = ct.TranslateX;
-                    fct.TranslateY = ct.TranslateY;
-                }
-            }
-
             e.Handled = true;
         }
 
@@ -621,19 +659,15 @@ namespace HyperOS.Pages
             string tag = (string)handle.Tag;
             switch (tag)
             {
-                case "Clock":
-                    clockX = newX; clockY = newY;
-                    if (FrontClockPanel.Visibility == Visibility.Visible)
-                    {
-                        var fct = FrontClockPanel.RenderTransform as CompositeTransform;
-                        if (fct != null) { fct.TranslateX = 0; fct.TranslateY = 0; }
-                        UpdateDepthPreview();
-                    }
-                    break;
+                case "Clock":    clockX = newX; clockY = newY; break;
                 case "Weather":  weatherX = newX; weatherY = newY; break;
                 case "Countdown": countdownX = newX; countdownY = newY; break;
             }
             hasUnsavedChanges = true;
+
+            // Update depth front layer position after drag
+            if (tag == "Clock")
+                Dispatcher.BeginInvoke(() => UpdateDepthFrontLayer());
 
             e.Handled = true;
         }
@@ -1362,63 +1396,7 @@ namespace HyperOS.Pages
             Save("DepthHourBehind", depthHourBehind);
             Save("DepthColonBehind", depthColonBehind);
             Save("DepthMinuteBehind", depthMinuteBehind);
-            UpdateDepthPreview();
-        }
-
-        private void UpdateDepthPreview()
-        {
-            bool depthOn = useDepthEffect && PreviewFg.Visibility == Visibility.Visible;
-            if (!depthOn)
-            {
-                // No depth — show all behind, hide front layer
-                PHour.Opacity = 1;
-                PColon.Opacity = 1;
-                PMinute.Opacity = 1;
-                FrontClockPanel.Visibility = Visibility.Collapsed;
-                return;
-            }
-
-            // Show front panel, position to match PTimePanel exactly
-            FrontClockPanel.Visibility = Visibility.Visible;
-
-            // Delay position calculation until layout has updated
-            Dispatcher.BeginInvoke(() =>
-            {
-                try
-                {
-                    var transform = PTimePanel.TransformToVisual(PreviewArea);
-                    var pos = transform.Transform(new Point(0, 0));
-                    FrontClockPanel.Margin = new Thickness(pos.X, pos.Y, 0, 0);
-                }
-                catch { }
-            });
-
-            // Behind elements: keep visible but transparent when "in front"
-            PHour.Opacity = depthHourBehind ? 1 : 0;
-            PColon.Opacity = depthColonBehind ? 1 : 0;
-            PMinute.Opacity = depthMinuteBehind ? 1 : 0;
-
-            // Front elements: all visible to keep spacing, transparent when "behind"
-            PHourFront.Opacity = depthHourBehind ? 0 : 1;
-            PColonFront.Opacity = depthColonBehind ? 0 : 1;
-            PMinuteFront.Opacity = depthMinuteBehind ? 0 : 1;
-            PHourFront.Visibility = Visibility.Visible;
-            PColonFront.Visibility = Visibility.Visible;
-            PMinuteFront.Visibility = Visibility.Visible;
-
-            // Sync text, font, color from behind elements
-            PHourFront.Text = PHour.Text;
-            PColonFront.Text = PColon.Text;
-            PMinuteFront.Text = PMinute.Text;
-            PHourFront.FontFamily = PHour.FontFamily;
-            PColonFront.FontFamily = PColon.FontFamily;
-            PMinuteFront.FontFamily = PMinute.FontFamily;
-            PHourFront.FontSize = PHour.FontSize;
-            PColonFront.FontSize = PColon.FontSize;
-            PMinuteFront.FontSize = PMinute.FontSize;
-            PHourFront.Foreground = PHour.Foreground;
-            PColonFront.Foreground = PColon.Foreground;
-            PMinuteFront.Foreground = PMinute.Foreground;
+            UpdateDepthFrontLayer();
         }
 
         #endregion
