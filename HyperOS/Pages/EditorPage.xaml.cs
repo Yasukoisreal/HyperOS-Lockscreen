@@ -138,6 +138,27 @@ namespace HyperOS.Pages
         {
             base.OnNavigatedTo(e);
 
+            // Restore unsaved positions from transient state (after tombstone)
+            var state = Microsoft.Phone.Shell.PhoneApplicationService.Current.State;
+            bool restoredFromState = false;
+            double resClockX = 0, resClockY = 0;
+            double resWeatherX = 0, resWeatherY = 0;
+            double resCountdownX = 0, resCountdownY = 0;
+            if (state.ContainsKey("EdClockX"))
+            {
+                restoredFromState = true;
+                resClockX = (double)state["EdClockX"];
+                resClockY = (double)state["EdClockY"];
+                resWeatherX = (double)state["EdWeatherX"];
+                resWeatherY = (double)state["EdWeatherY"];
+                resCountdownX = (double)state["EdCountdownX"];
+                resCountdownY = (double)state["EdCountdownY"];
+                // Clean up
+                state.Remove("EdClockX"); state.Remove("EdClockY");
+                state.Remove("EdWeatherX"); state.Remove("EdWeatherY");
+                state.Remove("EdCountdownX"); state.Remove("EdCountdownY");
+            }
+
             // Check if we're editing a specific preset
             string presetStr;
             if (NavigationContext.QueryString.TryGetValue("preset", out presetStr))
@@ -182,6 +203,16 @@ namespace HyperOS.Pages
 
                 LoadAllSettings();
                 LoadPreviewImages();
+
+                // Override with restored positions if returning from photo picker
+                if (restoredFromState)
+                {
+                    clockX = resClockX; clockY = resClockY;
+                    weatherX = resWeatherX; weatherY = resWeatherY;
+                    countdownX = resCountdownX; countdownY = resCountdownY;
+                    hasSavedPositions = true;
+                }
+
                 ApplyPreview();
                 isLoading = false;
 
@@ -893,6 +924,12 @@ namespace HyperOS.Pages
 
         private void EdWallpaper_Click(object sender, RoutedEventArgs e)
         {
+            // Save current positions to transient state before tombstoning
+            var state = Microsoft.Phone.Shell.PhoneApplicationService.Current.State;
+            state["EdClockX"] = clockX; state["EdClockY"] = clockY;
+            state["EdWeatherX"] = weatherX; state["EdWeatherY"] = weatherY;
+            state["EdCountdownX"] = countdownX; state["EdCountdownY"] = countdownY;
+
             var chooser = new PhotoChooserTask();
             chooser.ShowCamera = true;
             chooser.Completed += (s, args) =>
