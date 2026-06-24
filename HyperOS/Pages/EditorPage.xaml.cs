@@ -1356,9 +1356,9 @@ namespace HyperOS.Pages
             if (!depthOn)
             {
                 // No depth — show all behind, hide front layer
-                PHour.Visibility = Visibility.Visible;
-                PColon.Visibility = Visibility.Visible;
-                PMinute.Visibility = Visibility.Visible;
+                PHour.Opacity = 1;
+                PColon.Opacity = 1;
+                PMinute.Opacity = 1;
                 FrontClockPanel.Visibility = Visibility.Collapsed;
                 return;
             }
@@ -1367,15 +1367,18 @@ namespace HyperOS.Pages
             FrontClockPanel.Visibility = Visibility.Visible;
             FrontClockPanel.Margin = ClockHandle.Margin;
 
-            // Behind elements: visible only when "behind" is ON
-            PHour.Visibility = depthHourBehind ? Visibility.Visible : Visibility.Collapsed;
-            PColon.Visibility = depthColonBehind ? Visibility.Visible : Visibility.Collapsed;
-            PMinute.Visibility = depthMinuteBehind ? Visibility.Visible : Visibility.Collapsed;
+            // Behind elements: keep visible but transparent when "in front"
+            PHour.Opacity = depthHourBehind ? 1 : 0;
+            PColon.Opacity = depthColonBehind ? 1 : 0;
+            PMinute.Opacity = depthMinuteBehind ? 1 : 0;
 
-            // Front elements: visible only when "behind" is OFF (= in front)
-            PHourFront.Visibility = depthHourBehind ? Visibility.Collapsed : Visibility.Visible;
-            PColonFront.Visibility = depthColonBehind ? Visibility.Collapsed : Visibility.Visible;
-            PMinuteFront.Visibility = depthMinuteBehind ? Visibility.Collapsed : Visibility.Visible;
+            // Front elements: all visible to keep spacing, transparent when "behind"
+            PHourFront.Opacity = depthHourBehind ? 0 : 1;
+            PColonFront.Opacity = depthColonBehind ? 0 : 1;
+            PMinuteFront.Opacity = depthMinuteBehind ? 0 : 1;
+            PHourFront.Visibility = Visibility.Visible;
+            PColonFront.Visibility = Visibility.Visible;
+            PMinuteFront.Visibility = Visibility.Visible;
 
             // Sync text, font, color from behind elements
             PHourFront.Text = PHour.Text;
