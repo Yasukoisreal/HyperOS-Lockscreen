@@ -231,19 +231,19 @@
                 <StackPanel Orientation="Horizontal" Margin="12,4,12,4">
                     <Border x:Name="TabClock" Style="{StaticResource TabPill}"
                             Tap="Tab_Tap" Tag="Clock">
-                        <TextBlock x:Name="TabClockText" Text="🕐 Clock" Style="{StaticResource TabText}"/>
+                        <TextBlock x:Name="TabClockText" Text="♦ Clock" Style="{StaticResource TabText}"/>
                     </Border>
                     <Border x:Name="TabWeather" Style="{StaticResource TabPill}"
                             Tap="Tab_Tap" Tag="Weather">
-                        <TextBlock x:Name="TabWeatherText" Text="🌤 Weather" Style="{StaticResource TabText}"/>
+                        <TextBlock x:Name="TabWeatherText" Text="☀ Weather" Style="{StaticResource TabText}"/>
                     </Border>
                     <Border x:Name="TabCountdown" Style="{StaticResource TabPill}"
                             Tap="Tab_Tap" Tag="Countdown">
-                        <TextBlock x:Name="TabCountdownText" Text="⏱ Countdown" Style="{StaticResource TabText}"/>
+                        <TextBlock x:Name="TabCountdownText" Text="⌛ Countdown" Style="{StaticResource TabText}"/>
                     </Border>
                     <Border x:Name="TabDisplay" Style="{StaticResource TabPill}"
                             Tap="Tab_Tap" Tag="Display">
-                        <TextBlock x:Name="TabDisplayText" Text="🖼 Display" Style="{StaticResource TabText}"/>
+                        <TextBlock x:Name="TabDisplayText" Text="★ Display" Style="{StaticResource TabText}"/>
                     </Border>
                 </StackPanel>
             </ScrollViewer>
@@ -411,9 +411,9 @@
                                     <ColumnDefinition Width="4"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                <Button Content="📍 Save" Click="EdWeatherLocation_Click"
+                                <Button Content="● Save" Click="EdWeatherLocation_Click"
                                     Style="{StaticResource EditorActionBtn}"/>
-                                <Button Content="📡 GPS" Click="EdWeatherGps_Click" Grid.Column="2"
+                                <Button Content="◎ GPS" Click="EdWeatherGps_Click" Grid.Column="2"
                                     Style="{StaticResource EditorActionBtn}"/>
                             </Grid>
                             <TextBlock x:Name="WeatherStatus" Text="" FontSize="12"
@@ -446,7 +446,7 @@
 
                         <!-- ══ DISPLAY PROPERTIES ══ -->
                         <StackPanel x:Name="DisplayProps" Visibility="Collapsed">
-                            <Button Content="🖼 Change Wallpaper" Click="EdWallpaper_Click"
+                            <Button Content="▣ Change Wallpaper" Click="EdWallpaper_Click"
                                 Style="{StaticResource EditorActionBtn}" Margin="0,8,0,0"/>
 
                             <TextBlock Text="DEPTH EFFECT" Style="{StaticResource PropLabel}"/>
@@ -461,9 +461,9 @@
                                 <toolkit:ToggleSwitch x:Name="EdDepthToggle" Grid.Column="1"
                                     Checked="EdDepthToggle_Changed" Unchecked="EdDepthToggle_Changed"/>
                             </Grid>
-                            <Button x:Name="EdForegroundBtn" Content="📁 Choose Foreground PNG"
+                            <Button x:Name="EdForegroundBtn" Content="▤ Choose Foreground PNG"
                                 Click="EdForeground_Click" Style="{StaticResource EditorActionBtn}"/>
-                            <Button x:Name="EdAutoExtractBtn" Content="✨ Auto Extract Foreground"
+                            <Button x:Name="EdAutoExtractBtn" Content="★ Auto Extract Foreground"
                                 Click="EdAutoExtract_Click" Style="{StaticResource EditorActionBtn}" Margin="0,4,0,0"/>
                             <TextBlock x:Name="ExtractStatus" Text="" FontSize="12"
                                 Foreground="#88FFFFFF" HorizontalAlignment="Center" Margin="0,4,0,0"
