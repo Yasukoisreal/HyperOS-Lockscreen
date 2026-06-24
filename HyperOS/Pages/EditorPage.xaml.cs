@@ -613,7 +613,7 @@ namespace HyperOS.Pages
                 case "Clock":
                     clockX = newX; clockY = newY;
                     if (FrontClockPanel.Visibility == Visibility.Visible)
-                        FrontClockPanel.Margin = new Thickness(newX, newY, 0, 0);
+                        UpdateDepthPreview();
                     break;
                 case "Weather":  weatherX = newX; weatherY = newY; break;
                 case "Countdown": countdownX = newX; countdownY = newY; break;
@@ -1363,9 +1363,18 @@ namespace HyperOS.Pages
                 return;
             }
 
-            // Show front panel, position to match clock
+            // Show front panel, position to match PTimePanel exactly
             FrontClockPanel.Visibility = Visibility.Visible;
-            FrontClockPanel.Margin = ClockHandle.Margin;
+            try
+            {
+                var transform = PTimePanel.TransformToVisual(PreviewArea);
+                var pos = transform.Transform(new Point(0, 0));
+                FrontClockPanel.Margin = new Thickness(pos.X, pos.Y, 0, 0);
+            }
+            catch
+            {
+                FrontClockPanel.Margin = ClockHandle.Margin;
+            }
 
             // Behind elements: keep visible but transparent when "in front"
             PHour.Opacity = depthHourBehind ? 1 : 0;
