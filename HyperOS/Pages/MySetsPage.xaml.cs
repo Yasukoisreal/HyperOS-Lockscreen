@@ -160,7 +160,18 @@ namespace HyperOS.Pages
         private void ReadSavedPresets()
         {
             var s = IsolatedStorageSettings.ApplicationSettings;
-            for (int i = 0; i < Presets.Count; i++)
+
+            // First preset (Classic) reflects the live/active settings
+            var first = Presets[0];
+            first.ClockStyle = GetSetting(s, "ClockStyle", first.ClockStyle);
+            first.ClockSize = GetSetting(s, "ClockSize", first.ClockSize);
+            first.ClockColor = GetSetting(s, "ClockColor", first.ClockColor);
+            first.ClockBlend = GetSetting(s, "ClockBlend", first.ClockBlend);
+            first.DateAlign = GetSetting(s, "DateAlign", first.DateAlign);
+            first.PreviewClockColor = ResolveClockColor(first.ClockColor, first.ClockBlend);
+
+            // Other presets use their own saved values
+            for (int i = 1; i < Presets.Count; i++)
             {
                 string prefix = "Set" + i + "_";
                 if (s.Contains(prefix + "ClockStyle"))
@@ -173,7 +184,41 @@ namespace HyperOS.Pages
                     p.DateAlign = GetSetting(s, prefix + "DateAlign", p.DateAlign);
                     p.ClockX = GetSetting(s, prefix + "ClockX", p.ClockX);
                     p.ClockY = GetSetting(s, prefix + "ClockY", p.ClockY);
+                    p.PreviewClockColor = ResolveClockColor(p.ClockColor, p.ClockBlend);
                 }
+            }
+        }
+
+        private static Color ResolveClockColor(int colorIdx, int blendIdx)
+        {
+            if (blendIdx > 0)
+            {
+                switch (blendIdx)
+                {
+                    case 1: return Color.FromArgb(255, 255, 120, 50);   // Sunset
+                    case 2: return Color.FromArgb(255, 0, 180, 255);    // Ocean
+                    case 3: return Color.FromArgb(255, 0, 255, 150);    // Aurora
+                    case 4: return Color.FromArgb(255, 255, 0, 200);    // Neon
+                    case 5: return Color.FromArgb(255, 255, 105, 180);  // Rose
+                    case 6: return Color.FromArgb(255, 255, 50, 0);     // Fire
+                    case 7: return Colors.White;                         // Ice
+                    case 8: return Color.FromArgb(255, 50, 205, 50);    // Lime
+                    case 9: return Color.FromArgb(255, 75, 0, 130);     // Twilight
+                    default: return Colors.White;
+                }
+            }
+            switch (colorIdx)
+            {
+                case 1: return Color.FromArgb(255, 255, 215, 0);   // Gold
+                case 2: return Color.FromArgb(255, 135, 206, 235); // Sky Blue
+                case 3: return Color.FromArgb(255, 255, 182, 193); // Pink
+                case 4: return Color.FromArgb(255, 255, 68, 68);   // Red
+                case 5: return Color.FromArgb(255, 91, 255, 176);  // Mint
+                case 6: return Color.FromArgb(255, 196, 167, 255); // Lavender
+                case 7: return Color.FromArgb(255, 255, 140, 66);  // Orange
+                case 8: return Color.FromArgb(255, 0, 229, 255);   // Cyan
+                case 9: return Color.FromArgb(255, 160, 160, 176); // Silver
+                default: return Colors.White;
             }
         }
 
