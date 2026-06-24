@@ -338,6 +338,7 @@ namespace HyperOS.Pages
             EdDepthLayers.Visibility = useDepthEffect ? Visibility.Visible : Visibility.Collapsed;
             EdAnimToggle.IsChecked = Get(s, "bIsAnimOn", true);
             EdOwnerInfo.Text = Get<string>(s, "OwnerInfo", "");
+            EdApiKey.Text = Get<string>(s, "RemoveBgApiKey", "");
 
             // Lock screen registration
             try { EdLockToggle.IsChecked = ExtensibilityApp.IsLockScreenApplicationRegistered(); }
@@ -1090,7 +1091,8 @@ namespace HyperOS.Pages
 
             // Build multipart request
             string boundary = "----HyperOS" + DateTime.Now.Ticks.ToString("x");
-            string apiKey = "5vau8AvB3j2LwGEVC2xaW5Ji";
+            string savedKey = Get<string>(IsolatedStorageSettings.ApplicationSettings, "RemoveBgApiKey", "");
+            string apiKey = string.IsNullOrEmpty(savedKey) ? "5vau8AvB3j2LwGEVC2xaW5Ji" : savedKey.Trim();
 
             var request = (System.Net.HttpWebRequest)System.Net.WebRequest.Create("https://api.remove.bg/v1.0/removebg");
             request.Method = "POST";
@@ -1215,6 +1217,11 @@ namespace HyperOS.Pages
             MessageBox.Show(
                 string.IsNullOrEmpty(info) ? "Owner info cleared." : "Owner info saved!",
                 "Saved", MessageBoxButton.OK);
+        }
+
+        private void EdApiKey_LostFocus(object sender, RoutedEventArgs e)
+        {
+            Save("RemoveBgApiKey", EdApiKey.Text.Trim());
         }
 
         #endregion
