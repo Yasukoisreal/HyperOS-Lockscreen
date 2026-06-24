@@ -558,6 +558,54 @@
                    Fill="#66FF4081" HorizontalAlignment="Stretch" VerticalAlignment="Top"
                    Visibility="Collapsed"/>
 
+        <!-- ═══ UNSAVED CHANGES DIALOG ═══ -->
+        <Grid x:Name="UnsavedDialog" Visibility="Collapsed">
+            <!-- Dim background -->
+            <Rectangle Fill="#99000000"/>
+            <!-- Dialog card -->
+            <Border Background="#FF1E1E2E" CornerRadius="16" 
+                    VerticalAlignment="Center" HorizontalAlignment="Center"
+                    Width="400" Padding="24,20,24,16">
+                <StackPanel>
+                    <TextBlock Text="Chưa lưu" FontSize="22" FontWeight="Bold" 
+                               Foreground="White" Margin="0,0,0,8"
+                               FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"/>
+                    <TextBlock Text="Bạn có thay đổi chưa lưu. Bạn muốn làm gì?"
+                               FontSize="15" Foreground="#BBFFFFFF" TextWrapping="Wrap"
+                               Margin="0,0,0,20"
+                               FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"/>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <!-- Save -->
+                        <Border Grid.Column="0" Background="#3A7BF2" CornerRadius="8"
+                                Tap="UnsavedDialog_Save" Margin="0,0,4,0" Padding="0,12">
+                            <TextBlock Text="Save" HorizontalAlignment="Center"
+                                       FontSize="15" Foreground="White" FontWeight="Bold"
+                                       FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"/>
+                        </Border>
+                        <!-- Don't Save -->
+                        <Border Grid.Column="1" Background="#33FFFFFF" CornerRadius="8"
+                                Tap="UnsavedDialog_DontSave" Margin="2,0,2,0" Padding="0,12">
+                            <TextBlock Text="Don't Save" HorizontalAlignment="Center"
+                                       FontSize="14" Foreground="#DDFFFFFF"
+                                       FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"/>
+                        </Border>
+                        <!-- Cancel -->
+                        <Border Grid.Column="2" Background="#33FFFFFF" CornerRadius="8"
+                                Tap="UnsavedDialog_Cancel" Margin="4,0,0,0" Padding="0,12">
+                            <TextBlock Text="Cancel" HorizontalAlignment="Center"
+                                       FontSize="15" Foreground="#DDFFFFFF"
+                                       FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"/>
+                        </Border>
+                    </Grid>
+                </StackPanel>
+            </Border>
+        </Grid>
+
     </Grid>
 
 </phone:PhoneApplicationPage>

@@ -247,27 +247,40 @@ namespace HyperOS.Pages
 
         protected override void OnBackKeyPress(System.ComponentModel.CancelEventArgs e)
         {
+            if (UnsavedDialog.Visibility == Visibility.Visible)
+            {
+                // Dialog is showing, Cancel = close dialog, stay in editor
+                e.Cancel = true;
+                UnsavedDialog.Visibility = Visibility.Collapsed;
+                return;
+            }
+
             if (hasUnsavedChanges)
             {
                 e.Cancel = true;
-                var result = MessageBox.Show(
-                    "Bạn có thay đổi chưa lưu. Bạn muốn lưu trước khi thoát không?",
-                    "Chưa lưu",
-                    MessageBoxButton.OKCancel);
-                if (result == MessageBoxResult.OK)
-                {
-                    // User wants to save → trigger save and back
-                    SaveAndBack_Tap(null, null);
-                }
-                else
-                {
-                    // Discard and go back
-                    hasUnsavedChanges = false;
-                    if (NavigationService.CanGoBack)
-                        NavigationService.GoBack();
-                }
+                UnsavedDialog.Visibility = Visibility.Visible;
+                return;
             }
             base.OnBackKeyPress(e);
+        }
+
+        private void UnsavedDialog_Save(object sender, System.Windows.Input.GestureEventArgs e)
+        {
+            UnsavedDialog.Visibility = Visibility.Collapsed;
+            SaveAndBack_Tap(null, null);
+        }
+
+        private void UnsavedDialog_DontSave(object sender, System.Windows.Input.GestureEventArgs e)
+        {
+            UnsavedDialog.Visibility = Visibility.Collapsed;
+            hasUnsavedChanges = false;
+            if (NavigationService.CanGoBack)
+                NavigationService.GoBack();
+        }
+
+        private void UnsavedDialog_Cancel(object sender, System.Windows.Input.GestureEventArgs e)
+        {
+            UnsavedDialog.Visibility = Visibility.Collapsed;
         }
 
         #endregion
