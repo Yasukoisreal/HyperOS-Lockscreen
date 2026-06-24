@@ -167,27 +167,6 @@
             </DoubleAnimationUsingKeyFrames>
         </Storyboard>
 
-        <!-- Song name animation -->
-        <Storyboard x:Key="SongAnim">
-            <DoubleAnimationUsingKeyFrames
-                Storyboard.TargetProperty="(UIElement.Opacity)"
-                Storyboard.TargetName="SongName">
-                <EasingDoubleKeyFrame KeyTime="0" Value="0"/>
-                <EasingDoubleKeyFrame KeyTime="0:0:0.700" Value="1"/>
-            </DoubleAnimationUsingKeyFrames>
-        </Storyboard>
-
-        <!-- Artist animation -->
-        <Storyboard x:Key="ArtistAnim">
-            <DoubleAnimationUsingKeyFrames
-                Storyboard.TargetProperty="(UIElement.Opacity)"
-                Storyboard.TargetName="Artist">
-                <EasingDoubleKeyFrame KeyTime="0" Value="0"/>
-                <EasingDoubleKeyFrame KeyTime="0:0:0.700" Value="1"/>
-            </DoubleAnimationUsingKeyFrames>
-        </Storyboard>
-
-
 
         <!-- HyperOS-style PIN button -->
         <Style x:Key="KeyboardButtonStyle" TargetType="Button">
@@ -214,7 +193,7 @@
         </Style>
     </phone:PhoneApplicationPage.Resources>
 
-    <Grid x:Name="LayoutRoot" Background="Black">
+    <Grid x:Name="LayoutRoot" Background="Black" Hold="LayoutRoot_Hold">
         <VisualStateManager.VisualStateGroups>
             <VisualStateGroup x:Name="VisualStateGroup">
                 <VisualStateGroup.Transitions>
@@ -256,7 +235,36 @@
                 </Rectangle.Fill>
             </Rectangle>
 
-            <!-- ⚡ OVERLAY PANEL — Swipe up to unlock -->
+            <!-- ═══ BEHIND FOREGROUND LAYER — clock parts behind subject ═══ -->
+            <Grid x:Name="BehindForegroundGrid" IsHitTestVisible="False" Visibility="Collapsed">
+                <Grid.RenderTransform><CompositeTransform/></Grid.RenderTransform>
+                <StackPanel x:Name="BehindClockPanel" VerticalAlignment="Center" HorizontalAlignment="Center"
+                            Margin="0,0,0,40">
+                    <!-- Spacer matching DateInfoPanel height -->
+                    <Border x:Name="BehindDateSpacer" Height="28"/>
+                    <!-- Behind clock parts -->
+                    <StackPanel x:Name="BehindTimePanel" Orientation="Horizontal" HorizontalAlignment="Center">
+                        <TextBlock x:Name="HourPartBehind" Text="20"
+                            FontFamily="/Assets/Fonts/MiSans-Demibold.ttf#MiSans"
+                            FontSize="105" Foreground="White"/>
+                        <TextBlock x:Name="ColonPartBehind" Text=":"
+                            FontFamily="/Assets/Fonts/MiSans-Demibold.ttf#MiSans"
+                            FontSize="105" Foreground="White"/>
+                        <TextBlock x:Name="MinutePartBehind" Text="05"
+                            FontFamily="/Assets/Fonts/MiSans-Demibold.ttf#MiSans"
+                            FontSize="105" Foreground="White"/>
+                    </StackPanel>
+                </StackPanel>
+            </Grid>
+
+            <!-- ═══ DEPTH EFFECT — foreground overlay (subject PNG) ═══ -->
+            <Border x:Name="ForegroundOverlay" IsHitTestVisible="False" Visibility="Collapsed">
+                <Border.Background>
+                    <ImageBrush x:Name="ForegroundBrush" Stretch="UniformToFill"/>
+                </Border.Background>
+            </Border>
+
+            <!-- ═══ FRONT LAYER — all widgets IN FRONT of foreground ═══ -->
             <Grid x:Name="OverlayInformationPanel"
                   Background="Transparent"
                   ManipulationStarted="OverlayInformationPanel_ManipulationStarted"
@@ -282,57 +290,47 @@
                             FontSize="20" Foreground="#CCFFFFFF"/>
                     </StackPanel>
 
-                    <!-- Large Time — centered HyperOS style -->
-                    <TextBlock x:Name="HourText" Text="20:05"
-                        FontFamily="/Assets/Fonts/MiSans-Demibold.ttf#MiSans"
-                        FontSize="105" Foreground="White"
-                        HorizontalAlignment="Center" Margin="0,0,0,0">
-                        <TextBlock.RenderTransform><CompositeTransform/></TextBlock.RenderTransform>
-                    </TextBlock>
-
-                    <!-- Weather widget -->
-                    <TextBlock x:Name="WeatherText" Text=""
-                        FontSize="18" Foreground="#BBFFFFFF"
-                        FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"
-                        HorizontalAlignment="Center" Margin="0,6,0,0"
-                        Visibility="Collapsed"/>
-
-                    <!-- Countdown widget -->
-                    <TextBlock x:Name="CountdownText" Text=""
-                        FontSize="16" Foreground="#99FFFFFF"
-                        FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"
-                        HorizontalAlignment="Center" Margin="0,4,0,0"
-                        Visibility="Collapsed"/>
-
-                    <!-- Music compact (if playing) -->
-                    <StackPanel x:Name="PlayPanel" Orientation="Horizontal"
-                                HorizontalAlignment="Center"
-                                Margin="0,10,0,0" Visibility="Collapsed">
-                        <StackPanel.Projection><PlaneProjection/></StackPanel.Projection>
-                        <TextBlock Text="♪ " FontSize="18" Foreground="#AAFFFFFF" VerticalAlignment="Center"/>
-                        <TextBlock x:Name="SongName" Text=""
-                            FontSize="18" Foreground="#CCFFFFFF"
-                            FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"
-                            VerticalAlignment="Center" MaxWidth="280" TextTrimming="WordEllipsis">
+                    <!-- Large Time — split into Hour : Minute for depth control -->
+                    <StackPanel x:Name="TimePanel" Orientation="Horizontal" HorizontalAlignment="Center">
+                        <TextBlock x:Name="HourPart" Text="20"
+                            FontFamily="/Assets/Fonts/MiSans-Demibold.ttf#MiSans"
+                            FontSize="105" Foreground="White">
                             <TextBlock.RenderTransform><CompositeTransform/></TextBlock.RenderTransform>
                         </TextBlock>
-                        <TextBlock Text=" — " FontSize="18" Foreground="#66FFFFFF" VerticalAlignment="Center"/>
-                        <TextBlock x:Name="Artist" Text=""
-                            FontSize="18" Foreground="#88FFFFFF"
-                            FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"
-                            VerticalAlignment="Center" MaxWidth="120" TextTrimming="WordEllipsis">
+                        <TextBlock x:Name="ColonPart" Text=":"
+                            FontFamily="/Assets/Fonts/MiSans-Demibold.ttf#MiSans"
+                            FontSize="105" Foreground="White">
+                            <TextBlock.RenderTransform><CompositeTransform/></TextBlock.RenderTransform>
+                        </TextBlock>
+                        <TextBlock x:Name="MinutePart" Text="05"
+                            FontFamily="/Assets/Fonts/MiSans-Demibold.ttf#MiSans"
+                            FontSize="105" Foreground="White">
                             <TextBlock.RenderTransform><CompositeTransform/></TextBlock.RenderTransform>
                         </TextBlock>
                     </StackPanel>
-
-                    <!-- Owner info text -->
-                    <TextBlock x:Name="OwnerInfoText" Text=""
-                        FontSize="16" Foreground="#88FFFFFF"
-                        FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"
-                        HorizontalAlignment="Center" Margin="0,12,0,0"
-                        TextWrapping="Wrap" MaxWidth="350"
-                        Visibility="Collapsed"/>
                 </StackPanel>
+
+                <!-- Weather widget (independent position) -->
+                <TextBlock x:Name="WeatherText" Text=""
+                    FontSize="18" Foreground="#BBFFFFFF"
+                    FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"
+                    HorizontalAlignment="Left" VerticalAlignment="Top"
+                    Visibility="Collapsed"/>
+
+                <!-- Countdown widget (independent position) -->
+                <TextBlock x:Name="CountdownText" Text=""
+                    FontSize="16" Foreground="#99FFFFFF"
+                    FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"
+                    HorizontalAlignment="Left" VerticalAlignment="Top"
+                    Visibility="Collapsed"/>
+
+                <!-- Owner info text (independent position) -->
+                <TextBlock x:Name="OwnerInfoText" Text=""
+                    FontSize="16" Foreground="#88FFFFFF"
+                    FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"
+                    HorizontalAlignment="Left" VerticalAlignment="Top"
+                    TextWrapping="Wrap" MaxWidth="350"
+                    Visibility="Collapsed"/>
 
                 <!-- Battery & Charging info — top right -->
                 <StackPanel Orientation="Horizontal"
@@ -362,27 +360,7 @@
                     <Border.RenderTransform><CompositeTransform/></Border.RenderTransform>
                 </Border>
 
-                <!-- Music playback controls (hidden - swipe left to access) -->
-                <StackPanel x:Name="MusicControlPanel" Orientation="Horizontal"
-                            HorizontalAlignment="Right" VerticalAlignment="Bottom"
-                            Margin="0,0,20,100" Visibility="Collapsed">
-                    <Button x:Name="BtnPrev" Click="PlayPrev" Width="52" Height="52"
-                            Background="Transparent" BorderThickness="0">
-                        <TextBlock Text="⏮" FontSize="18" Foreground="White"/>
-                    </Button>
-                    <Button x:Name="BtnPlayPause" Click="PlayPause" Width="52" Height="52"
-                            Background="Transparent" BorderThickness="0">
-                        <TextBlock x:Name="PlayPauseIcon" Text="▶" FontSize="18" Foreground="White"/>
-                    </Button>
-                    <Button x:Name="BtnNext" Click="PlayNext" Width="52" Height="52"
-                            Background="Transparent" BorderThickness="0">
-                        <TextBlock Text="⏭" FontSize="18" Foreground="White"/>
-                    </Button>
-                </StackPanel>
 
-                <!-- Hidden slider for code compatibility -->
-                <Slider x:Name="PlaySlider" Minimum="0" Maximum="100" Value="0"
-                        Visibility="Collapsed" ValueChanged="PlaySlider_ValueChanged"/>
 
                 <!-- Quick shortcuts — bottom corners (HyperOS style) -->
                 <!-- Flashlight (left) -->
@@ -417,13 +395,6 @@
                     </Canvas>
                 </Border>
             </Grid>
-
-            <!-- Depth Effect — foreground overlay (above clock) -->
-            <Border x:Name="ForegroundOverlay" IsHitTestVisible="False" Visibility="Collapsed">
-                <Border.Background>
-                    <ImageBrush x:Name="ForegroundBrush" Stretch="UniformToFill"/>
-                </Border.Background>
-            </Border>
         </Grid>
 
         <!-- Hidden password box for PIN input -->
@@ -557,6 +528,52 @@
                     BorderThickness="0"
                     FontFamily="/Assets/Fonts/MiSans-Demibold.ttf#MiSans"
                     Click="RecoverButton_Click"/>
+            </StackPanel>
+        </Grid>
+
+        <!-- ============ MY SETS OVERLAY ============ -->
+        <Grid x:Name="MySetsOverlay" Visibility="Collapsed" Background="#EE111111">
+            <!-- Header -->
+            <Grid VerticalAlignment="Top" Margin="16,28,16,0" Canvas.ZIndex="10">
+                <TextBlock Text="My Sets"
+                    FontFamily="/Assets/Fonts/MiSans-Demibold.ttf#MiSans"
+                    FontSize="20" Foreground="#AAFFFFFF"
+                    HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                <Border Tap="MySets_Close_Tap" HorizontalAlignment="Right"
+                    Width="40" Height="40" Background="Transparent">
+                    <TextBlock Text="✕" FontSize="18" Foreground="#77FFFFFF"
+                        HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+            </Grid>
+
+            <!-- Title -->
+            <StackPanel VerticalAlignment="Top" Margin="24,70,24,0" Canvas.ZIndex="10">
+                <TextBlock x:Name="MySetsTitle" Text="Classic"
+                    FontFamily="/Assets/Fonts/MiSans-Demibold.ttf#MiSans"
+                    FontSize="32" Foreground="White" HorizontalAlignment="Center"/>
+                <TextBlock x:Name="MySetsSubtitle" Text=""
+                    FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"
+                    FontSize="13" Foreground="#77FFFFFF" HorizontalAlignment="Center"
+                    Margin="0,2,0,0"/>
+            </StackPanel>
+
+            <!-- Carousel Canvas -->
+            <Canvas x:Name="MySetsCarousel"
+                    Margin="0,150,0,100"
+                    Background="Transparent"
+                    ManipulationDelta="MySets_ManipulationDelta"
+                    ManipulationCompleted="MySets_ManipulationCompleted"/>
+
+            <!-- Bottom -->
+            <StackPanel VerticalAlignment="Bottom" Margin="0,0,0,20" HorizontalAlignment="Center">
+                <Border Tap="MySets_Apply_Tap"
+                    Background="#55FFFFFF" CornerRadius="22" Padding="36,10"
+                    Margin="0,0,0,14">
+                    <TextBlock Text="Apply"
+                        FontFamily="/Assets/Fonts/MiSans-Demibold.ttf#MiSans"
+                        FontSize="15" Foreground="White" HorizontalAlignment="Center"/>
+                </Border>
+                <StackPanel x:Name="MySetsDotsPanel" Orientation="Horizontal" HorizontalAlignment="Center"/>
             </StackPanel>
         </Grid>
     </Grid>

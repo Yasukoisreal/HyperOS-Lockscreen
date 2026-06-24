@@ -1,0 +1,1082 @@
+using System;
+using System.IO;
+using System.IO.IsolatedStorage;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Shapes;
+using Microsoft.Phone.Controls;
+using Microsoft.Phone.Tasks;
+using Windows.Phone.System.LockScreenExtensibility;
+
+namespace HyperOS.Pages
+{
+    public partial class EditorPage : PhoneApplicationPage
+    {
+        private bool isLoading = true;
+
+        // Current selections
+        private string selectedTab = "Clock";
+        private Border selectedHandle;
+
+        // Element positions (pixels, 480x800 space)
+        private double clockX, clockY;
+        private double weatherX, weatherY;
+        private double countdownX, countdownY;
+        private bool hasSavedPositions;
+
+        // Clock settings
+        private int clockStyle = 0;
+        private int clockSize = 2;
+        private int clockColor = 0;
+        private int clockBlend = 0;
+        private int dateAlign = 1; // 0=Left, 1=Center, 2=Right
+
+        // Widget settings
+        private bool showWeather;
+        private bool showCountdown;
+
+        // Depth
+        private bool useDepthEffect;
+        private bool depthHourBehind = true;
+        private bool depthColonBehind = true;
+        private bool depthMinuteBehind = true;
+
+        // Font & size arrays
+        private static readonly string[] FontNames = {
+            "MiSans Regular", "MiSans Bold", "MiSans Light", "Bebas Neue",
+            "Playfair Display", "DM Serif", "Instrument Serif",
+            "Montserrat", "Poppins", "Raleway Light", "Abril Fatface",
+            "Segoe WP", "Segoe WP Black" };
+        private static readonly FontFamily[] Fonts = {
+            new FontFamily("/Assets/Fonts/MiSans-Regular.ttf#MiSans"),
+            new FontFamily("/Assets/Fonts/MiSans-Demibold.ttf#MiSans"),
+            new FontFamily("/Assets/Fonts/MiSans-Light.ttf#MiSans"),
+            new FontFamily("/Assets/Fonts/BebasNeue-Regular.ttf#Bebas Neue"),
+            new FontFamily("/Assets/Fonts/PlayfairDisplay-Regular.ttf#Playfair Display"),
+            new FontFamily("/Assets/Fonts/DMSerifDisplay-Regular.ttf#DM Serif Display"),
+            new FontFamily("/Assets/Fonts/InstrumentSerif-Regular.ttf#Instrument Serif"),
+            new FontFamily("/Assets/Fonts/Montserrat-Bold.ttf#Montserrat"),
+            new FontFamily("/Assets/Fonts/Poppins-SemiBold.ttf#Poppins"),
+            new FontFamily("/Assets/Fonts/Raleway-Light.ttf#Raleway"),
+            new FontFamily("/Assets/Fonts/AbrilFatface-Regular.ttf#Abril Fatface"),
+            new FontFamily("Segoe WP"),
+            new FontFamily("Segoe WP Black") };
+        private static readonly int[] SizeValues = { 80, 95, 105, 120, 140 };
+
+        // Accent
+        private static readonly SolidColorBrush AccentBrush =
+            new SolidColorBrush(Color.FromArgb(0xFF, 0x3A, 0x7B, 0xF2));
+        private static readonly SolidColorBrush SelectBrush =
+            new SolidColorBrush(Color.FromArgb(0xAA, 0x00, 0xD4, 0xAA));
+        private static readonly SolidColorBrush TransparentBrush =
+            new SolidColorBrush(Colors.Transparent);
+        private static readonly SolidColorBrush InactiveTabBg =
+            new SolidColorBrush(Color.FromArgb(0x22, 0xFF, 0xFF, 0xFF));
+
+        // Which preset slot we are editing (-1 = none/direct)
+        private int editingPreset = -1;
+
+        public EditorPage()
+        {
+            InitializeComponent();
+        }
+
+        #region Lifecycle
+
+        private void EditorPage_Loaded(object sender, RoutedEventArgs e)
+        {
+            isLoading = true;
+            LoadAllSettings();
+            LoadPreviewImages();
+            ApplyPreview();
+            SelectTab("Clock");
+            isLoading = false;
+
+            // If no saved positions, center elements after layout is computed
+            if (!hasSavedPositions)
+            {
+                ClockHandle.LayoutUpdated += OnLayoutCenter;
+            }
+        }
+
+        private void OnLayoutCenter(object sender, EventArgs e)
+        {
+            if (ClockHandle.ActualWidth <= 0) return; // Not yet rendered
+            ClockHandle.LayoutUpdated -= OnLayoutCenter;
+            CenterElements();
+        }
+
+        private void CenterElements()
+        {
+            // Center clock like the lock screen default (Center/Center, margin-bottom 40)
+            clockX = (SCREEN_W - ClockHandle.ActualWidth) / 2.0;
+            clockY = (SCREEN_H - ClockHandle.ActualHeight) / 2.0 + 8;
+            ClockHandle.Margin = new Thickness(clockX, clockY, 0, 0);
+
+            // Stack weather and countdown below clock, also centered
+            if (WeatherHandle.Visibility == Visibility.Visible)
+            {
+                weatherX = (SCREEN_W - WeatherHandle.ActualWidth) / 2.0;
+                weatherY = clockY + ClockHandle.ActualHeight + 8;
+                WeatherHandle.Margin = new Thickness(weatherX, weatherY, 0, 0);
+            }
+            if (CountdownHandle.Visibility == Visibility.Visible)
+            {
+                double baseY = (WeatherHandle.Visibility == Visibility.Visible)
+                    ? weatherY + WeatherHandle.ActualHeight + 4
+                    : clockY + ClockHandle.ActualHeight + 8;
+                countdownX = (SCREEN_W - CountdownHandle.ActualWidth) / 2.0;
+                countdownY = baseY;
+                CountdownHandle.Margin = new Thickness(countdownX, countdownY, 0, 0);
+            }
+        }
+
+        protected override void OnNavigatedTo(System.Windows.Navigation.NavigationEventArgs e)
+        {
+            base.OnNavigatedTo(e);
+
+            // Check if we're editing a specific preset
+            string presetStr;
+            if (NavigationContext.QueryString.TryGetValue("preset", out presetStr))
+            {
+                int p;
+                if (int.TryParse(presetStr, out p))
+                    editingPreset = p;
+            }
+
+            if (!isLoading)
+            {
+                isLoading = true;
+
+                // If editing a preset, load its saved settings first
+                if (editingPreset >= 0)
+                {
+                    var s = IsolatedStorageSettings.ApplicationSettings;
+                    foreach (var key in SetKeys)
+                    {
+                        string sk = "Set" + editingPreset + "_" + key;
+                        if (s.Contains(sk)) s[key] = s[sk];
+                    }
+                    s.Save();
+
+                    // Load per-preset wallpaper
+                    try
+                    {
+                        using (var store = IsolatedStorageFile.GetUserStoreForApplication())
+                        {
+                            string presetBg = "Background_" + editingPreset + ".jpg";
+                            if (store.FileExists(presetBg))
+                            {
+                                // Copy preset wallpaper to Background.jpg for editor preview
+                                if (store.FileExists("Background.jpg"))
+                                    store.DeleteFile("Background.jpg");
+                                store.CopyFile(presetBg, "Background.jpg");
+                            }
+                        }
+                    }
+                    catch { }
+                }
+
+                LoadAllSettings();
+                LoadPreviewImages();
+                ApplyPreview();
+                isLoading = false;
+
+                if (!hasSavedPositions && ClockHandle.ActualWidth > 0)
+                {
+                    CenterElements();
+                }
+            }
+        }
+
+        #endregion
+
+        #region Settings I/O
+
+        private void LoadAllSettings()
+        {
+            var s = IsolatedStorageSettings.ApplicationSettings;
+
+            clockStyle = Get(s, "ClockStyle", 0);
+            clockSize = Get(s, "ClockSize", 2);
+            clockColor = Get(s, "ClockColor", 0);
+            clockBlend = Get(s, "ClockBlend", 0);
+            dateAlign = Get(s, "DateAlign", 1);
+            showWeather = Get(s, "ShowWeather", false);
+            showCountdown = Get(s, "ShowCountdown", false);
+            useDepthEffect = Get(s, "UseDepthEffect", false);
+            depthHourBehind = Get(s, "DepthHourBehind", true);
+            depthColonBehind = Get(s, "DepthColonBehind", true);
+            depthMinuteBehind = Get(s, "DepthMinuteBehind", true);
+
+            // Positions — check if user has saved free layout positions
+            hasSavedPositions = s.Contains("ClockX");
+            double defClockX, defClockY;
+            ComputeDefaultClockPos(s, out defClockX, out defClockY);
+            clockX = Get(s, "ClockX", defClockX);
+            clockY = Get(s, "ClockY", defClockY);
+            weatherX = Get(s, "WeatherX", defClockX);
+            weatherY = Get(s, "WeatherY", defClockY + 155);
+            countdownX = Get(s, "CountdownX", defClockX);
+            countdownY = Get(s, "CountdownY", defClockY + 185);
+
+            // Update UI controls
+            FontLabel.Text = FontNames[Math.Min(clockStyle, FontNames.Length - 1)];
+            UpdateSizeSelection();
+            UpdateColorSelection();
+            UpdateBlendSelection();
+            UpdateDateAlignSelection();
+
+            EdWeatherToggle.IsChecked = showWeather;
+            EdCountdownToggle.IsChecked = showCountdown;
+            EdCountdownName.Text = Get<string>(s, "CountdownName", "");
+            if (s.Contains("CountdownTarget"))
+                EdCountdownDate.Text = ((DateTime)s["CountdownTarget"]).ToString("yyyy-MM-dd");
+            EdDepthToggle.IsChecked = useDepthEffect;
+            EdDepthHour.IsChecked = depthHourBehind;
+            EdDepthColon.IsChecked = depthColonBehind;
+            EdDepthMinute.IsChecked = depthMinuteBehind;
+            EdDepthLayers.Visibility = useDepthEffect ? Visibility.Visible : Visibility.Collapsed;
+            EdAnimToggle.IsChecked = Get(s, "bIsAnimOn", true);
+            EdOwnerInfo.Text = Get<string>(s, "OwnerInfo", "");
+
+            // Lock screen registration
+            try { EdLockToggle.IsChecked = ExtensibilityApp.IsLockScreenApplicationRegistered(); }
+            catch { }
+        }
+
+        private void ComputeDefaultClockPos(IsolatedStorageSettings s, out double x, out double y)
+        {
+            int pos = Get(s, "ClockPosition", 1); // 0=Top,1=Center,2=Bottom
+            int hAlign = Get(s, "ClockHAlign", 1); // 0=Left,1=Center,2=Right
+
+            switch (pos)
+            {
+                case 0: y = 72; break;
+                case 2: y = 460; break;
+                default: y = 260; break;
+            }
+            switch (hAlign)
+            {
+                case 0: x = 24; break;
+                case 2: x = 160; break;
+                default: x = 70; break;
+            }
+        }
+
+        private T Get<T>(IsolatedStorageSettings s, string key, T def)
+        {
+            if (s.Contains(key)) return (T)s[key];
+            return def;
+        }
+
+        private void Save(string key, object val)
+        {
+            var s = IsolatedStorageSettings.ApplicationSettings;
+            s[key] = val;
+            s.Save();
+        }
+
+        #endregion
+
+        #region Preview
+
+        private void LoadPreviewImages()
+        {
+            try
+            {
+                using (var store = IsolatedStorageFile.GetUserStoreForApplication())
+                {
+                    if (store.FileExists("Background.jpg"))
+                    {
+                        using (var stream = store.OpenFile("Background.jpg",
+                            FileMode.Open, FileAccess.Read))
+                        {
+                            var bmp = new BitmapImage();
+                            bmp.SetSource(stream);
+                            PreviewBgBrush.ImageSource = bmp;
+                        }
+                    }
+                    if (useDepthEffect && store.FileExists("Foreground.png"))
+                    {
+                        using (var stream = store.OpenFile("Foreground.png",
+                            FileMode.Open, FileAccess.Read))
+                        {
+                            var bmp = new BitmapImage();
+                            bmp.SetSource(stream);
+                            PreviewFgBrush.ImageSource = bmp;
+                            PreviewFg.Visibility = Visibility.Visible;
+                        }
+                    }
+                    else
+                    {
+                        PreviewFg.Visibility = Visibility.Collapsed;
+                    }
+                }
+            }
+            catch { }
+        }
+
+        private void ApplyPreview()
+        {
+            // Time
+            var now = DateTime.Now;
+            PHour.Text = now.Hour.ToString("D2");
+            PMinute.Text = now.Minute.ToString("D2");
+            PDay.Text = now.DayOfWeek.ToString();
+            PDate.Text = now.ToString("MMMM d");
+
+            // Font
+            int fi = Math.Max(0, Math.Min(clockStyle, Fonts.Length - 1));
+            PHour.FontFamily = Fonts[fi];
+            PColon.FontFamily = Fonts[fi];
+            PMinute.FontFamily = Fonts[fi];
+
+            // Size
+            int si = Math.Max(0, Math.Min(clockSize, SizeValues.Length - 1));
+            int sz = SizeValues[si];
+            PHour.FontSize = sz;
+            PColon.FontSize = sz;
+            PMinute.FontSize = sz;
+            double pull = -sz * 0.16;
+            PTimePanel.Margin = new Thickness(0, pull, 0, 0);
+
+            // Color
+            ApplyClockColor();
+
+            // Date alignment
+            ApplyDateAlign();
+
+            // Positions
+            ClockHandle.Margin = new Thickness(clockX, clockY, 0, 0);
+            WeatherHandle.Margin = new Thickness(weatherX, weatherY, 0, 0);
+            CountdownHandle.Margin = new Thickness(countdownX, countdownY, 0, 0);
+
+            // Weather
+            if (showWeather)
+            {
+                string cached = Get<string>(IsolatedStorageSettings.ApplicationSettings, "CachedWeather", "");
+                PWeather.Text = string.IsNullOrEmpty(cached) ? "☀ 28°C" : cached;
+                WeatherHandle.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                WeatherHandle.Visibility = Visibility.Collapsed;
+            }
+
+            // Countdown
+            if (showCountdown)
+            {
+                var s = IsolatedStorageSettings.ApplicationSettings;
+                string name = Get<string>(s, "CountdownName", "Event");
+                if (s.Contains("CountdownTarget"))
+                {
+                    var target = (DateTime)s["CountdownTarget"];
+                    int days = (int)(target - DateTime.Today).TotalDays;
+                    PCountdown.Text = "⏱ " + days + " days to " + name;
+                }
+                else
+                {
+                    PCountdown.Text = "⏱ " + name;
+                }
+                CountdownHandle.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                CountdownHandle.Visibility = Visibility.Collapsed;
+            }
+
+            // Battery
+            try
+            {
+                var bat = Windows.Phone.Devices.Power.Battery.GetDefault();
+                PBattery.Text = "🔋 " + bat.RemainingChargePercent + "%";
+            }
+            catch
+            {
+                PBattery.Text = "🔋 --";
+            }
+        }
+
+        private void ApplyClockColor()
+        {
+            Brush brush;
+            if (clockBlend > 0)
+            {
+                switch (clockBlend)
+                {
+                    case 1: brush = MakeGrad(Color.FromArgb(255, 255, 120, 50),
+                                Color.FromArgb(255, 255, 60, 120)); break;  // Sunset
+                    case 2: brush = MakeGrad(Color.FromArgb(255, 0, 180, 255),
+                                Color.FromArgb(255, 0, 80, 200)); break;    // Ocean
+                    case 3: brush = MakeGrad(Color.FromArgb(255, 0, 255, 150),
+                                Color.FromArgb(255, 100, 0, 255)); break;   // Aurora
+                    case 4: brush = MakeGrad(Color.FromArgb(255, 255, 0, 200),
+                                Color.FromArgb(255, 0, 200, 255)); break;   // Neon
+                    case 5: brush = MakeGrad(Color.FromArgb(255, 255, 105, 180),
+                                Color.FromArgb(255, 148, 0, 211)); break;   // Rose
+                    case 6: brush = MakeGrad(Color.FromArgb(255, 255, 50, 0),
+                                Color.FromArgb(255, 255, 165, 0)); break;   // Fire
+                    case 7: brush = MakeGrad(Color.FromArgb(255, 255, 255, 255),
+                                Color.FromArgb(255, 173, 216, 230)); break; // Ice
+                    case 8: brush = MakeGrad(Color.FromArgb(255, 50, 205, 50),
+                                Color.FromArgb(255, 255, 255, 0)); break;   // Lime
+                    case 9: brush = MakeGrad(Color.FromArgb(255, 75, 0, 130),
+                                Color.FromArgb(255, 25, 25, 112)); break;   // Twilight
+                    default: brush = new SolidColorBrush(Colors.White); break;
+                }
+            }
+            else
+            {
+                switch (clockColor)
+                {
+                    case 1: brush = new SolidColorBrush(Color.FromArgb(255, 255, 215, 0)); break;   // Gold
+                    case 2: brush = new SolidColorBrush(Color.FromArgb(255, 135, 206, 235)); break; // Sky Blue
+                    case 3: brush = new SolidColorBrush(Color.FromArgb(255, 255, 182, 193)); break; // Pink
+                    case 4: brush = new SolidColorBrush(Color.FromArgb(255, 255, 68, 68)); break;   // Red
+                    case 5: brush = new SolidColorBrush(Color.FromArgb(255, 91, 255, 176)); break;  // Mint
+                    case 6: brush = new SolidColorBrush(Color.FromArgb(255, 196, 167, 255)); break; // Lavender
+                    case 7: brush = new SolidColorBrush(Color.FromArgb(255, 255, 140, 66)); break;  // Orange
+                    case 8: brush = new SolidColorBrush(Color.FromArgb(255, 0, 229, 255)); break;   // Cyan
+                    case 9: brush = new SolidColorBrush(Color.FromArgb(255, 160, 160, 176)); break; // Silver
+                    default: brush = new SolidColorBrush(Colors.White); break;
+                }
+            }
+            PHour.Foreground = brush;
+            PColon.Foreground = brush;
+            PMinute.Foreground = brush;
+        }
+
+        private LinearGradientBrush MakeGrad(Color from, Color to)
+        {
+            var lgb = new LinearGradientBrush();
+            lgb.StartPoint = new Point(0, 0);
+            lgb.EndPoint = new Point(0, 1);
+            lgb.GradientStops.Add(new GradientStop { Color = from, Offset = 0 });
+            lgb.GradientStops.Add(new GradientStop { Color = to, Offset = 1 });
+            return lgb;
+        }
+
+        #endregion
+
+        #region Drag & Drop
+
+        private const double MAGNET = 12.0; // Magnetic attraction threshold (px)
+        private const double SCREEN_W = 480.0;
+        private const double SCREEN_H = 800.0;
+
+        private void Element_ManipulationDelta(object sender, ManipulationDeltaEventArgs e)
+        {
+            var handle = (Border)sender;
+            var ct = (CompositeTransform)handle.RenderTransform;
+            ct.TranslateX += e.DeltaManipulation.Translation.X;
+            ct.TranslateY += e.DeltaManipulation.Translation.Y;
+
+            // Show live alignment guides while dragging
+            double liveX = handle.Margin.Left + ct.TranslateX;
+            double liveY = handle.Margin.Top + ct.TranslateY;
+            double w = handle.ActualWidth;
+            double h = handle.ActualHeight;
+            ShowGuides(handle, liveX, liveY, w, h);
+
+            e.Handled = true;
+        }
+
+        private void Element_ManipulationCompleted(object sender, ManipulationCompletedEventArgs e)
+        {
+            var handle = (Border)sender;
+            var ct = (CompositeTransform)handle.RenderTransform;
+
+            // Compute new position (old margin + translation)
+            double newX = handle.Margin.Left + ct.TranslateX;
+            double newY = handle.Margin.Top + ct.TranslateY;
+
+            // Magnetic snap to alignment points
+            double w = handle.ActualWidth;
+            double h = handle.ActualHeight;
+            SnapToGuides(handle, ref newX, ref newY, w, h);
+
+            // Clamp to screen bounds
+            newX = Math.Max(0, Math.Min(SCREEN_W - w, newX));
+            newY = Math.Max(0, Math.Min(SCREEN_H - h, newY));
+
+            // Apply
+            handle.Margin = new Thickness(newX, newY, 0, 0);
+            ct.TranslateX = 0;
+            ct.TranslateY = 0;
+
+            // Hide guides
+            GuideV.Visibility = Visibility.Collapsed;
+            GuideH.Visibility = Visibility.Collapsed;
+
+            // Update in-memory position (saved to settings only on Save tap)
+            string tag = (string)handle.Tag;
+            switch (tag)
+            {
+                case "Clock":    clockX = newX; clockY = newY; break;
+                case "Weather":  weatherX = newX; weatherY = newY; break;
+                case "Countdown": countdownX = newX; countdownY = newY; break;
+            }
+
+            e.Handled = true;
+        }
+
+        private void SnapToGuides(Border handle, ref double x, ref double y, double w, double h)
+        {
+            // ── Screen center guides ──
+            double centerX = (SCREEN_W - w) / 2.0;   // X to center element horizontally
+            double centerY = (SCREEN_H - h) / 2.0;   // Y to center element vertically
+
+            if (Math.Abs(x - centerX) < MAGNET) x = centerX;
+            if (Math.Abs(y - centerY) < MAGNET) y = centerY;
+
+            // ── Left edge alignment (x=24, common padding) ──
+            if (Math.Abs(x - 24) < MAGNET) x = 24;
+
+            // ── Align with other visible elements ──
+            Border[] handles = { ClockHandle, WeatherHandle, CountdownHandle };
+            foreach (var other in handles)
+            {
+                if (other == handle || other.Visibility != Visibility.Visible) continue;
+
+                double ox = other.Margin.Left;
+                double oy = other.Margin.Top;
+
+                // Same X (left-align)
+                if (Math.Abs(x - ox) < MAGNET) x = ox;
+
+                // Same Y (top-align)
+                if (Math.Abs(y - oy) < MAGNET) y = oy;
+
+                // Stack below (align Y to bottom of other element)
+                double belowY = oy + other.ActualHeight + 4;
+                if (Math.Abs(y - belowY) < MAGNET) y = belowY;
+            }
+        }
+
+        private void ShowGuides(Border handle, double x, double y, double w, double h)
+        {
+            double centerX = (SCREEN_W - w) / 2.0;
+            double centerY = (SCREEN_H - h) / 2.0;
+            bool showV = false, showH = false;
+            double gx = 0, gy = 0;
+
+            // Center guides
+            if (Math.Abs(x - centerX) < MAGNET) { showV = true; gx = SCREEN_W / 2.0; }
+            if (Math.Abs(y - centerY) < MAGNET) { showH = true; gy = SCREEN_H / 2.0; }
+
+            // Left edge guide
+            if (Math.Abs(x - 24) < MAGNET) { showV = true; gx = 24; }
+
+            // Element alignment guides
+            Border[] handles = { ClockHandle, WeatherHandle, CountdownHandle };
+            foreach (var other in handles)
+            {
+                if (other == handle || other.Visibility != Visibility.Visible) continue;
+                double ox = other.Margin.Left;
+                double oy = other.Margin.Top;
+
+                if (Math.Abs(x - ox) < MAGNET) { showV = true; gx = ox; }
+                if (Math.Abs(y - oy) < MAGNET) { showH = true; gy = oy; }
+                double belowY = oy + other.ActualHeight + 4;
+                if (Math.Abs(y - belowY) < MAGNET) { showH = true; gy = belowY; }
+            }
+
+            if (showV)
+            {
+                GuideV.Visibility = Visibility.Visible;
+                GuideV.Margin = new Thickness(gx, 0, 0, 0);
+            }
+            else { GuideV.Visibility = Visibility.Collapsed; }
+
+            if (showH)
+            {
+                GuideH.Visibility = Visibility.Visible;
+                GuideH.Margin = new Thickness(0, gy, 0, 0);
+            }
+            else { GuideH.Visibility = Visibility.Collapsed; }
+        }
+
+        #endregion
+
+        #region Element Selection
+
+        private void Element_Tap(object sender, System.Windows.Input.GestureEventArgs e)
+        {
+            var handle = (Border)sender;
+            string tag = (string)handle.Tag;
+            SelectTab(tag);
+            e.Handled = true;
+        }
+
+        private void SelectHandle(Border handle)
+        {
+            // Deselect previous
+            if (selectedHandle != null)
+                selectedHandle.BorderBrush = TransparentBrush;
+
+            selectedHandle = handle;
+            if (handle != null)
+                handle.BorderBrush = SelectBrush;
+        }
+
+        private void SaveAndBack_Tap(object sender, System.Windows.Input.GestureEventArgs e)
+        {
+            // Save all current positions
+            Save("ClockX", clockX);
+            Save("ClockY", clockY);
+            Save("WeatherX", weatherX);
+            Save("WeatherY", weatherY);
+            Save("CountdownX", countdownX);
+            Save("CountdownY", countdownY);
+
+            // Also save to preset slot if editing one
+            if (editingPreset >= 0)
+            {
+                SaveSet(editingPreset);
+
+                // Copy current Background.jpg to preset-specific file
+                try
+                {
+                    using (var store = IsolatedStorageFile.GetUserStoreForApplication())
+                    {
+                        if (store.FileExists("Background.jpg"))
+                        {
+                            string presetBg = "Background_" + editingPreset + ".jpg";
+                            if (store.FileExists(presetBg))
+                                store.DeleteFile(presetBg);
+                            store.CopyFile("Background.jpg", presetBg);
+                        }
+                    }
+                }
+                catch { }
+            }
+
+            // Navigate back
+            if (NavigationService.CanGoBack)
+                NavigationService.GoBack();
+        }
+
+        private void Background_Tap(object sender, System.Windows.Input.GestureEventArgs e)
+        {
+            SelectHandle(null);
+        }
+
+        #endregion
+
+        #region Tab Navigation
+
+        private void Tab_Tap(object sender, System.Windows.Input.GestureEventArgs e)
+        {
+            var border = (Border)sender;
+            string tag = (string)border.Tag;
+            SelectTab(tag);
+        }
+
+        private void SelectTab(string tab)
+        {
+            selectedTab = tab;
+
+            // Update tab visuals
+            SetTabActive(TabClock, TabClockText, tab == "Clock");
+            SetTabActive(TabWeather, TabWeatherText, tab == "Weather");
+            SetTabActive(TabCountdown, TabCountdownText, tab == "Countdown");
+            SetTabActive(TabDisplay, TabDisplayText, tab == "Display");
+            SetTabActive(TabMore, TabMoreText, tab == "More");
+
+            // Show corresponding properties
+            ClockProps.Visibility = tab == "Clock" ? Visibility.Visible : Visibility.Collapsed;
+            WeatherProps.Visibility = tab == "Weather" ? Visibility.Visible : Visibility.Collapsed;
+            CountdownProps.Visibility = tab == "Countdown" ? Visibility.Visible : Visibility.Collapsed;
+            DisplayProps.Visibility = tab == "Display" ? Visibility.Visible : Visibility.Collapsed;
+            MoreProps.Visibility = tab == "More" ? Visibility.Visible : Visibility.Collapsed;
+
+            // Select corresponding handle on preview
+            switch (tab)
+            {
+                case "Clock": SelectHandle(ClockHandle); break;
+                case "Weather": SelectHandle(WeatherHandle); break;
+                case "Countdown": SelectHandle(CountdownHandle); break;
+                default: SelectHandle(null); break;
+            }
+        }
+
+        private void SetTabActive(Border tab, TextBlock text, bool active)
+        {
+            tab.Background = active ? AccentBrush : InactiveTabBg;
+            text.Foreground = active ?
+                new SolidColorBrush(Colors.White) :
+                new SolidColorBrush(Color.FromArgb(0xAA, 0xFF, 0xFF, 0xFF));
+        }
+
+        #endregion
+
+        #region Clock Property Handlers
+
+        private void FontPrev_Tap(object sender, System.Windows.Input.GestureEventArgs e)
+        {
+            clockStyle = (clockStyle - 1 + FontNames.Length) % FontNames.Length;
+            Save("ClockStyle", clockStyle);
+            FontLabel.Text = FontNames[clockStyle];
+            int fi = Math.Max(0, Math.Min(clockStyle, Fonts.Length - 1));
+            PHour.FontFamily = Fonts[fi];
+            PColon.FontFamily = Fonts[fi];
+            PMinute.FontFamily = Fonts[fi];
+        }
+
+        private void FontNext_Tap(object sender, System.Windows.Input.GestureEventArgs e)
+        {
+            clockStyle = (clockStyle + 1) % FontNames.Length;
+            Save("ClockStyle", clockStyle);
+            FontLabel.Text = FontNames[clockStyle];
+            int fi = Math.Max(0, Math.Min(clockStyle, Fonts.Length - 1));
+            PHour.FontFamily = Fonts[fi];
+            PColon.FontFamily = Fonts[fi];
+            PMinute.FontFamily = Fonts[fi];
+        }
+
+        private void Size_Tap(object sender, System.Windows.Input.GestureEventArgs e)
+        {
+            var border = (Border)sender;
+            clockSize = int.Parse((string)border.Tag);
+            Save("ClockSize", clockSize);
+            UpdateSizeSelection();
+            int sz = SizeValues[clockSize];
+            PHour.FontSize = sz;
+            PColon.FontSize = sz;
+            PMinute.FontSize = sz;
+            PTimePanel.Margin = new Thickness(0, -sz * 0.16, 0, 0);
+        }
+
+        private void UpdateSizeSelection()
+        {
+            Border[] pills = { SizeS, SizeM, SizeL, SizeXL, SizeXXL };
+            for (int i = 0; i < pills.Length; i++)
+            {
+                pills[i].Background = (i == clockSize) ? AccentBrush : InactiveTabBg;
+                ((TextBlock)pills[i].Child).Foreground = (i == clockSize) ?
+                    new SolidColorBrush(Colors.White) :
+                    new SolidColorBrush(Color.FromArgb(0xCC, 0xFF, 0xFF, 0xFF));
+            }
+        }
+
+        private void Color_Tap(object sender, System.Windows.Input.GestureEventArgs e)
+        {
+            var el = (Ellipse)sender;
+            clockColor = int.Parse((string)el.Tag);
+            clockBlend = 0;
+            Save("ClockColor", clockColor);
+            Save("ClockBlend", 0);
+            UpdateColorSelection();
+            UpdateBlendSelection();
+            ApplyClockColor();
+        }
+
+        private void UpdateColorSelection()
+        {
+            Ellipse[] circles = { ColorW, ColorG, ColorB, ColorP, ColorR, ColorMint, ColorLav, ColorOr, ColorCy, ColorSi };
+            for (int i = 0; i < circles.Length; i++)
+            {
+                circles[i].Stroke = (i == clockColor && clockBlend == 0) ?
+                    SelectBrush : TransparentBrush;
+            }
+        }
+
+        private void Blend_Tap(object sender, System.Windows.Input.GestureEventArgs e)
+        {
+            var border = (Border)sender;
+            clockBlend = int.Parse((string)border.Tag);
+            Save("ClockBlend", clockBlend);
+            UpdateBlendSelection();
+            UpdateColorSelection();
+            ApplyClockColor();
+        }
+
+        private void UpdateBlendSelection()
+        {
+            Border[] pills = { BlendNone, BlendSunset, BlendOcean, BlendAurora, BlendNeon, BlendRose, BlendFire, BlendIce, BlendLime, BlendTwilight };
+            for (int i = 0; i < pills.Length; i++)
+            {
+                pills[i].Background = (i == clockBlend) ? AccentBrush : InactiveTabBg;
+                ((TextBlock)pills[i].Child).Foreground = (i == clockBlend) ?
+                    new SolidColorBrush(Colors.White) :
+                    new SolidColorBrush(Color.FromArgb(0xCC, 0xFF, 0xFF, 0xFF));
+            }
+        }
+
+        private void DateAlign_Tap(object sender, System.Windows.Input.GestureEventArgs e)
+        {
+            if (isLoading) return;
+            var border = (Border)sender;
+            dateAlign = int.Parse((string)border.Tag);
+            Save("DateAlign", dateAlign);
+            UpdateDateAlignSelection();
+            ApplyDateAlign();
+        }
+
+        private void UpdateDateAlignSelection()
+        {
+            Border[] pills = { AlignLeft, AlignCenter, AlignRight };
+            for (int i = 0; i < pills.Length; i++)
+            {
+                pills[i].Background = (i == dateAlign) ? AccentBrush : InactiveTabBg;
+                ((TextBlock)pills[i].Child).Foreground = (i == dateAlign) ?
+                    new SolidColorBrush(Colors.White) :
+                    new SolidColorBrush(Color.FromArgb(0xCC, 0xFF, 0xFF, 0xFF));
+            }
+        }
+
+        private void ApplyDateAlign()
+        {
+            switch (dateAlign)
+            {
+                case 0: PDatePanel.HorizontalAlignment = HorizontalAlignment.Left; break;
+                case 2: PDatePanel.HorizontalAlignment = HorizontalAlignment.Right; break;
+                default: PDatePanel.HorizontalAlignment = HorizontalAlignment.Center; break;
+            }
+        }
+
+        #endregion
+
+        #region Weather Handlers
+
+        private void EdWeatherToggle_Changed(object sender, RoutedEventArgs e)
+        {
+            if (isLoading) return;
+            showWeather = EdWeatherToggle.IsChecked == true;
+            Save("ShowWeather", showWeather);
+            WeatherHandle.Visibility = showWeather ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        private void EdWeatherLocation_Click(object sender, RoutedEventArgs e)
+        {
+            NavigationService.Navigate(
+                new Uri("/Pages/SettingsPage.xaml?section=weather", UriKind.Relative));
+        }
+
+        #endregion
+
+        #region Countdown Handlers
+
+        private void EdCountdownToggle_Changed(object sender, RoutedEventArgs e)
+        {
+            if (isLoading) return;
+            showCountdown = EdCountdownToggle.IsChecked == true;
+            Save("ShowCountdown", showCountdown);
+            CountdownHandle.Visibility = showCountdown ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        private void EdSaveCountdown_Click(object sender, RoutedEventArgs e)
+        {
+            Save("CountdownName", EdCountdownName.Text.Trim());
+            DateTime target;
+            if (DateTime.TryParse(EdCountdownDate.Text.Trim(), out target))
+            {
+                Save("CountdownTarget", target);
+                string name = EdCountdownName.Text.Trim();
+                int days = (int)(target - DateTime.Today).TotalDays;
+                PCountdown.Text = "⏱ " + days + " days to " + name;
+                MessageBox.Show("Countdown saved!", "Saved", MessageBoxButton.OK);
+            }
+            else
+            {
+                MessageBox.Show("Invalid date. Use yyyy-MM-dd", "Error", MessageBoxButton.OK);
+            }
+        }
+
+        #endregion
+
+        #region Display Handlers
+
+        private void EdWallpaper_Click(object sender, RoutedEventArgs e)
+        {
+            var chooser = new PhotoChooserTask();
+            chooser.ShowCamera = true;
+            chooser.Completed += (s, args) =>
+            {
+                if (args.TaskResult == TaskResult.OK && args.ChosenPhoto != null)
+                {
+                    try
+                    {
+                        var bmp = new BitmapImage();
+                        bmp.SetSource(args.ChosenPhoto);
+                        var wb = new WriteableBitmap(bmp);
+                        using (var store = IsolatedStorageFile.GetUserStoreForApplication())
+                        using (var stream = store.CreateFile("Background.jpg"))
+                        {
+                            wb.SaveJpeg(stream, wb.PixelWidth, wb.PixelHeight, 0, 90);
+                        }
+                        PreviewBgBrush.ImageSource = bmp;
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show("Error: " + ex.Message, "Error", MessageBoxButton.OK);
+                    }
+                }
+            };
+            chooser.Show();
+        }
+
+        private void EdDepthToggle_Changed(object sender, RoutedEventArgs e)
+        {
+            if (isLoading) return;
+            useDepthEffect = EdDepthToggle.IsChecked == true;
+            Save("UseDepthEffect", useDepthEffect);
+            EdDepthLayers.Visibility = useDepthEffect ? Visibility.Visible : Visibility.Collapsed;
+            LoadPreviewImages();
+        }
+
+        private void EdForeground_Click(object sender, RoutedEventArgs e)
+        {
+            var picker = new Windows.Storage.Pickers.FileOpenPicker();
+            picker.FileTypeFilter.Add(".png");
+            picker.SuggestedStartLocation = Windows.Storage.Pickers.PickerLocationId.PicturesLibrary;
+            picker.PickSingleFileAndContinue();
+        }
+
+        private void EdDepthLayer_Changed(object sender, RoutedEventArgs e)
+        {
+            if (isLoading) return;
+            Save("DepthHourBehind", EdDepthHour.IsChecked == true);
+            Save("DepthColonBehind", EdDepthColon.IsChecked == true);
+            Save("DepthMinuteBehind", EdDepthMinute.IsChecked == true);
+        }
+
+        private void EdAnimToggle_Changed(object sender, RoutedEventArgs e)
+        {
+            if (isLoading) return;
+            Save("bIsAnimOn", EdAnimToggle.IsChecked == true);
+        }
+
+        private void EdSaveOwner_Click(object sender, RoutedEventArgs e)
+        {
+            string info = EdOwnerInfo.Text.Trim();
+            Save("OwnerInfo", info);
+            MessageBox.Show(
+                string.IsNullOrEmpty(info) ? "Owner info cleared." : "Owner info saved!",
+                "Saved", MessageBoxButton.OK);
+        }
+
+        #endregion
+
+        #region More Handlers
+
+        private void EdSecurity_Click(object sender, RoutedEventArgs e)
+        {
+            NavigationService.Navigate(
+                new Uri("/Pages/SettingsPage.xaml?section=security", UriKind.Relative));
+        }
+
+        private void EdAbout_Click(object sender, RoutedEventArgs e)
+        {
+            NavigationService.Navigate(
+                new Uri("/Pages/About.xaml", UriKind.Relative));
+        }
+
+        private void EdLockToggle_Changed(object sender, RoutedEventArgs e)
+        {
+            if (isLoading) return;
+            try
+            {
+                if (EdLockToggle.IsChecked == true)
+                {
+                    using (var store = IsolatedStorageFile.GetUserStoreForApplication())
+                    {
+                        if (store.FileExists("Background.jpg"))
+                        {
+                            if (!ExtensibilityApp.IsLockScreenApplicationRegistered())
+                                ExtensibilityApp.RegisterLockScreenApplication();
+                        }
+                        else
+                        {
+                            MessageBox.Show("Please choose a background image first.",
+                                "Background Required", MessageBoxButton.OK);
+                            EdLockToggle.IsChecked = false;
+                        }
+                    }
+                }
+                else
+                {
+                    if (ExtensibilityApp.IsLockScreenApplicationRegistered())
+                    {
+                        var result = MessageBox.Show(
+                            "Remove HyperOS as your live lock screen?",
+                            "Remove", MessageBoxButton.OKCancel);
+                        if (result == MessageBoxResult.OK)
+                            ExtensibilityApp.UnregisterLockScreenApplication();
+                        else
+                            EdLockToggle.IsChecked = true;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error: " + ex.Message, "Error", MessageBoxButton.OK);
+            }
+        }
+
+        // My Sets
+        private static readonly string[] SetKeys = { "ClockStyle", "ClockPosition", "ClockHAlign",
+            "ClockColor", "ClockBlend", "ClockSize",
+            "ShowWeather", "ShowCountdown", "UseDepthEffect",
+            "DepthHourBehind", "DepthColonBehind", "DepthMinuteBehind",
+            "ClockX", "ClockY", "WeatherX", "WeatherY", "CountdownX", "CountdownY",
+            "bIsAnimOn" };
+
+        private void SaveSet(int n)
+        {
+            var s = IsolatedStorageSettings.ApplicationSettings;
+            foreach (var key in SetKeys)
+                if (s.Contains(key)) s["Set" + n + "_" + key] = s[key];
+            s.Save();
+            MessageBox.Show("Set " + n + " saved!", "My Sets", MessageBoxButton.OK);
+        }
+
+        private void LoadSet(int n)
+        {
+            var s = IsolatedStorageSettings.ApplicationSettings;
+            bool found = false;
+            foreach (var key in SetKeys)
+            {
+                string sk = "Set" + n + "_" + key;
+                if (s.Contains(sk)) { s[key] = s[sk]; found = true; }
+            }
+            if (found)
+            {
+                s.Save();
+                isLoading = true;
+                LoadAllSettings();
+                ApplyPreview();
+                isLoading = false;
+            }
+            else
+            {
+                if (MessageBox.Show("No set saved. Save current?", "My Sets",
+                    MessageBoxButton.OKCancel) == MessageBoxResult.OK)
+                    SaveSet(n);
+            }
+        }
+
+        private void EdLoadSet1(object sender, RoutedEventArgs e) { LoadSet(1); }
+        private void EdLoadSet2(object sender, RoutedEventArgs e) { LoadSet(2); }
+        private void EdLoadSet3(object sender, RoutedEventArgs e) { LoadSet(3); }
+        private void EdSaveSet1(object sender, System.Windows.Input.GestureEventArgs e) { SaveSet(1); }
+        private void EdSaveSet2(object sender, System.Windows.Input.GestureEventArgs e) { SaveSet(2); }
+        private void EdSaveSet3(object sender, System.Windows.Input.GestureEventArgs e) { SaveSet(3); }
+
+        #endregion
+
+        #region Navigation
+
+        private void Back_Tap(object sender, System.Windows.Input.GestureEventArgs e)
+        {
+            if (NavigationService.CanGoBack)
+                NavigationService.GoBack();
+        }
+
+        #endregion
+    }
+}

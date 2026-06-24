@@ -28,14 +28,14 @@ namespace HyperOS
                 else
                 {
                     NavigationService.Navigate(
-                        new Uri("/Pages/SettingsPage.xaml", UriKind.Relative));
+                        new Uri("/Pages/MySetsPage.xaml", UriKind.Relative));
                 }
             }
             catch
             {
-                // Fallback to settings if SystemProtection fails
+                // Fallback to My Sets if SystemProtection fails
                 NavigationService.Navigate(
-                    new Uri("/Pages/SettingsPage.xaml", UriKind.Relative));
+                    new Uri("/Pages/MySetsPage.xaml", UriKind.Relative));
             }
         }
     }

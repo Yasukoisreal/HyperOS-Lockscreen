@@ -91,7 +91,7 @@
             <StackPanel>
                 <TextBlock Text="HyperOS" FontSize="14" Foreground="#55FFFFFF"
                     FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"/>
-                <TextBlock Text="Settings" FontSize="36" Foreground="White"
+                <TextBlock x:Name="HeaderTitle" Text="Settings" FontSize="36" Foreground="White"
                     FontFamily="/Assets/Fonts/MiSans-Demibold.ttf#MiSans"
                     Margin="0,-4,0,0"/>
             </StackPanel>
@@ -108,6 +108,7 @@
             <StackPanel>
 
                 <!-- ─── LOCKSCREEN ─── -->
+                <StackPanel x:Name="SectionLockscreen">
                 <TextBlock Text="LOCKSCREEN" Style="{StaticResource SectionTitle}"/>
                 <Border Style="{StaticResource CardBorder}">
                     <StackPanel>
@@ -120,6 +121,7 @@
                             FontSize="12.5" Foreground="#55FFFFFF" Margin="0,2,0,0"/>
                     </StackPanel>
                 </Border>
+                </StackPanel>
 
                 <!-- ─── SECURITY ─── -->
                 <TextBlock Text="SECURITY" Style="{StaticResource SectionTitle}"/>
@@ -167,6 +169,7 @@
                 </Border>
 
                 <!-- ─── CLOCK ─── -->
+                <StackPanel x:Name="SectionClock">
                 <TextBlock Text="CLOCK" Style="{StaticResource SectionTitle}"/>
                 <Border Style="{StaticResource CardBorder}">
                     <StackPanel>
@@ -251,8 +254,10 @@
                         </toolkit:ListPicker>
                     </StackPanel>
                 </Border>
+                </StackPanel>
 
                 <!-- ─── DISPLAY ─── -->
+                <StackPanel x:Name="SectionDisplay">
                 <TextBlock Text="DISPLAY" Style="{StaticResource SectionTitle}"/>
                 <Border Style="{StaticResource CardBorder}">
                     <StackPanel>
@@ -290,8 +295,10 @@
                         <Button Content="Save" Click="SaveOwnerInfo_Click" Style="{StaticResource ActionBtn}"/>
                     </StackPanel>
                 </Border>
+                </StackPanel>
 
                 <!-- ─── WIDGETS ─── -->
+                <StackPanel x:Name="SectionWidgets">
                 <TextBlock Text="WIDGETS" Style="{StaticResource SectionTitle}"/>
                 <Border Style="{StaticResource CardBorder}">
                     <StackPanel>
@@ -359,8 +366,10 @@
                             Style="{StaticResource AccentBtn}"/>
                     </StackPanel>
                 </Border>
+                </StackPanel>
 
                 <!-- ─── ADVANCED ─── -->
+                <StackPanel x:Name="SectionAdvanced">
                 <TextBlock Text="ADVANCED" Style="{StaticResource SectionTitle}"/>
                 <Border Style="{StaticResource CardBorder}">
                     <StackPanel>
@@ -380,10 +389,54 @@
                         </Grid>
                         <Button Content="Choose Foreground PNG" Click="ChooseForeground_Click"
                             Style="{StaticResource ActionBtn}"/>
+
+                        <!-- Depth Layer Settings -->
+                        <StackPanel x:Name="DepthLayerPanel" Visibility="Collapsed" Margin="0,8,0,0">
+                            <TextBlock Text="DEPTH LAYERS" FontSize="11" Foreground="#55FFFFFF"
+                                FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans" Margin="0,0,0,6"/>
+                            <TextBlock Text="ON = Behind subject · OFF = In front" FontSize="11" Foreground="#44FFFFFF"
+                                FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans" Margin="0,0,0,8"/>
+
+                            <!-- Hour -->
+                            <Grid Margin="0,2,0,2">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Hour (giờ)" Style="{StaticResource SettingTitle}"/>
+                                <toolkit:ToggleSwitch x:Name="DepthHourToggle" Grid.Column="1"
+                                    Checked="DepthHourToggle_Changed"
+                                    Unchecked="DepthHourToggle_Changed"/>
+                            </Grid>
+                            <!-- Colon -->
+                            <Grid Margin="0,2,0,2">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Colon (hai chấm)" Style="{StaticResource SettingTitle}"/>
+                                <toolkit:ToggleSwitch x:Name="DepthColonToggle" Grid.Column="1"
+                                    Checked="DepthColonToggle_Changed"
+                                    Unchecked="DepthColonToggle_Changed"/>
+                            </Grid>
+                            <!-- Minute -->
+                            <Grid Margin="0,2,0,2">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Minute (phút)" Style="{StaticResource SettingTitle}"/>
+                                <toolkit:ToggleSwitch x:Name="DepthMinuteToggle" Grid.Column="1"
+                                    Checked="DepthMinuteToggle_Changed"
+                                    Unchecked="DepthMinuteToggle_Changed"/>
+                            </Grid>
+                        </StackPanel>
                     </StackPanel>
                 </Border>
+                </StackPanel>
 
                 <!-- ─── MY SETS ─── -->
+                <StackPanel x:Name="SectionMySets">
                 <TextBlock Text="MY SETS" Style="{StaticResource SectionTitle}"/>
                 <Border Style="{StaticResource CardBorder}">
                     <StackPanel>
@@ -412,8 +465,10 @@
                             Foreground="#44FFFFFF" HorizontalAlignment="Center" Margin="0,6,0,0"/>
                     </StackPanel>
                 </Border>
+                </StackPanel>
 
                 <!-- ─── ABOUT ─── -->
+                <StackPanel x:Name="SectionAbout">
                 <Border Style="{StaticResource CardBorder}" Margin="0,8,0,32">
                     <Button Content="About HyperOS" Click="About_Click"
                         Background="Transparent" Foreground="#AAFFFFFF"
@@ -421,6 +476,7 @@
                         HorizontalContentAlignment="Left" FontSize="17"
                         FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"/>
                 </Border>
+                </StackPanel>
 
             </StackPanel>
         </ScrollViewer>

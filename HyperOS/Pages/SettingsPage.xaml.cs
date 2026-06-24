@@ -31,6 +31,38 @@ namespace HyperOS.Pages
             isLoading = false;
         }
 
+        protected override void OnNavigatedTo(NavigationEventArgs e)
+        {
+            base.OnNavigatedTo(e);
+
+            // Support filtering: /Pages/SettingsPage.xaml?section=security
+            string section;
+            if (NavigationContext.QueryString.TryGetValue("section", out section))
+            {
+                if (section == "security")
+                {
+                    HeaderTitle.Text = "Security";
+                    SectionLockscreen.Visibility = Visibility.Collapsed;
+                    SectionClock.Visibility = Visibility.Collapsed;
+                    SectionDisplay.Visibility = Visibility.Collapsed;
+                    SectionWidgets.Visibility = Visibility.Collapsed;
+                    SectionAdvanced.Visibility = Visibility.Collapsed;
+                    SectionMySets.Visibility = Visibility.Collapsed;
+                    SectionAbout.Visibility = Visibility.Collapsed;
+                }
+                else if (section == "weather")
+                {
+                    HeaderTitle.Text = "Weather";
+                    SectionLockscreen.Visibility = Visibility.Collapsed;
+                    SectionClock.Visibility = Visibility.Collapsed;
+                    SectionDisplay.Visibility = Visibility.Collapsed;
+                    SectionAdvanced.Visibility = Visibility.Collapsed;
+                    SectionMySets.Visibility = Visibility.Collapsed;
+                    SectionAbout.Visibility = Visibility.Collapsed;
+                }
+            }
+        }
+
         #region Lock Screen Registration
 
         private void CheckLockScreenStatus()
@@ -612,12 +644,32 @@ namespace HyperOS.Pages
         {
             if (isLoading) return;
             SaveSetting("UseDepthEffect", true);
+            DepthLayerPanel.Visibility = Visibility.Visible;
         }
 
         private void DepthToggle_Unchecked(object sender, RoutedEventArgs e)
         {
             if (isLoading) return;
             SaveSetting("UseDepthEffect", false);
+            DepthLayerPanel.Visibility = Visibility.Collapsed;
+        }
+
+        private void DepthHourToggle_Changed(object sender, RoutedEventArgs e)
+        {
+            if (isLoading) return;
+            SaveSetting("DepthHourBehind", DepthHourToggle.IsChecked == true);
+        }
+
+        private void DepthColonToggle_Changed(object sender, RoutedEventArgs e)
+        {
+            if (isLoading) return;
+            SaveSetting("DepthColonBehind", DepthColonToggle.IsChecked == true);
+        }
+
+        private void DepthMinuteToggle_Changed(object sender, RoutedEventArgs e)
+        {
+            if (isLoading) return;
+            SaveSetting("DepthMinuteBehind", DepthMinuteToggle.IsChecked == true);
         }
 
         private void ChooseForeground_Click(object sender, RoutedEventArgs e)
@@ -634,7 +686,8 @@ namespace HyperOS.Pages
 
         private static readonly string[] SetKeys = { "ClockStyle", "ClockPosition", "ClockHAlign",
             "ClockColor", "ClockBlend", "ClockSize",
-            "ShowWeather", "ShowCountdown", "UseDepthEffect", "bIsAnimOn" };
+            "ShowWeather", "ShowCountdown", "UseDepthEffect",
+            "DepthHourBehind", "DepthColonBehind", "DepthMinuteBehind", "bIsAnimOn" };
 
         private void SaveSet(int setNum)
         {
@@ -755,6 +808,10 @@ namespace HyperOS.Pages
 
             // Depth
             DepthToggle.IsChecked = GetSetting<bool>(s, "UseDepthEffect", false);
+            DepthHourToggle.IsChecked = GetSetting<bool>(s, "DepthHourBehind", true);
+            DepthColonToggle.IsChecked = GetSetting<bool>(s, "DepthColonBehind", true);
+            DepthMinuteToggle.IsChecked = GetSetting<bool>(s, "DepthMinuteBehind", true);
+            DepthLayerPanel.Visibility = (DepthToggle.IsChecked == true) ? Visibility.Visible : Visibility.Collapsed;
 
             if (PasswordToggle.IsChecked == true)
                 PinSetupPanel.Visibility = Visibility.Collapsed;
