@@ -448,8 +448,13 @@
                                 <toolkit:ToggleSwitch x:Name="EdDepthToggle" Grid.Column="1"
                                     Checked="EdDepthToggle_Changed" Unchecked="EdDepthToggle_Changed"/>
                             </Grid>
-                            <Button x:Name="EdForegroundBtn" Content="Choose Foreground PNG"
+                            <Button x:Name="EdForegroundBtn" Content="📁 Choose Foreground PNG"
                                 Click="EdForeground_Click" Style="{StaticResource EditorActionBtn}"/>
+                            <Button x:Name="EdAutoExtractBtn" Content="✨ Auto Extract Foreground"
+                                Click="EdAutoExtract_Click" Style="{StaticResource EditorActionBtn}" Margin="0,4,0,0"/>
+                            <TextBlock x:Name="ExtractStatus" Text="" FontSize="12"
+                                Foreground="#88FFFFFF" HorizontalAlignment="Center" Margin="0,4,0,0"
+                                FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"/>
 
                             <StackPanel x:Name="EdDepthLayers" Visibility="Collapsed">
                                 <TextBlock Text="DEPTH LAYERS  (ON = Behind)" Style="{StaticResource PropLabel}"/>

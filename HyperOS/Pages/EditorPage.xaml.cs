@@ -1049,6 +1049,151 @@ namespace HyperOS.Pages
             picker.PickSingleFileAndContinue();
         }
 
+        private void EdAutoExtract_Click(object sender, RoutedEventArgs e)
+        {
+            // Check if Background.jpg exists
+            try
+            {
+                using (var store = IsolatedStorageFile.GetUserStoreForApplication())
+                {
+                    if (!store.FileExists("Background.jpg"))
+                    {
+                        MessageBox.Show("Hãy chọn ảnh nền trước khi tách foreground.", "Chưa có ảnh nền", MessageBoxButton.OK);
+                        return;
+                    }
+                }
+            }
+            catch { return; }
+
+            EdAutoExtractBtn.IsEnabled = false;
+            ExtractStatus.Text = "⏳ Đang tách vật thể...";
+
+            // Read Background.jpg bytes
+            byte[] imageBytes;
+            try
+            {
+                using (var store = IsolatedStorageFile.GetUserStoreForApplication())
+                using (var stream = store.OpenFile("Background.jpg", FileMode.Open, FileAccess.Read))
+                {
+                    imageBytes = new byte[stream.Length];
+                    stream.Read(imageBytes, 0, imageBytes.Length);
+                }
+            }
+            catch (Exception ex)
+            {
+                ExtractStatus.Text = "❌ Lỗi đọc ảnh: " + ex.Message;
+                EdAutoExtractBtn.IsEnabled = true;
+                return;
+            }
+
+            // WP8.1 handles TLS 1.2 at OS level
+
+            // Build multipart request
+            string boundary = "----HyperOS" + DateTime.Now.Ticks.ToString("x");
+            string apiKey = "5vau8AvB3j2LwGEVC2xaW5Ji";
+
+            var request = (System.Net.HttpWebRequest)System.Net.WebRequest.Create("https://api.remove.bg/v1.0/removebg");
+            request.Method = "POST";
+            request.ContentType = "multipart/form-data; boundary=" + boundary;
+            request.Headers["X-Api-Key"] = apiKey;
+
+            request.BeginGetRequestStream(reqResult =>
+            {
+                try
+                {
+                    using (var reqStream = request.EndGetRequestStream(reqResult))
+                    {
+                        var encoding = System.Text.Encoding.UTF8;
+
+                        // File part
+                        string fileHeader = "--" + boundary + "\r\n" +
+                            "Content-Disposition: form-data; name=\"image_file\"; filename=\"background.jpg\"\r\n" +
+                            "Content-Type: image/jpeg\r\n\r\n";
+                        byte[] headerBytes = encoding.GetBytes(fileHeader);
+                        reqStream.Write(headerBytes, 0, headerBytes.Length);
+                        reqStream.Write(imageBytes, 0, imageBytes.Length);
+
+                        // Size param
+                        string sizeParam = "\r\n--" + boundary + "\r\n" +
+                            "Content-Disposition: form-data; name=\"size\"\r\n\r\nauto";
+
+                        byte[] sizeBytes = encoding.GetBytes(sizeParam);
+                        reqStream.Write(sizeBytes, 0, sizeBytes.Length);
+
+                        // End boundary
+                        byte[] endBytes = encoding.GetBytes("\r\n--" + boundary + "--\r\n");
+                        reqStream.Write(endBytes, 0, endBytes.Length);
+                    }
+
+                    request.BeginGetResponse(resResult =>
+                    {
+                        try
+                        {
+                            using (var response = request.EndGetResponse(resResult))
+                            using (var resStream = response.GetResponseStream())
+                            using (var ms = new MemoryStream())
+                            {
+                                resStream.CopyTo(ms);
+                                byte[] pngBytes = ms.ToArray();
+
+                                // Save to IsolatedStorage
+                                using (var store = IsolatedStorageFile.GetUserStoreForApplication())
+                                using (var file = store.CreateFile("Foreground.png"))
+                                {
+                                    file.Write(pngBytes, 0, pngBytes.Length);
+                                }
+
+                                // Update UI on dispatcher
+                                Dispatcher.BeginInvoke(() =>
+                                {
+                                    ExtractStatus.Text = "✅ Tách thành công!";
+                                    EdAutoExtractBtn.IsEnabled = true;
+                                    hasUnsavedChanges = true;
+
+                                    // Auto-enable depth effect
+                                    if (!useDepthEffect)
+                                    {
+                                        useDepthEffect = true;
+                                        Save("UseDepthEffect", true);
+                                        EdDepthToggle.IsChecked = true;
+                                        EdDepthLayers.Visibility = Visibility.Visible;
+                                    }
+
+                                    LoadPreviewImages();
+                                });
+                            }
+                        }
+                        catch (System.Net.WebException wex)
+                        {
+                            string errMsg = "Lỗi API";
+                            try
+                            {
+                                if (wex.Response != null)
+                                    using (var errStream = wex.Response.GetResponseStream())
+                                    using (var reader = new StreamReader(errStream))
+                                        errMsg = reader.ReadToEnd();
+                            }
+                            catch { }
+
+                            Dispatcher.BeginInvoke(() =>
+                            {
+                                ExtractStatus.Text = "❌ " + errMsg;
+                                EdAutoExtractBtn.IsEnabled = true;
+                            });
+                        }
+                    }, null);
+                }
+                catch (Exception ex)
+                {
+                    Dispatcher.BeginInvoke(() =>
+                    {
+                        ExtractStatus.Text = "❌ " + ex.Message;
+                        EdAutoExtractBtn.IsEnabled = true;
+                    });
+                }
+            }, null);
+        }
+
         private void EdDepthLayer_Changed(object sender, RoutedEventArgs e)
         {
             if (isLoading) return;
