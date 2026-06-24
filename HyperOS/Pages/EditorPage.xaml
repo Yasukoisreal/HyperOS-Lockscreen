@@ -452,14 +452,6 @@
                                 Click="EdForeground_Click" Style="{StaticResource EditorActionBtn}"/>
                             <Button x:Name="EdAutoExtractBtn" Content="✨ Auto Extract Foreground"
                                 Click="EdAutoExtract_Click" Style="{StaticResource EditorActionBtn}" Margin="0,4,0,0"/>
-                            <TextBlock Text="REMOVE.BG API KEY" Style="{StaticResource PropLabel}"/>
-                            <TextBox x:Name="EdApiKey" Background="#14FFFFFF" Foreground="White"
-                                FontSize="14" FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"
-                                LostFocus="EdApiKey_LostFocus"
-                                InputScope="Url"/>
-                            <TextBlock Text="Free: remove.bg/api • 50 lượt/tháng" FontSize="11"
-                                Foreground="#44FFFFFF" HorizontalAlignment="Center" Margin="0,2,0,0"
-                                FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"/>
                             <TextBlock x:Name="ExtractStatus" Text="" FontSize="12"
                                 Foreground="#88FFFFFF" HorizontalAlignment="Center" Margin="0,4,0,0"
                                 FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"/>
@@ -516,6 +508,15 @@
                         <StackPanel x:Name="MoreProps" Visibility="Collapsed">
                             <Button Content="🔐 Security Settings" Click="EdSecurity_Click"
                                 Style="{StaticResource EditorActionBtn}" Margin="0,8,0,0"/>
+
+                            <TextBlock Text="REMOVE.BG API KEY" Style="{StaticResource PropLabel}"/>
+                            <TextBox x:Name="EdApiKey" Background="#14FFFFFF" Foreground="White"
+                                FontSize="14" FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"
+                                LostFocus="EdApiKey_LostFocus"
+                                InputScope="Url"/>
+                            <TextBlock Text="Free: remove.bg/api • 50 lượt/tháng" FontSize="11"
+                                Foreground="#44FFFFFF" HorizontalAlignment="Center" Margin="0,2,0,0"
+                                FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"/>
 
                             <TextBlock Text=" " Style="{StaticResource PropLabel}"/>
                             <Button Content="ℹ About HyperOS" Click="EdAbout_Click"
