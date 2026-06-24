@@ -36,21 +36,22 @@
             </DoubleAnimationUsingKeyFrames>
         </Storyboard>
 
-        <!-- Unlock fade-out + scale animation -->
+        <!-- Unlock slide-up animation -->
         <Storyboard x:Name="UnlockAnim" Completed="UnlockAnim_Completed">
             <DoubleAnimation Storyboard.TargetName="OverlayInformationPanel"
                 Storyboard.TargetProperty="Opacity"
-                From="1" To="0" Duration="0:0:0.3">
+                From="1" To="0" Duration="0:0:0.35">
                 <DoubleAnimation.EasingFunction>
                     <CubicEase EasingMode="EaseIn"/>
                 </DoubleAnimation.EasingFunction>
             </DoubleAnimation>
             <DoubleAnimation Storyboard.TargetName="OverlayInformationPanel"
-                Storyboard.TargetProperty="(UIElement.RenderTransform).(CompositeTransform.ScaleX)"
-                From="1" To="1.05" Duration="0:0:0.3"/>
-            <DoubleAnimation Storyboard.TargetName="OverlayInformationPanel"
-                Storyboard.TargetProperty="(UIElement.RenderTransform).(CompositeTransform.ScaleY)"
-                From="1" To="1.05" Duration="0:0:0.3"/>
+                Storyboard.TargetProperty="(UIElement.RenderTransform).(CompositeTransform.TranslateY)"
+                From="0" To="-800" Duration="0:0:0.35">
+                <DoubleAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseIn"/>
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
         </Storyboard>
 
         <!-- Clock fade-in animation -->
