@@ -336,13 +336,7 @@ namespace HyperOS.Pages
             EdDepthColon.IsChecked = depthColonBehind;
             EdDepthMinute.IsChecked = depthMinuteBehind;
             EdDepthLayers.Visibility = useDepthEffect ? Visibility.Visible : Visibility.Collapsed;
-            EdAnimToggle.IsChecked = Get(s, "bIsAnimOn", true);
-            EdOwnerInfo.Text = Get<string>(s, "OwnerInfo", "");
-            EdApiKey.Text = Get<string>(s, "RemoveBgApiKey", "");
 
-            // Lock screen registration
-            try { EdLockToggle.IsChecked = ExtensibilityApp.IsLockScreenApplicationRegistered(); }
-            catch { }
         }
 
         private void ComputeDefaultClockPos(IsolatedStorageSettings s, out double x, out double y)
@@ -786,14 +780,12 @@ namespace HyperOS.Pages
             SetTabActive(TabWeather, TabWeatherText, tab == "Weather");
             SetTabActive(TabCountdown, TabCountdownText, tab == "Countdown");
             SetTabActive(TabDisplay, TabDisplayText, tab == "Display");
-            SetTabActive(TabMore, TabMoreText, tab == "More");
 
             // Show corresponding properties
             ClockProps.Visibility = tab == "Clock" ? Visibility.Visible : Visibility.Collapsed;
             WeatherProps.Visibility = tab == "Weather" ? Visibility.Visible : Visibility.Collapsed;
             CountdownProps.Visibility = tab == "Countdown" ? Visibility.Visible : Visibility.Collapsed;
             DisplayProps.Visibility = tab == "Display" ? Visibility.Visible : Visibility.Collapsed;
-            MoreProps.Visibility = tab == "More" ? Visibility.Visible : Visibility.Collapsed;
 
             // Select corresponding handle on preview
             switch (tab)
@@ -1209,83 +1201,9 @@ namespace HyperOS.Pages
             Save("DepthMinuteBehind", EdDepthMinute.IsChecked == true);
         }
 
-        private void EdAnimToggle_Changed(object sender, RoutedEventArgs e)
-        {
-            if (isLoading) return;
-            Save("bIsAnimOn", EdAnimToggle.IsChecked == true);
-        }
-
-        private void EdSaveOwner_Click(object sender, RoutedEventArgs e)
-        {
-            string info = EdOwnerInfo.Text.Trim();
-            Save("OwnerInfo", info);
-            MessageBox.Show(
-                string.IsNullOrEmpty(info) ? "Owner info cleared." : "Owner info saved!",
-                "Saved", MessageBoxButton.OK);
-        }
-
-        private void EdApiKey_LostFocus(object sender, RoutedEventArgs e)
-        {
-            Save("RemoveBgApiKey", EdApiKey.Text.Trim());
-        }
-
         #endregion
 
-        #region More Handlers
-
-        private void EdSecurity_Click(object sender, RoutedEventArgs e)
-        {
-            NavigationService.Navigate(
-                new Uri("/Pages/About.xaml", UriKind.Relative));
-        }
-
-        private void EdAbout_Click(object sender, RoutedEventArgs e)
-        {
-            NavigationService.Navigate(
-                new Uri("/Pages/About.xaml", UriKind.Relative));
-        }
-
-        private void EdLockToggle_Changed(object sender, RoutedEventArgs e)
-        {
-            if (isLoading) return;
-            try
-            {
-                if (EdLockToggle.IsChecked == true)
-                {
-                    using (var store = IsolatedStorageFile.GetUserStoreForApplication())
-                    {
-                        if (store.FileExists("Background.jpg"))
-                        {
-                            if (!ExtensibilityApp.IsLockScreenApplicationRegistered())
-                                ExtensibilityApp.RegisterLockScreenApplication();
-                        }
-                        else
-                        {
-                            MessageBox.Show("Please choose a background image first.",
-                                "Background Required", MessageBoxButton.OK);
-                            EdLockToggle.IsChecked = false;
-                        }
-                    }
-                }
-                else
-                {
-                    if (ExtensibilityApp.IsLockScreenApplicationRegistered())
-                    {
-                        var result = MessageBox.Show(
-                            "Remove HyperOS as your live lock screen?",
-                            "Remove", MessageBoxButton.OKCancel);
-                        if (result == MessageBoxResult.OK)
-                            ExtensibilityApp.UnregisterLockScreenApplication();
-                        else
-                            EdLockToggle.IsChecked = true;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Error: " + ex.Message, "Error", MessageBoxButton.OK);
-            }
-        }
+        #region My Sets
 
         // My Sets
         private static readonly string[] SetKeys = { "ClockStyle", "ClockPosition", "ClockHAlign",
@@ -1353,8 +1271,6 @@ namespace HyperOS.Pages
                     SaveSet(n);
             }
         }
-
-
 
         #endregion
 

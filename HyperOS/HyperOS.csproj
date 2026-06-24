@@ -103,6 +103,9 @@
     <Compile Include="Pages\LockScreen.xaml.cs">
       <DependentUpon>LockScreen.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Pages\SettingsPage.xaml.cs">
+      <DependentUpon>SettingsPage.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Pages\EditorPage.xaml.cs">
       <DependentUpon>EditorPage.xaml</DependentUpon>
     </Compile>
@@ -134,6 +137,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Pages\LockScreen.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Pages\SettingsPage.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

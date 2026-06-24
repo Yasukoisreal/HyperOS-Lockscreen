@@ -245,10 +245,6 @@
                             Tap="Tab_Tap" Tag="Display">
                         <TextBlock x:Name="TabDisplayText" Text="🖼 Display" Style="{StaticResource TabText}"/>
                     </Border>
-                    <Border x:Name="TabMore" Style="{StaticResource TabPill}"
-                            Tap="Tab_Tap" Tag="More">
-                        <TextBlock x:Name="TabMoreText" Text="⚙ More" Style="{StaticResource TabText}"/>
-                    </Border>
                 </StackPanel>
             </ScrollViewer>
 
@@ -484,56 +480,6 @@
                                 </Grid>
                             </StackPanel>
 
-                            <TextBlock Text="ANIMATIONS" Style="{StaticResource PropLabel}"/>
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Text="Entry Animations" FontSize="15" Foreground="White"
-                                    FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"
-                                    VerticalAlignment="Center"/>
-                                <toolkit:ToggleSwitch x:Name="EdAnimToggle" Grid.Column="1"
-                                    Checked="EdAnimToggle_Changed" Unchecked="EdAnimToggle_Changed"/>
-                            </Grid>
-
-                            <TextBlock Text="OWNER INFO" Style="{StaticResource PropLabel}"/>
-                            <TextBox x:Name="EdOwnerInfo" Background="#14FFFFFF" Foreground="White"
-                                BorderThickness="0" FontSize="14" MaxLength="100"/>
-                            <Button Content="Save Owner Info" Click="EdSaveOwner_Click"
-                                Style="{StaticResource EditorActionBtn}"/>
-                        </StackPanel>
-
-                        <!-- ══ MORE (Security, Sets, About) ══ -->
-                        <StackPanel x:Name="MoreProps" Visibility="Collapsed">
-                            <Button Content="🔐 Security Settings" Click="EdSecurity_Click"
-                                Style="{StaticResource EditorActionBtn}" Margin="0,8,0,0"/>
-
-                            <TextBlock Text="REMOVE.BG API KEY" Style="{StaticResource PropLabel}"/>
-                            <TextBox x:Name="EdApiKey" Background="#14FFFFFF" Foreground="White"
-                                FontSize="14" FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"
-                                LostFocus="EdApiKey_LostFocus"
-                                InputScope="Url"/>
-                            <TextBlock Text="Free: remove.bg/api • 50 lượt/tháng" FontSize="11"
-                                Foreground="#44FFFFFF" HorizontalAlignment="Center" Margin="0,2,0,0"
-                                FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"/>
-
-                            <TextBlock Text=" " Style="{StaticResource PropLabel}"/>
-                            <Button Content="ℹ About HyperOS" Click="EdAbout_Click"
-                                Style="{StaticResource EditorActionBtn}"/>
-
-                            <TextBlock Text="LOCK SCREEN" Style="{StaticResource PropLabel}"/>
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Text="Use as live lockscreen" FontSize="15" Foreground="White"
-                                    FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"
-                                    VerticalAlignment="Center"/>
-                                <toolkit:ToggleSwitch x:Name="EdLockToggle" Grid.Column="1"
-                                    Checked="EdLockToggle_Changed" Unchecked="EdLockToggle_Changed"/>
-                            </Grid>
                         </StackPanel>
 
                     </StackPanel>

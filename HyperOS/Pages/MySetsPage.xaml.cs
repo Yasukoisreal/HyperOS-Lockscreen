@@ -489,7 +489,7 @@ namespace HyperOS.Pages
         private void Settings_Tap(object sender, System.Windows.Input.GestureEventArgs e)
         {
             NavigationService.Navigate(
-                new Uri("/Pages/EditorPage.xaml", UriKind.Relative));
+                new Uri("/Pages/SettingsPage.xaml", UriKind.Relative));
         }
 
         #endregion
