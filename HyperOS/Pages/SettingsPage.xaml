@@ -47,10 +47,50 @@
                 <!-- SECURITY -->
                 <TextBlock Text="SECURITY" FontSize="13" Foreground="#55FFFFFF"
                     FontFamily="/Assets/Fonts/MiSans-Demibold.ttf#MiSans" Margin="0,24,0,8"/>
-                <Button Content="🔐 Security Settings" Click="Security_Click"
-                    Background="#14FFFFFF" Foreground="#DDFFFFFF" BorderThickness="0"
-                    FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans" FontSize="15"
-                    HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
+
+                <!-- PIN Code -->
+                <Grid Background="#14FFFFFF" Margin="0,0,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="PIN Code Lock" FontSize="15" Foreground="White"
+                        FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"
+                        VerticalAlignment="Center" Margin="12,0,0,0"/>
+                    <toolkit:ToggleSwitch x:Name="PinToggle" Grid.Column="1"
+                        Checked="PinToggle_Changed" Unchecked="PinToggle_Changed"/>
+                </Grid>
+                <StackPanel x:Name="PinPanel" Visibility="Collapsed" Margin="0,4,0,0">
+                    <TextBox x:Name="PinBox" Background="#14FFFFFF" Foreground="White"
+                        BorderThickness="0" FontSize="16" MaxLength="8"
+                        FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"
+                        InputScope="NumericPin"/>
+                    <Button Content="💾 Save PIN" Click="SavePin_Click"
+                        Background="#14FFFFFF" Foreground="#DDFFFFFF" BorderThickness="0"
+                        FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans" FontSize="15"
+                        HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                        Margin="0,4,0,0"/>
+                </StackPanel>
+
+                <!-- Pattern Lock -->
+                <Grid Background="#14FFFFFF" Margin="0,8,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Pattern Lock" FontSize="15" Foreground="White"
+                        FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"
+                        VerticalAlignment="Center" Margin="12,0,0,0"/>
+                    <toolkit:ToggleSwitch x:Name="PatternToggle" Grid.Column="1"
+                        Checked="PatternToggle_Changed" Unchecked="PatternToggle_Changed"/>
+                </Grid>
+                <TextBlock x:Name="PatternHint" Text="" FontSize="12" Foreground="#88FFFFFF"
+                    HorizontalAlignment="Center" Margin="0,4,0,0"
+                    FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"/>
+
+                <TextBlock x:Name="SecurityStatus" Text="" FontSize="12"
+                    Foreground="#88FFFFFF" HorizontalAlignment="Center" Margin="0,8,0,0"
+                    FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"/>
 
                 <!-- OWNER INFO -->
                 <TextBlock Text="OWNER INFO" FontSize="13" Foreground="#55FFFFFF"

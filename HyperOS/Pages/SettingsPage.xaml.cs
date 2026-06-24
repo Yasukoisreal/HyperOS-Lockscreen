@@ -24,6 +24,17 @@ namespace HyperOS.Pages
             try { LockToggle.IsChecked = ExtensibilityApp.IsLockScreenApplicationRegistered(); }
             catch { }
 
+            // Security
+            bool pinOn = Get(s, "bIsPasswordEnabled", false);
+            bool patternOn = Get(s, "bIsPatternOn", false);
+            PinToggle.IsChecked = pinOn;
+            PatternToggle.IsChecked = patternOn;
+            PinPanel.Visibility = pinOn ? Visibility.Visible : Visibility.Collapsed;
+            if (pinOn)
+                PinBox.Text = Get<string>(s, "sPassword", "");
+            if (patternOn)
+                PatternHint.Text = "✅ Pattern đã được thiết lập trên màn hình khoá";
+
             // Owner info
             OwnerInfoBox.Text = Get<string>(s, "OwnerInfo", "");
 
@@ -102,11 +113,84 @@ namespace HyperOS.Pages
             }
         }
 
-        private void Security_Click(object sender, RoutedEventArgs e)
+        #endregion
+
+        #region Security
+
+        private void PinToggle_Changed(object sender, RoutedEventArgs e)
         {
-            NavigationService.Navigate(
-                new Uri("/Pages/About.xaml", UriKind.Relative));
+            if (isLoading) return;
+            bool on = PinToggle.IsChecked == true;
+
+            if (on)
+            {
+                // Disable pattern if enabling PIN
+                if (PatternToggle.IsChecked == true)
+                {
+                    isLoading = true;
+                    PatternToggle.IsChecked = false;
+                    isLoading = false;
+                    Save("bIsPatternOn", false);
+                    PatternHint.Text = "";
+                }
+                PinPanel.Visibility = Visibility.Visible;
+                PinBox.Text = "";
+                PinBox.Focus();
+            }
+            else
+            {
+                Save("bIsPasswordEnabled", false);
+                Save("sPassword", "");
+                PinPanel.Visibility = Visibility.Collapsed;
+                SecurityStatus.Text = "🔓 PIN đã tắt";
+            }
         }
+
+        private void SavePin_Click(object sender, RoutedEventArgs e)
+        {
+            string pin = PinBox.Text.Trim();
+            if (pin.Length < 4)
+            {
+                MessageBox.Show("PIN phải có ít nhất 4 ký tự.", "Quá ngắn", MessageBoxButton.OK);
+                return;
+            }
+            Save("sPassword", pin);
+            Save("bIsPasswordEnabled", true);
+            SecurityStatus.Text = "🔒 PIN đã lưu (" + pin.Length + " ký tự)";
+        }
+
+        private void PatternToggle_Changed(object sender, RoutedEventArgs e)
+        {
+            if (isLoading) return;
+            bool on = PatternToggle.IsChecked == true;
+
+            if (on)
+            {
+                // Disable PIN if enabling Pattern
+                if (PinToggle.IsChecked == true)
+                {
+                    isLoading = true;
+                    PinToggle.IsChecked = false;
+                    isLoading = false;
+                    Save("bIsPasswordEnabled", false);
+                    PinPanel.Visibility = Visibility.Collapsed;
+                }
+                Save("bIsPatternOn", true);
+                PatternHint.Text = "⬆ Vẽ pattern trên màn hình khoá để thiết lập";
+                SecurityStatus.Text = "🔒 Pattern lock đã bật";
+            }
+            else
+            {
+                Save("bIsPatternOn", false);
+                Save("sPattern", "");
+                PatternHint.Text = "";
+                SecurityStatus.Text = "🔓 Pattern lock đã tắt";
+            }
+        }
+
+        #endregion
+
+        #region Other Handlers
 
         private void SaveOwner_Click(object sender, RoutedEventArgs e)
         {
