@@ -576,6 +576,17 @@ namespace HyperOS.Pages
             double h = handle.ActualHeight;
             ShowGuides(handle, liveX, liveY, w, h);
 
+            // Keep front clock layer in sync during drag
+            if ((string)handle.Tag == "Clock" && FrontClockPanel.Visibility == Visibility.Visible)
+            {
+                var fct = FrontClockPanel.RenderTransform as CompositeTransform;
+                if (fct != null)
+                {
+                    fct.TranslateX = ct.TranslateX;
+                    fct.TranslateY = ct.TranslateY;
+                }
+            }
+
             e.Handled = true;
         }
 
@@ -613,7 +624,11 @@ namespace HyperOS.Pages
                 case "Clock":
                     clockX = newX; clockY = newY;
                     if (FrontClockPanel.Visibility == Visibility.Visible)
+                    {
+                        var fct = FrontClockPanel.RenderTransform as CompositeTransform;
+                        if (fct != null) { fct.TranslateX = 0; fct.TranslateY = 0; }
                         UpdateDepthPreview();
+                    }
                     break;
                 case "Weather":  weatherX = newX; weatherY = newY; break;
                 case "Countdown": countdownX = newX; countdownY = newY; break;

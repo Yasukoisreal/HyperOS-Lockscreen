@@ -149,6 +149,7 @@
             <!-- Front-layer clock parts (rendered ABOVE foreground for depth effect) -->
             <Border x:Name="FrontClockPanel" IsHitTestVisible="False"
                     HorizontalAlignment="Left" VerticalAlignment="Top" Visibility="Collapsed">
+                <Border.RenderTransform><CompositeTransform/></Border.RenderTransform>
                 <StackPanel Orientation="Horizontal">
                     <TextBlock x:Name="PHourFront" Text="21"
                         FontFamily="/Assets/Fonts/MiSans-Demibold.ttf#MiSans"
