@@ -953,8 +953,7 @@ namespace HyperOS.Pages
 
         private void EdWeatherLocation_Click(object sender, RoutedEventArgs e)
         {
-            NavigationService.Navigate(
-                new Uri("/Pages/SettingsPage.xaml?section=weather", UriKind.Relative));
+            MessageBox.Show("Vị trí thời tiết sẽ tự động xác định bằng GPS.", "Thời tiết", MessageBoxButton.OK);
         }
 
         #endregion
@@ -1080,7 +1079,7 @@ namespace HyperOS.Pages
         private void EdSecurity_Click(object sender, RoutedEventArgs e)
         {
             NavigationService.Navigate(
-                new Uri("/Pages/SettingsPage.xaml?section=security", UriKind.Relative));
+                new Uri("/Pages/About.xaml", UriKind.Relative));
         }
 
         private void EdAbout_Click(object sender, RoutedEventArgs e)
