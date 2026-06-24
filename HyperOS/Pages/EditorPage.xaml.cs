@@ -1380,16 +1380,18 @@ namespace HyperOS.Pages
 
             // Show front panel, position to match PTimePanel exactly
             FrontClockPanel.Visibility = Visibility.Visible;
-            try
+
+            // Delay position calculation until layout has updated
+            Dispatcher.BeginInvoke(() =>
             {
-                var transform = PTimePanel.TransformToVisual(PreviewArea);
-                var pos = transform.Transform(new Point(0, 0));
-                FrontClockPanel.Margin = new Thickness(pos.X, pos.Y, 0, 0);
-            }
-            catch
-            {
-                FrontClockPanel.Margin = ClockHandle.Margin;
-            }
+                try
+                {
+                    var transform = PTimePanel.TransformToVisual(PreviewArea);
+                    var pos = transform.Transform(new Point(0, 0));
+                    FrontClockPanel.Margin = new Thickness(pos.X, pos.Y, 0, 0);
+                }
+                catch { }
+            });
 
             // Behind elements: keep visible but transparent when "in front"
             PHour.Opacity = depthHourBehind ? 1 : 0;
