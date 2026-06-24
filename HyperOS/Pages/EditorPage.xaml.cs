@@ -411,6 +411,7 @@ namespace HyperOS.Pages
                 }
             }
             catch { }
+            UpdateDepthPreview();
         }
 
         private void ApplyPreview()
@@ -609,7 +610,11 @@ namespace HyperOS.Pages
             string tag = (string)handle.Tag;
             switch (tag)
             {
-                case "Clock":    clockX = newX; clockY = newY; break;
+                case "Clock":
+                    clockX = newX; clockY = newY;
+                    if (FrontClockPanel.Visibility == Visibility.Visible)
+                        FrontClockPanel.Margin = new Thickness(newX, newY, 0, 0);
+                    break;
                 case "Weather":  weatherX = newX; weatherY = newY; break;
                 case "Countdown": countdownX = newX; countdownY = newY; break;
             }
@@ -1336,9 +1341,55 @@ namespace HyperOS.Pages
         private void EdDepthLayer_Changed(object sender, RoutedEventArgs e)
         {
             if (isLoading) return;
-            Save("DepthHourBehind", EdDepthHour.IsChecked == true);
-            Save("DepthColonBehind", EdDepthColon.IsChecked == true);
-            Save("DepthMinuteBehind", EdDepthMinute.IsChecked == true);
+            depthHourBehind = EdDepthHour.IsChecked == true;
+            depthColonBehind = EdDepthColon.IsChecked == true;
+            depthMinuteBehind = EdDepthMinute.IsChecked == true;
+            Save("DepthHourBehind", depthHourBehind);
+            Save("DepthColonBehind", depthColonBehind);
+            Save("DepthMinuteBehind", depthMinuteBehind);
+            UpdateDepthPreview();
+        }
+
+        private void UpdateDepthPreview()
+        {
+            bool depthOn = useDepthEffect && PreviewFg.Visibility == Visibility.Visible;
+            if (!depthOn)
+            {
+                // No depth — show all behind, hide front layer
+                PHour.Visibility = Visibility.Visible;
+                PColon.Visibility = Visibility.Visible;
+                PMinute.Visibility = Visibility.Visible;
+                FrontClockPanel.Visibility = Visibility.Collapsed;
+                return;
+            }
+
+            // Show front panel, position to match clock
+            FrontClockPanel.Visibility = Visibility.Visible;
+            FrontClockPanel.Margin = ClockHandle.Margin;
+
+            // Behind elements: visible only when "behind" is ON
+            PHour.Visibility = depthHourBehind ? Visibility.Visible : Visibility.Collapsed;
+            PColon.Visibility = depthColonBehind ? Visibility.Visible : Visibility.Collapsed;
+            PMinute.Visibility = depthMinuteBehind ? Visibility.Visible : Visibility.Collapsed;
+
+            // Front elements: visible only when "behind" is OFF (= in front)
+            PHourFront.Visibility = depthHourBehind ? Visibility.Collapsed : Visibility.Visible;
+            PColonFront.Visibility = depthColonBehind ? Visibility.Collapsed : Visibility.Visible;
+            PMinuteFront.Visibility = depthMinuteBehind ? Visibility.Collapsed : Visibility.Visible;
+
+            // Sync text, font, color from behind elements
+            PHourFront.Text = PHour.Text;
+            PColonFront.Text = PColon.Text;
+            PMinuteFront.Text = PMinute.Text;
+            PHourFront.FontFamily = PHour.FontFamily;
+            PColonFront.FontFamily = PColon.FontFamily;
+            PMinuteFront.FontFamily = PMinute.FontFamily;
+            PHourFront.FontSize = PHour.FontSize;
+            PColonFront.FontSize = PColon.FontSize;
+            PMinuteFront.FontSize = PMinute.FontSize;
+            PHourFront.Foreground = PHour.Foreground;
+            PColonFront.Foreground = PColon.Foreground;
+            PMinuteFront.Foreground = PMinute.Foreground;
         }
 
         #endregion

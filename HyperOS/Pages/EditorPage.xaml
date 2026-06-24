@@ -146,6 +146,22 @@
                 </Border.Background>
             </Border>
 
+            <!-- Front-layer clock parts (rendered ABOVE foreground for depth effect) -->
+            <StackPanel x:Name="FrontClockPanel" IsHitTestVisible="False"
+                        HorizontalAlignment="Left" VerticalAlignment="Top" Visibility="Collapsed">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                    <TextBlock x:Name="PHourFront" Text="21"
+                        FontFamily="/Assets/Fonts/MiSans-Demibold.ttf#MiSans"
+                        FontSize="105" Foreground="White" Visibility="Collapsed"/>
+                    <TextBlock x:Name="PColonFront" Text=":"
+                        FontFamily="/Assets/Fonts/MiSans-Demibold.ttf#MiSans"
+                        FontSize="105" Foreground="White" Visibility="Collapsed"/>
+                    <TextBlock x:Name="PMinuteFront" Text="30"
+                        FontFamily="/Assets/Fonts/MiSans-Demibold.ttf#MiSans"
+                        FontSize="105" Foreground="White" Visibility="Collapsed"/>
+                </StackPanel>
+            </StackPanel>
+
             <!-- Battery indicator (non-draggable, top-right) -->
             <StackPanel Orientation="Horizontal"
                         HorizontalAlignment="Right" VerticalAlignment="Top"
