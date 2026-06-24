@@ -505,6 +505,11 @@ namespace HyperOS.Pages
                 FrontColon.Visibility = Visibility.Collapsed;
                 FrontMinute.Visibility = Visibility.Collapsed;
                 FrontDate.Visibility = Visibility.Collapsed;
+                // Restore originals
+                PHour.Opacity = 1;
+                PColon.Opacity = 1;
+                PMinute.Opacity = 1;
+                PDatePanel.Opacity = 1;
                 return;
             }
 
