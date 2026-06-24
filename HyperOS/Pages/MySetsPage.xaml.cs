@@ -168,6 +168,8 @@ namespace HyperOS.Pages
             first.ClockColor = GetSetting(s, "ClockColor", first.ClockColor);
             first.ClockBlend = GetSetting(s, "ClockBlend", first.ClockBlend);
             first.DateAlign = GetSetting(s, "DateAlign", first.DateAlign);
+            first.ClockX = GetSetting(s, "ClockX", first.ClockX);
+            first.ClockY = GetSetting(s, "ClockY", first.ClockY);
             first.PreviewClockColor = ResolveClockColor(first.ClockColor, first.ClockBlend);
 
             // Other presets use their own saved values
