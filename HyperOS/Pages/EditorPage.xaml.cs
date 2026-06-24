@@ -1181,6 +1181,11 @@ namespace HyperOS.Pages
 
         private void Back_Tap(object sender, System.Windows.Input.GestureEventArgs e)
         {
+            if (hasUnsavedChanges)
+            {
+                UnsavedDialog.Visibility = Visibility.Visible;
+                return;
+            }
             if (NavigationService.CanGoBack)
                 NavigationService.GoBack();
         }
