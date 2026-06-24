@@ -18,38 +18,32 @@ namespace HyperOS.Pages
         private void SettingsPage_Loaded(object sender, RoutedEventArgs e)
         {
             isLoading = true;
-            try
-            {
-                var s = IsolatedStorageSettings.ApplicationSettings;
+            var s = IsolatedStorageSettings.ApplicationSettings;
 
-                // Lock screen
-                try { LockToggle.IsChecked = ExtensibilityApp.IsLockScreenApplicationRegistered(); }
-                catch { }
+            // Lock screen
+            try { LockToggle.IsChecked = ExtensibilityApp.IsLockScreenApplicationRegistered(); }
+            catch { }
 
-                // Security
-                bool pinOn = Get(s, "bIsPasswordEnabled", false);
-                bool patternOn = Get(s, "bIsPatternOn", false);
-                PinToggle.IsChecked = pinOn;
-                PatternToggle.IsChecked = patternOn;
-                PinPanel.Visibility = pinOn ? Visibility.Visible : Visibility.Collapsed;
-                if (pinOn)
-                    PinBox.Text = Get<string>(s, "sPassword", "");
-                if (patternOn)
-                    PatternHint.Text = "✅ Pattern đã được thiết lập trên màn hình khoá";
+            // Security
+            bool pinOn = Get(s, "bIsPasswordEnabled", false);
+            bool patternOn = Get(s, "bIsPatternOn", false);
+            PinToggle.IsChecked = pinOn;
+            PatternToggle.IsChecked = patternOn;
+            PinPanel.Visibility = pinOn ? Visibility.Visible : Visibility.Collapsed;
+            if (pinOn)
+                PinBox.Text = Get<string>(s, "sPassword", "");
+            if (patternOn)
+                PatternHint.Text = "✅ Pattern đã được thiết lập trên màn hình khoá";
 
-                // Owner info
-                OwnerInfoBox.Text = Get<string>(s, "OwnerInfo", "");
+            // Owner info
+            OwnerInfoBox.Text = Get<string>(s, "OwnerInfo", "");
 
-                // Animations
-                AnimToggle.IsChecked = Get(s, "bIsAnimOn", true);
+            // Animations
+            AnimToggle.IsChecked = Get(s, "bIsAnimOn", true);
 
-                // API Key
-                ApiKeyBox.Text = Get<string>(s, "RemoveBgApiKey", "");
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine("SettingsPage load error: " + ex);
-            }
+            // API Key
+            ApiKeyBox.Text = Get<string>(s, "RemoveBgApiKey", "");
+
             isLoading = false;
         }
 

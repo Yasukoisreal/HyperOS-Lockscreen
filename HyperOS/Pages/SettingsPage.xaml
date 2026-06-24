@@ -64,7 +64,7 @@
                     <TextBox x:Name="PinBox" Background="#14FFFFFF" Foreground="White"
                         BorderThickness="0" FontSize="16" MaxLength="8"
                         FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"
-                        InputScope="NumericPin"/>
+                        InputScope="Number"/>
                     <Button Content="💾 Save PIN" Click="SavePin_Click"
                         Background="#14FFFFFF" Foreground="#DDFFFFFF" BorderThickness="0"
                         FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans" FontSize="15"
