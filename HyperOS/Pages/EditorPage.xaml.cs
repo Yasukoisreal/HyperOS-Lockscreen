@@ -1091,8 +1091,13 @@ namespace HyperOS.Pages
 
             // Build multipart request
             string boundary = "----HyperOS" + DateTime.Now.Ticks.ToString("x");
-            string savedKey = Get<string>(IsolatedStorageSettings.ApplicationSettings, "RemoveBgApiKey", "");
-            string apiKey = string.IsNullOrEmpty(savedKey) ? "5vau8AvB3j2LwGEVC2xaW5Ji" : savedKey.Trim();
+            string apiKey = Get<string>(IsolatedStorageSettings.ApplicationSettings, "RemoveBgApiKey", "").Trim();
+            if (string.IsNullOrEmpty(apiKey))
+            {
+                ExtractStatus.Text = "❌ Nhập API key trước!";
+                EdAutoExtractBtn.IsEnabled = true;
+                return;
+            }
 
             var request = (System.Net.HttpWebRequest)System.Net.WebRequest.Create("https://api.remove.bg/v1.0/removebg");
             request.Method = "POST";
