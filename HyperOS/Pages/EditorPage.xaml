@@ -400,8 +400,13 @@
                                 <toolkit:ToggleSwitch x:Name="EdWeatherToggle" Grid.Column="1"
                                     Checked="EdWeatherToggle_Changed" Unchecked="EdWeatherToggle_Changed"/>
                             </Grid>
-                            <Button Content="📍 Set Location..." Click="EdWeatherLocation_Click"
-                                Style="{StaticResource EditorActionBtn}"/>
+                            <TextBlock Text="LOCATION" Style="{StaticResource PropLabel}"/>
+                            <TextBox x:Name="EdWeatherCity" Background="#14FFFFFF" Foreground="White"
+                                BorderThickness="0" FontSize="14"
+                                FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"
+                                InputScope="Maps"/>
+                            <Button Content="📍 Save Location" Click="EdWeatherLocation_Click"
+                                Style="{StaticResource EditorActionBtn}" Margin="0,4,0,0"/>
                         </StackPanel>
 
                         <!-- ══ COUNTDOWN PROPERTIES ══ -->

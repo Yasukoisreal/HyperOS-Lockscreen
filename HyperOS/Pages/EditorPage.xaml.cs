@@ -327,6 +327,7 @@ namespace HyperOS.Pages
             UpdateDateAlignSelection();
 
             EdWeatherToggle.IsChecked = showWeather;
+            EdWeatherCity.Text = Get<string>(s, "WeatherCity", "");
             EdCountdownToggle.IsChecked = showCountdown;
             EdCountdownName.Text = Get<string>(s, "CountdownName", "");
             if (s.Contains("CountdownTarget"))
@@ -946,7 +947,14 @@ namespace HyperOS.Pages
 
         private void EdWeatherLocation_Click(object sender, RoutedEventArgs e)
         {
-            MessageBox.Show("Vị trí thời tiết sẽ tự động xác định bằng GPS.", "Thời tiết", MessageBoxButton.OK);
+            string city = EdWeatherCity.Text.Trim();
+            if (string.IsNullOrEmpty(city))
+            {
+                MessageBox.Show("Nhập tên thành phố.", "Thiếu thông tin", MessageBoxButton.OK);
+                return;
+            }
+            Save("WeatherCity", city);
+            MessageBox.Show("Đã lưu: " + city, "Thời tiết", MessageBoxButton.OK);
         }
 
         #endregion
