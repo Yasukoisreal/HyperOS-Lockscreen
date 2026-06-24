@@ -630,6 +630,10 @@ namespace HyperOS.Pages
             // ── Left edge alignment (x=24, common padding) ──
             if (Math.Abs(x - 24) < MAGNET) x = 24;
 
+            // ── Right edge alignment ──
+            double rightEdge = SCREEN_W - 24 - w;
+            if (Math.Abs(x - rightEdge) < MAGNET) x = rightEdge;
+
             // ── Align with other visible elements ──
             Border[] handles = { ClockHandle, WeatherHandle, CountdownHandle };
             foreach (var other in handles)
@@ -664,6 +668,10 @@ namespace HyperOS.Pages
 
             // Left edge guide
             if (Math.Abs(x - 24) < MAGNET) { showV = true; gx = 24; }
+
+            // Right edge guide
+            double rightX = SCREEN_W - 24 - w;
+            if (Math.Abs(x - rightX) < MAGNET) { showV = true; gx = SCREEN_W - 24; }
 
             // Element alignment guides
             Border[] handles = { ClockHandle, WeatherHandle, CountdownHandle };
