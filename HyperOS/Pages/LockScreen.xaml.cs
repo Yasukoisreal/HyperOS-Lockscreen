@@ -1452,7 +1452,7 @@ namespace HyperOS.Pages
 
             stack.Children.Add(new TextBlock
             {
-                Text = DateTime.Now.ToString("ddd  ·  MMM dd"),
+                Text = DateTime.Now.DayOfWeek.ToString() + "  ·  " + DateTime.Now.ToString("MMMM d"),
                 FontFamily = new FontFamily("/Assets/Fonts/MiSans-Regular.ttf#MiSans"),
                 FontSize = 10, Foreground = dateBrush,
                 HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 0, 0, 2)
