@@ -1458,7 +1458,7 @@ namespace HyperOS.Pages
                 HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 0, 0, 2)
             });
 
-            var timeP = new StackPanel { Orientation = System.Windows.Controls.Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center };
+            var timeP = new StackPanel { Orientation = System.Windows.Controls.Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, -sz * 0.16, 0, 0) };
             timeP.Children.Add(new TextBlock { Text = DateTime.Now.ToString("HH"), FontFamily = ClockFontFamilies[fi], FontSize = sz, Foreground = hourBrush });
             timeP.Children.Add(new TextBlock { Text = ":", FontFamily = ClockFontFamilies[fi], FontSize = sz, Foreground = colonBrush, Margin = new Thickness(0, -sz * 0.08, 0, 0) });
             timeP.Children.Add(new TextBlock { Text = DateTime.Now.ToString("mm"), FontFamily = ClockFontFamilies[fi], FontSize = sz, Foreground = minuteBrush });

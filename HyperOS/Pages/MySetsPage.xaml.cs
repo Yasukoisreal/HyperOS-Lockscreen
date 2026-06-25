@@ -424,7 +424,8 @@ namespace HyperOS.Pages
             var timePanel = new StackPanel
             {
                 Orientation = System.Windows.Controls.Orientation.Horizontal,
-                HorizontalAlignment = HorizontalAlignment.Center
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Margin = new Thickness(0, -sz * 0.16, 0, 0)
             };
             timePanel.Children.Add(new TextBlock { Text = DateTime.Now.ToString("HH"), FontFamily = PreviewFonts[fi], FontSize = sz, Foreground = hourBrush });
             timePanel.Children.Add(new TextBlock { Text = ":", FontFamily = PreviewFonts[fi], FontSize = sz, Foreground = colonBrush, Margin = new Thickness(0, -sz * 0.08, 0, 0) });
