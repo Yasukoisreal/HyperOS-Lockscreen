@@ -29,8 +29,12 @@ namespace HyperOS.Pages
             public Color PreviewClockColor { get; set; }
             public double ClockX { get; set; }  // -1 = center
             public double ClockY { get; set; }  // -1 = center
+            public bool UseDepthEffect { get; set; }
+            public bool DepthHourBehind { get; set; }
+            public bool DepthColonBehind { get; set; }
+            public bool DepthMinuteBehind { get; set; }
 
-            public Preset() { ClockX = -1; ClockY = -1; }
+            public Preset() { ClockX = -1; ClockY = -1; DepthHourBehind = true; DepthColonBehind = true; DepthMinuteBehind = true; }
         }
 
         private static readonly List<Preset> Presets = new List<Preset>
@@ -112,6 +116,7 @@ namespace HyperOS.Pages
             new FontFamily("Segoe WP Black"),
         };
         private Dictionary<int, BitmapImage> presetWallpapers = new Dictionary<int, BitmapImage>();
+        private BitmapImage globalForeground;
 
         public MySetsPage()
         {
@@ -121,9 +126,32 @@ namespace HyperOS.Pages
         private void Page_Loaded(object sender, RoutedEventArgs e)
         {
             LoadPresetWallpapers();
+            LoadForegroundImage();
             ReadSavedPresets();
             BuildCards();
             GoToIndex(0, false);
+        }
+
+        private void LoadForegroundImage()
+        {
+            globalForeground = null;
+            try
+            {
+                using (var store = IsolatedStorageFile.GetUserStoreForApplication())
+                {
+                    if (store.FileExists("Foreground.png"))
+                    {
+                        using (var stream = store.OpenFile("Foreground.png",
+                            System.IO.FileMode.Open, System.IO.FileAccess.Read))
+                        {
+                            var bmp = new BitmapImage();
+                            bmp.SetSource(stream);
+                            globalForeground = bmp;
+                        }
+                    }
+                }
+            }
+            catch { }
         }
 
         private void LoadPresetWallpapers()
@@ -170,6 +198,10 @@ namespace HyperOS.Pages
             first.DateAlign = GetSetting(s, "DateAlign", first.DateAlign);
             first.ClockX = GetSetting(s, "ClockX", first.ClockX);
             first.ClockY = GetSetting(s, "ClockY", first.ClockY);
+            first.UseDepthEffect = GetSetting(s, "UseDepthEffect", false);
+            first.DepthHourBehind = GetSetting(s, "DepthHourBehind", true);
+            first.DepthColonBehind = GetSetting(s, "DepthColonBehind", true);
+            first.DepthMinuteBehind = GetSetting(s, "DepthMinuteBehind", true);
             first.PreviewClockColor = ResolveClockColor(first.ClockColor, first.ClockBlend);
 
             // Other presets use their own saved values
@@ -186,6 +218,10 @@ namespace HyperOS.Pages
                     p.DateAlign = GetSetting(s, prefix + "DateAlign", p.DateAlign);
                     p.ClockX = GetSetting(s, prefix + "ClockX", p.ClockX);
                     p.ClockY = GetSetting(s, prefix + "ClockY", p.ClockY);
+                    p.UseDepthEffect = GetSetting(s, prefix + "UseDepthEffect", false);
+                    p.DepthHourBehind = GetSetting(s, prefix + "DepthHourBehind", true);
+                    p.DepthColonBehind = GetSetting(s, prefix + "DepthColonBehind", true);
+                    p.DepthMinuteBehind = GetSetting(s, prefix + "DepthMinuteBehind", true);
                     p.PreviewClockColor = ResolveClockColor(p.ClockColor, p.ClockBlend);
                 }
             }
@@ -305,52 +341,39 @@ namespace HyperOS.Pages
                 }
             });
 
-            // Clock - position scaled from 480x800 editor to card size
-            var clockStack = new StackPanel();
-
-            if (preset.ClockX >= 0 && preset.ClockY >= 0)
-            {
-                // Scale from editor coords (480x800) to card coords (200x360)
-                double scaleX = CARD_W / 480.0;
-                double scaleY = CARD_H / 800.0;
-                double cx = preset.ClockX * scaleX;
-                double cy = preset.ClockY * scaleY;
-                clockStack.HorizontalAlignment = HorizontalAlignment.Left;
-                clockStack.VerticalAlignment = VerticalAlignment.Top;
-                clockStack.Margin = new Thickness(cx, cy, 0, 0);
-            }
-            else
-            {
-                clockStack.VerticalAlignment = VerticalAlignment.Center;
-                clockStack.HorizontalAlignment = HorizontalAlignment.Center;
-                clockStack.Margin = new Thickness(0, -10, 0, 0);
-            }
-
-            clockStack.Children.Add(new TextBlock
-            {
-                Text = DateTime.Now.ToString("ddd  ·  MMM dd"),
-                FontFamily = new FontFamily("/Assets/Fonts/MiSans-Regular.ttf#MiSans"),
-                FontSize = 10,
-                Foreground = new SolidColorBrush(Color.FromArgb(180, 255, 255, 255)),
-                HorizontalAlignment = HorizontalAlignment.Center,
-                Margin = new Thickness(0, 0, 0, 2)
-            });
-
+            // Clock setup
             int fi = Math.Min(preset.ClockStyle, PreviewFonts.Length - 1);
             int[] sizes = { 36, 42, 48, 54, 64 };
             int sz = sizes[Math.Min(preset.ClockSize, sizes.Length - 1)];
             var brush = new SolidColorBrush(preset.PreviewClockColor);
+            var transBrush = new SolidColorBrush(Colors.Transparent);
+            bool hasDepth = preset.UseDepthEffect && globalForeground != null;
 
-            var timePanel = new StackPanel
+            // --- BEHIND LAYER (or full layer if no depth) ---
+            var behindStack = BuildClockStack(preset, fi, sz,
+                hasDepth ? (preset.DepthHourBehind ? brush : transBrush) : brush,
+                hasDepth ? (preset.DepthColonBehind ? brush : transBrush) : brush,
+                hasDepth ? (preset.DepthMinuteBehind ? brush : transBrush) : brush,
+                hasDepth ? transBrush : new SolidColorBrush(Color.FromArgb(180, 255, 255, 255)));
+            inner.Children.Add(behindStack);
+
+            // --- FOREGROUND OVERLAY ---
+            if (hasDepth)
             {
-                Orientation = System.Windows.Controls.Orientation.Horizontal,
-                HorizontalAlignment = HorizontalAlignment.Center
-            };
-            timePanel.Children.Add(new TextBlock { Text = DateTime.Now.ToString("HH"), FontFamily = PreviewFonts[fi], FontSize = sz, Foreground = brush });
-            timePanel.Children.Add(new TextBlock { Text = ":", FontFamily = PreviewFonts[fi], FontSize = sz, Foreground = brush, Margin = new Thickness(0, -sz * 0.08, 0, 0) });
-            timePanel.Children.Add(new TextBlock { Text = DateTime.Now.ToString("mm"), FontFamily = PreviewFonts[fi], FontSize = sz, Foreground = brush });
-            clockStack.Children.Add(timePanel);
-            inner.Children.Add(clockStack);
+                inner.Children.Add(new Border
+                {
+                    Background = new ImageBrush { ImageSource = globalForeground, Stretch = Stretch.UniformToFill },
+                    IsHitTestVisible = false
+                });
+
+                // --- FRONT LAYER (parts NOT behind) ---
+                var frontStack = BuildClockStack(preset, fi, sz,
+                    preset.DepthHourBehind ? transBrush : brush,
+                    preset.DepthColonBehind ? transBrush : brush,
+                    preset.DepthMinuteBehind ? transBrush : brush,
+                    new SolidColorBrush(Color.FromArgb(180, 255, 255, 255)));
+                inner.Children.Add(frontStack);
+            }
 
             // Frame border
             inner.Children.Add(new Border
@@ -362,6 +385,48 @@ namespace HyperOS.Pages
             });
 
             return card;
+        }
+
+        private StackPanel BuildClockStack(Preset preset, int fi, int sz,
+            Brush hourBrush, Brush colonBrush, Brush minuteBrush, Brush dateBrush)
+        {
+            var stack = new StackPanel();
+            if (preset.ClockX >= 0 && preset.ClockY >= 0)
+            {
+                double scaleX = CARD_W / 480.0;
+                double scaleY = CARD_H / 800.0;
+                stack.HorizontalAlignment = HorizontalAlignment.Left;
+                stack.VerticalAlignment = VerticalAlignment.Top;
+                stack.Margin = new Thickness(preset.ClockX * scaleX, preset.ClockY * scaleY, 0, 0);
+            }
+            else
+            {
+                stack.VerticalAlignment = VerticalAlignment.Center;
+                stack.HorizontalAlignment = HorizontalAlignment.Center;
+                stack.Margin = new Thickness(0, -10, 0, 0);
+            }
+            stack.IsHitTestVisible = false;
+
+            stack.Children.Add(new TextBlock
+            {
+                Text = DateTime.Now.ToString("ddd  ·  MMM dd"),
+                FontFamily = new FontFamily("/Assets/Fonts/MiSans-Regular.ttf#MiSans"),
+                FontSize = 10, Foreground = dateBrush,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Margin = new Thickness(0, 0, 0, 2)
+            });
+
+            var timePanel = new StackPanel
+            {
+                Orientation = System.Windows.Controls.Orientation.Horizontal,
+                HorizontalAlignment = HorizontalAlignment.Center
+            };
+            timePanel.Children.Add(new TextBlock { Text = DateTime.Now.ToString("HH"), FontFamily = PreviewFonts[fi], FontSize = sz, Foreground = hourBrush });
+            timePanel.Children.Add(new TextBlock { Text = ":", FontFamily = PreviewFonts[fi], FontSize = sz, Foreground = colonBrush, Margin = new Thickness(0, -sz * 0.08, 0, 0) });
+            timePanel.Children.Add(new TextBlock { Text = DateTime.Now.ToString("mm"), FontFamily = PreviewFonts[fi], FontSize = sz, Foreground = minuteBrush });
+            stack.Children.Add(timePanel);
+
+            return stack;
         }
 
         #endregion
