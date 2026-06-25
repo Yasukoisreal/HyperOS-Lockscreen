@@ -290,8 +290,12 @@
                 <Grid.RenderTransform><CompositeTransform/></Grid.RenderTransform>
                 <StackPanel x:Name="BehindClockPanel" VerticalAlignment="Center" HorizontalAlignment="Center"
                             Margin="0,0,0,40">
-                    <!-- Spacer matching DateInfoPanel height -->
-                    <Border x:Name="BehindDateSpacer" Height="28"/>
+                    <!-- Spacer matching DateInfoPanel: same font, size, margin, invisible -->
+                    <StackPanel x:Name="BehindDateSpacer" Orientation="Horizontal"
+                                HorizontalAlignment="Center" Margin="0,0,0,4">
+                        <TextBlock Text="X" FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"
+                            FontSize="20" Foreground="Transparent"/>
+                    </StackPanel>
                     <!-- Behind clock parts -->
                     <StackPanel x:Name="BehindTimePanel" Orientation="Horizontal" HorizontalAlignment="Center">
                         <TextBlock x:Name="HourPartBehind" Text="20"
