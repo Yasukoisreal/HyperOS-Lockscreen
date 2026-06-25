@@ -36,33 +36,33 @@
             </DoubleAnimationUsingKeyFrames>
         </Storyboard>
 
-        <!-- Unlock slide-up animation -->
+        <!-- Unlock slide-up animation (no From — starts from current swipe position) -->
         <Storyboard x:Name="UnlockAnim" Completed="UnlockAnim_Completed">
             <DoubleAnimation Storyboard.TargetName="OverlayInformationPanel"
                 Storyboard.TargetProperty="Opacity"
-                From="1" To="0" Duration="0:0:0.35">
+                To="0" Duration="0:0:0.35">
                 <DoubleAnimation.EasingFunction>
                     <CubicEase EasingMode="EaseIn"/>
                 </DoubleAnimation.EasingFunction>
             </DoubleAnimation>
             <DoubleAnimation Storyboard.TargetName="OverlayInformationPanel"
                 Storyboard.TargetProperty="(UIElement.RenderTransform).(CompositeTransform.TranslateY)"
-                From="0" To="-800" Duration="0:0:0.35">
+                To="-800" Duration="0:0:0.35">
                 <DoubleAnimation.EasingFunction>
                     <CubicEase EasingMode="EaseIn"/>
                 </DoubleAnimation.EasingFunction>
             </DoubleAnimation>
-            <!-- Behind layer must follow the same slide-up -->
+            <!-- Behind layer follows the same slide-up -->
             <DoubleAnimation Storyboard.TargetName="BehindForegroundGrid"
                 Storyboard.TargetProperty="Opacity"
-                From="1" To="0" Duration="0:0:0.35">
+                To="0" Duration="0:0:0.35">
                 <DoubleAnimation.EasingFunction>
                     <CubicEase EasingMode="EaseIn"/>
                 </DoubleAnimation.EasingFunction>
             </DoubleAnimation>
             <DoubleAnimation Storyboard.TargetName="BehindForegroundGrid"
                 Storyboard.TargetProperty="(UIElement.RenderTransform).(CompositeTransform.TranslateY)"
-                From="0" To="-800" Duration="0:0:0.35">
+                To="-800" Duration="0:0:0.35">
                 <DoubleAnimation.EasingFunction>
                     <CubicEase EasingMode="EaseIn"/>
                 </DoubleAnimation.EasingFunction>
