@@ -133,9 +133,6 @@ namespace HyperOS.Pages
             batteryTimer.Start();
             UpdateBattery();
 
-            // Play animations on first load
-            PlayEntryAnimations();
-
             // Weather timer (every 30 min)
             weatherTimer = new DispatcherTimer { Interval = TimeSpan.FromMinutes(30) };
             weatherTimer.Tick += (s, a) => FetchWeather();
@@ -146,10 +143,13 @@ namespace HyperOS.Pages
                 FetchWeather();      // Then refresh from API
             }
 
-            // Load extras
+            // Load depth effect BEFORE animations so animation knows which parts to skip
             LoadForeground();
             ApplyDepthLayers();
             UpdateCountdown();
+
+            // Play animations on first load (must be after ApplyDepthLayers)
+            PlayEntryAnimations();
 
             isFirstLoad = false;
         }
@@ -206,11 +206,72 @@ namespace HyperOS.Pages
             {
                 try
                 {
-                    ((Storyboard)Resources["TimeAnim"]).Begin();
+                    // Build clock animation in code to respect depth layers.
+                    // Only animate parts that are NOT behind the foreground.
+                    var sb = new Storyboard();
+                    int delayMs = 0;
+
+                    // Hour
+                    if (!useDepthEffect || !depthHourBehind)
+                    {
+                        AddFadeSlide(sb, HourPart, delayMs, 600);
+                    }
+                    delayMs += 100;
+
+                    // Colon
+                    if (!useDepthEffect || !depthColonBehind)
+                    {
+                        AddFadeSlide(sb, ColonPart, delayMs, 600);
+                    }
+                    delayMs += 100;
+
+                    // Minute
+                    if (!useDepthEffect || !depthMinuteBehind)
+                    {
+                        AddFadeSlide(sb, MinutePart, delayMs, 600);
+                    }
+
+                    if (sb.Children.Count > 0)
+                        sb.Begin();
+
                     ((Storyboard)Resources["DayAnim"]).Begin();
                 }
                 catch { }
             }
+        }
+
+        private void AddFadeSlide(Storyboard sb, UIElement target, int delayMs, int durationMs)
+        {
+            // Opacity: 0 → 1
+            var opAnim = new DoubleAnimationUsingKeyFrames();
+            Storyboard.SetTarget(opAnim, target);
+            Storyboard.SetTargetProperty(opAnim, new PropertyPath("(UIElement.Opacity)"));
+            opAnim.KeyFrames.Add(new EasingDoubleKeyFrame { KeyTime = TimeSpan.Zero, Value = 0 });
+            if (delayMs > 0)
+                opAnim.KeyFrames.Add(new EasingDoubleKeyFrame { KeyTime = TimeSpan.FromMilliseconds(delayMs), Value = 0 });
+            opAnim.KeyFrames.Add(new EasingDoubleKeyFrame
+            {
+                KeyTime = TimeSpan.FromMilliseconds(delayMs + durationMs),
+                Value = 1,
+                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+            });
+            sb.Children.Add(opAnim);
+
+            // TranslateY: 30 → 0
+            var trAnim = new DoubleAnimationUsingKeyFrames();
+            Storyboard.SetTarget(trAnim, target);
+            Storyboard.SetTargetProperty(trAnim,
+                new PropertyPath("(UIElement.RenderTransform).(CompositeTransform.TranslateY)"));
+            trAnim.KeyFrames.Add(new EasingDoubleKeyFrame { KeyTime = TimeSpan.Zero, Value = 30 });
+            if (delayMs > 0)
+                trAnim.KeyFrames.Add(new EasingDoubleKeyFrame { KeyTime = TimeSpan.FromMilliseconds(delayMs), Value = 30 });
+            trAnim.KeyFrames.Add(new EasingDoubleKeyFrame
+            {
+                KeyTime = TimeSpan.FromMilliseconds(delayMs + durationMs),
+                Value = 0,
+                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+            });
+            sb.Children.Add(trAnim);
         }
 
         #region Time & Date
