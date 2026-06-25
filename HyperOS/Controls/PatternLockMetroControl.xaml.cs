@@ -18,7 +18,7 @@ namespace HyperOS.Controls
 
         // Properties
         public bool IsRegisterationMode { get; set; }
-        public int Tries { get; set; } = 5;
+        public int Tries { get; set; }
 
         // Internal state
         private readonly Point[] dotCenters;
@@ -51,6 +51,7 @@ namespace HyperOS.Controls
         public PatternLockMetroControl()
         {
             InitializeComponent();
+            Tries = 5;
 
             dots = new Ellipse[]
             {

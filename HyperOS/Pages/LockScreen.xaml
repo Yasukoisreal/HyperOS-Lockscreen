@@ -58,7 +58,7 @@
         <Storyboard x:Key="TimeAnim">
             <DoubleAnimationUsingKeyFrames
                 Storyboard.TargetProperty="(UIElement.Opacity)"
-                Storyboard.TargetName="HourText">
+                Storyboard.TargetName="HourPart">
                 <EasingDoubleKeyFrame KeyTime="0" Value="0"/>
                 <EasingDoubleKeyFrame KeyTime="0:0:0.600" Value="1">
                     <EasingDoubleKeyFrame.EasingFunction>
@@ -68,7 +68,7 @@
             </DoubleAnimationUsingKeyFrames>
             <DoubleAnimationUsingKeyFrames
                 Storyboard.TargetProperty="(UIElement.RenderTransform).(CompositeTransform.TranslateY)"
-                Storyboard.TargetName="HourText">
+                Storyboard.TargetName="HourPart">
                 <EasingDoubleKeyFrame KeyTime="0" Value="30"/>
                 <EasingDoubleKeyFrame KeyTime="0:0:0.600" Value="0">
                     <EasingDoubleKeyFrame.EasingFunction>

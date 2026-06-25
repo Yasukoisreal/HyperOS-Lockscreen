@@ -568,8 +568,8 @@ namespace HyperOS.Pages
                 bIsPatternOn = (bool)s["bIsPatternOn"];
             if (s.Contains("bIsAnimOn"))
                 bIsAnimOn = (bool)s["bIsAnimOn"];
-            if (s.Contains("UserPassword"))
-                UserPassword = (string)s["UserPassword"];
+            if (s.Contains("sPassword"))
+                UserPassword = (string)s["sPassword"];
             if (s.Contains("ClockStyle"))
                 clockStyle = (int)s["ClockStyle"];
             if (s.Contains("ClockPosition"))
@@ -1485,7 +1485,8 @@ namespace HyperOS.Pages
                 // Copy all saved preset slot settings to global keys
                 string[] keys = { "ClockStyle", "ClockPosition", "ClockHAlign", "ClockColor", "ClockBlend", "ClockSize",
                     "ShowWeather", "ShowCountdown", "UseDepthEffect", "DepthHourBehind", "DepthColonBehind", "DepthMinuteBehind",
-                    "ClockX", "ClockY", "WeatherX", "WeatherY", "CountdownX", "CountdownY", "bIsAnimOn", "DateAlign" };
+                    "ClockX", "ClockY", "WeatherX", "WeatherY", "CountdownX", "CountdownY",
+                    "bIsAnimOn", "DateAlign", "CountdownName", "CountdownTarget", "OwnerInfo" };
                 foreach (var key in keys)
                 {
                     string sk = pfx + key;
@@ -1546,7 +1547,11 @@ namespace HyperOS.Pages
             ApplyClockColor();
             ApplyClockSize();
             ApplyFreePositions();
+            lastTimeText = "";
             UpdateTime();
+            LoadForeground();
+            ApplyDepthLayers();
+            UpdateCountdown();
         }
 
         private void MySets_Close_Tap(object sender, System.Windows.Input.GestureEventArgs e)

@@ -62,7 +62,7 @@
                 </Grid>
                 <StackPanel x:Name="PinPanel" Visibility="Collapsed" Margin="0,4,0,0">
                     <TextBox x:Name="PinBox" Background="#14FFFFFF" Foreground="White"
-                        BorderThickness="0" FontSize="16" MaxLength="8"
+                        BorderThickness="0" FontSize="16" MaxLength="4"
                         FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"
                         InputScope="Number"/>
                     <Button Content="Save PIN" Click="SavePin_Click"

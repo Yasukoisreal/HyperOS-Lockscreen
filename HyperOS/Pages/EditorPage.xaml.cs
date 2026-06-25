@@ -571,14 +571,14 @@ namespace HyperOS.Pages
             {
                 switch (clockBlend)
                 {
-                    case 1: brush = MakeGrad(Color.FromArgb(255, 255, 120, 50),
-                                Color.FromArgb(255, 255, 60, 120)); break;  // Sunset
-                    case 2: brush = MakeGrad(Color.FromArgb(255, 0, 180, 255),
-                                Color.FromArgb(255, 0, 80, 200)); break;    // Ocean
-                    case 3: brush = MakeGrad(Color.FromArgb(255, 0, 255, 150),
-                                Color.FromArgb(255, 100, 0, 255)); break;   // Aurora
+                    case 1: brush = MakeGrad(Color.FromArgb(255, 255, 140, 50),
+                                Color.FromArgb(255, 255, 80, 150)); break;  // Sunset
+                    case 2: brush = MakeGrad(Color.FromArgb(255, 0, 210, 255),
+                                Color.FromArgb(255, 58, 80, 200)); break;   // Ocean
+                    case 3: brush = MakeGrad(Color.FromArgb(255, 80, 255, 120),
+                                Color.FromArgb(255, 180, 80, 255)); break;  // Aurora
                     case 4: brush = MakeGrad(Color.FromArgb(255, 255, 0, 200),
-                                Color.FromArgb(255, 0, 200, 255)); break;   // Neon
+                                Color.FromArgb(255, 0, 255, 255)); break;   // Neon
                     case 5: brush = MakeGrad(Color.FromArgb(255, 255, 105, 180),
                                 Color.FromArgb(255, 148, 0, 211)); break;   // Rose
                     case 6: brush = MakeGrad(Color.FromArgb(255, 255, 50, 0),
@@ -597,9 +597,9 @@ namespace HyperOS.Pages
                 switch (clockColor)
                 {
                     case 1: brush = new SolidColorBrush(Color.FromArgb(255, 255, 215, 0)); break;   // Gold
-                    case 2: brush = new SolidColorBrush(Color.FromArgb(255, 135, 206, 235)); break; // Sky Blue
+                    case 2: brush = new SolidColorBrush(Color.FromArgb(255, 135, 206, 250)); break; // Sky Blue
                     case 3: brush = new SolidColorBrush(Color.FromArgb(255, 255, 182, 193)); break; // Pink
-                    case 4: brush = new SolidColorBrush(Color.FromArgb(255, 255, 68, 68)); break;   // Red
+                    case 4: brush = new SolidColorBrush(Color.FromArgb(255, 255, 99, 99)); break;   // Red
                     case 5: brush = new SolidColorBrush(Color.FromArgb(255, 91, 255, 176)); break;  // Mint
                     case 6: brush = new SolidColorBrush(Color.FromArgb(255, 196, 167, 255)); break; // Lavender
                     case 7: brush = new SolidColorBrush(Color.FromArgb(255, 255, 140, 66)); break;  // Orange
@@ -617,7 +617,7 @@ namespace HyperOS.Pages
         {
             var lgb = new LinearGradientBrush();
             lgb.StartPoint = new Point(0, 0);
-            lgb.EndPoint = new Point(0, 1);
+            lgb.EndPoint = new Point(1, 1);
             lgb.GradientStops.Add(new GradientStop { Color = from, Offset = 0 });
             lgb.GradientStops.Add(new GradientStop { Color = to, Offset = 1 });
             return lgb;
@@ -1000,6 +1000,7 @@ namespace HyperOS.Pages
             Save("DateAlign", dateAlign);
             UpdateDateAlignSelection();
             ApplyDateAlign();
+            Dispatcher.BeginInvoke(() => UpdateDepthFrontLayer());
         }
 
         private void UpdateDateAlignSelection()
@@ -1255,6 +1256,7 @@ namespace HyperOS.Pages
             Save("UseDepthEffect", useDepthEffect);
             EdDepthLayers.Visibility = useDepthEffect ? Visibility.Visible : Visibility.Collapsed;
             LoadPreviewImages();
+            Dispatcher.BeginInvoke(() => UpdateDepthFrontLayer());
         }
 
         private void EdForeground_Click(object sender, RoutedEventArgs e)

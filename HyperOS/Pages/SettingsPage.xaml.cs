@@ -149,14 +149,14 @@ namespace HyperOS.Pages
         private void SavePin_Click(object sender, RoutedEventArgs e)
         {
             string pin = PinBox.Text.Trim();
-            if (pin.Length < 4)
+            if (pin.Length != 4)
             {
-                MessageBox.Show("PIN phải có ít nhất 4 ký tự.", "Quá ngắn", MessageBoxButton.OK);
+                MessageBox.Show("PIN phải có đúng 4 chữ số.", "Sai định dạng", MessageBoxButton.OK);
                 return;
             }
             Save("sPassword", pin);
             Save("bIsPasswordEnabled", true);
-            SecurityStatus.Text = "🔒 PIN đã lưu (" + pin.Length + " ký tự)";
+            SecurityStatus.Text = "🔒 PIN đã lưu";
         }
 
         private void PatternToggle_Changed(object sender, RoutedEventArgs e)
@@ -182,7 +182,7 @@ namespace HyperOS.Pages
             else
             {
                 Save("bIsPatternOn", false);
-                Save("sPattern", "");
+                Save("AppPatternToMatch", "");
                 PatternHint.Text = "";
                 SecurityStatus.Text = "🔓 Pattern lock đã tắt";
             }
