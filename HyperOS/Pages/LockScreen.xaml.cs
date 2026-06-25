@@ -1374,6 +1374,11 @@ namespace HyperOS.Pages
             };
 
             var inner = new Grid { Width = MS_CW, Height = MS_CH };
+            inner.Clip = new RectangleGeometry
+            {
+                Rect = new Rect(0, 0, MS_CW, MS_CH),
+                RadiusX = 24, RadiusY = 24
+            };
             card.Child = inner;
 
             // Gradient

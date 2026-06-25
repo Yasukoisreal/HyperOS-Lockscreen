@@ -322,6 +322,11 @@ namespace HyperOS.Pages
             };
 
             var inner = new Grid { Width = CARD_W, Height = CARD_H };
+            inner.Clip = new RectangleGeometry
+            {
+                Rect = new Rect(0, 0, CARD_W, CARD_H),
+                RadiusX = 24, RadiusY = 24
+            };
             card.Child = inner;
 
             // Gradient overlay
