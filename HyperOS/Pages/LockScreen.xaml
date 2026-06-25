@@ -296,13 +296,19 @@
                     <StackPanel x:Name="BehindTimePanel" Orientation="Horizontal" HorizontalAlignment="Center">
                         <TextBlock x:Name="HourPartBehind" Text="20"
                             FontFamily="/Assets/Fonts/MiSans-Demibold.ttf#MiSans"
-                            FontSize="105" Foreground="White"/>
+                            FontSize="105" Foreground="White">
+                            <TextBlock.RenderTransform><CompositeTransform/></TextBlock.RenderTransform>
+                        </TextBlock>
                         <TextBlock x:Name="ColonPartBehind" Text=":"
                             FontFamily="/Assets/Fonts/MiSans-Demibold.ttf#MiSans"
-                            FontSize="105" Foreground="White"/>
+                            FontSize="105" Foreground="White">
+                            <TextBlock.RenderTransform><CompositeTransform/></TextBlock.RenderTransform>
+                        </TextBlock>
                         <TextBlock x:Name="MinutePartBehind" Text="05"
                             FontFamily="/Assets/Fonts/MiSans-Demibold.ttf#MiSans"
-                            FontSize="105" Foreground="White"/>
+                            FontSize="105" Foreground="White">
+                            <TextBlock.RenderTransform><CompositeTransform/></TextBlock.RenderTransform>
+                        </TextBlock>
                     </StackPanel>
                 </StackPanel>
             </Grid>

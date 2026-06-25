@@ -207,32 +207,31 @@ namespace HyperOS.Pages
                 try
                 {
                     // Build clock animation in code to respect depth layers.
-                    // Only animate parts that are NOT behind the foreground.
+                    // Animate the visible version of each part (front or behind).
                     var sb = new Storyboard();
                     int delayMs = 0;
 
                     // Hour
-                    if (!useDepthEffect || !depthHourBehind)
-                    {
+                    if (useDepthEffect && depthHourBehind)
+                        AddFadeSlide(sb, HourPartBehind, delayMs, 600);
+                    else
                         AddFadeSlide(sb, HourPart, delayMs, 600);
-                    }
                     delayMs += 100;
 
                     // Colon
-                    if (!useDepthEffect || !depthColonBehind)
-                    {
+                    if (useDepthEffect && depthColonBehind)
+                        AddFadeSlide(sb, ColonPartBehind, delayMs, 600);
+                    else
                         AddFadeSlide(sb, ColonPart, delayMs, 600);
-                    }
                     delayMs += 100;
 
                     // Minute
-                    if (!useDepthEffect || !depthMinuteBehind)
-                    {
+                    if (useDepthEffect && depthMinuteBehind)
+                        AddFadeSlide(sb, MinutePartBehind, delayMs, 600);
+                    else
                         AddFadeSlide(sb, MinutePart, delayMs, 600);
-                    }
 
-                    if (sb.Children.Count > 0)
-                        sb.Begin();
+                    sb.Begin();
 
                     ((Storyboard)Resources["DayAnim"]).Begin();
                 }
