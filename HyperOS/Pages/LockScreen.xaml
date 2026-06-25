@@ -52,6 +52,21 @@
                     <CubicEase EasingMode="EaseIn"/>
                 </DoubleAnimation.EasingFunction>
             </DoubleAnimation>
+            <!-- Behind layer must follow the same slide-up -->
+            <DoubleAnimation Storyboard.TargetName="BehindForegroundGrid"
+                Storyboard.TargetProperty="Opacity"
+                From="1" To="0" Duration="0:0:0.35">
+                <DoubleAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseIn"/>
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+            <DoubleAnimation Storyboard.TargetName="BehindForegroundGrid"
+                Storyboard.TargetProperty="(UIElement.RenderTransform).(CompositeTransform.TranslateY)"
+                From="0" To="-800" Duration="0:0:0.35">
+                <DoubleAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseIn"/>
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
         </Storyboard>
 
         <!-- Clock fade-in animation -->
@@ -258,6 +273,9 @@
                         <DoubleAnimation Duration="0:0:0.3" To="0"
                             Storyboard.TargetProperty="(UIElement.Opacity)"
                             Storyboard.TargetName="OverlayInformationPanel"/>
+                        <DoubleAnimation Duration="0:0:0.3" To="0"
+                            Storyboard.TargetProperty="(UIElement.Opacity)"
+                            Storyboard.TargetName="BehindForegroundGrid"/>
                     </Storyboard>
                 </VisualState>
                 <VisualState x:Name="PassClose"/>
