@@ -17,7 +17,7 @@ namespace HyperOS
             base.OnNavigatedTo(e);
 
             // If screen is locked → show lock screen
-            // If user opened app normally → show settings
+            // If user opened app normally → show editor
             try
             {
                 if (SystemProtection.ScreenLocked)
@@ -28,14 +28,14 @@ namespace HyperOS
                 else
                 {
                     NavigationService.Navigate(
-                        new Uri("/Pages/MySetsPage.xaml", UriKind.Relative));
+                        new Uri("/Pages/EditorPage.xaml", UriKind.Relative));
                 }
             }
             catch
             {
-                // Fallback to My Sets if SystemProtection fails
+                // Fallback to Editor if SystemProtection fails
                 NavigationService.Navigate(
-                    new Uri("/Pages/MySetsPage.xaml", UriKind.Relative));
+                    new Uri("/Pages/EditorPage.xaml", UriKind.Relative));
             }
         }
     }

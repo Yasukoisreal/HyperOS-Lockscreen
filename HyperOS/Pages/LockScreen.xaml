@@ -258,7 +258,7 @@
         </Style>
     </phone:PhoneApplicationPage.Resources>
 
-    <Grid x:Name="LayoutRoot" Background="Black" Hold="LayoutRoot_Hold">
+    <Grid x:Name="LayoutRoot" Background="Black">
         <VisualStateManager.VisualStateGroups>
             <VisualStateGroup x:Name="VisualStateGroup">
                 <VisualStateGroup.Transitions>
@@ -291,6 +291,8 @@
                     <ImageBrush x:Name="BackgroundBrush" ImageSource="/Assets/BlurBackground.jpg" Stretch="UniformToFill"/>
                 </Border.Background>
             </Border>
+
+
 
             <!-- Bottom gradient overlay for text readability -->
             <Rectangle VerticalAlignment="Bottom" Height="420" CacheMode="BitmapCache">
@@ -332,6 +334,11 @@
                             <TextBlock.RenderTransform><CompositeTransform/></TextBlock.RenderTransform>
                         </TextBlock>
                     </StackPanel>
+                    <!-- Analog Clock Behind (Collapsed by default) -->
+                    <Canvas x:Name="AnalogClockCanvasBehind" Width="200" Height="200"
+                            HorizontalAlignment="Center" Visibility="Collapsed">
+                        <Canvas.RenderTransform><CompositeTransform/></Canvas.RenderTransform>
+                    </Canvas>
                 </StackPanel>
             </Grid>
 
@@ -386,6 +393,11 @@
                             <TextBlock.RenderTransform><CompositeTransform/></TextBlock.RenderTransform>
                         </TextBlock>
                     </StackPanel>
+                    <!-- Analog Clock (Collapsed by default) -->
+                    <Canvas x:Name="AnalogClockCanvas" Width="200" Height="200"
+                            HorizontalAlignment="Center" Visibility="Collapsed">
+                        <Canvas.RenderTransform><CompositeTransform/></Canvas.RenderTransform>
+                    </Canvas>
                 </StackPanel>
 
                 <!-- Weather widget (independent position) -->
@@ -609,51 +621,6 @@
             </StackPanel>
         </Grid>
 
-        <!-- ============ MY SETS OVERLAY ============ -->
-        <Grid x:Name="MySetsOverlay" Visibility="Collapsed" Background="#EE111111">
-            <!-- Header -->
-            <Grid VerticalAlignment="Top" Margin="16,28,16,0" Canvas.ZIndex="10">
-                <TextBlock Text="My Sets"
-                    FontFamily="/Assets/Fonts/MiSans-Demibold.ttf#MiSans"
-                    FontSize="20" Foreground="#AAFFFFFF"
-                    HorizontalAlignment="Left" VerticalAlignment="Center"/>
-                <Border Tap="MySets_Close_Tap" HorizontalAlignment="Right"
-                    Width="40" Height="40" Background="Transparent">
-                    <TextBlock Text="✕" FontSize="18" Foreground="#77FFFFFF"
-                        HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                </Border>
-            </Grid>
-
-            <!-- Title -->
-            <StackPanel VerticalAlignment="Top" Margin="24,70,24,0" Canvas.ZIndex="10">
-                <TextBlock x:Name="MySetsTitle" Text="Classic"
-                    FontFamily="/Assets/Fonts/MiSans-Demibold.ttf#MiSans"
-                    FontSize="32" Foreground="White" HorizontalAlignment="Center"/>
-                <TextBlock x:Name="MySetsSubtitle" Text=""
-                    FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"
-                    FontSize="13" Foreground="#77FFFFFF" HorizontalAlignment="Center"
-                    Margin="0,2,0,0"/>
-            </StackPanel>
-
-            <!-- Carousel Canvas -->
-            <Canvas x:Name="MySetsCarousel"
-                    Margin="0,150,0,100"
-                    Background="Transparent"
-                    ManipulationDelta="MySets_ManipulationDelta"
-                    ManipulationCompleted="MySets_ManipulationCompleted"/>
-
-            <!-- Bottom -->
-            <StackPanel VerticalAlignment="Bottom" Margin="0,0,0,20" HorizontalAlignment="Center">
-                <Border Tap="MySets_Apply_Tap"
-                    Background="#55FFFFFF" CornerRadius="22" Padding="36,10"
-                    Margin="0,0,0,14">
-                    <TextBlock Text="Apply"
-                        FontFamily="/Assets/Fonts/MiSans-Demibold.ttf#MiSans"
-                        FontSize="15" Foreground="White" HorizontalAlignment="Center"/>
-                </Border>
-                <StackPanel x:Name="MySetsDotsPanel" Orientation="Horizontal" HorizontalAlignment="Center"/>
-            </StackPanel>
-        </Grid>
     </Grid>
 
 </phone:PhoneApplicationPage>

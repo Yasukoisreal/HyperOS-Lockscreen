@@ -92,22 +92,6 @@ namespace HyperOS
         // This code will not execute when the application is first launched
         private void Application_Activated(object sender, ActivatedEventArgs e)
         {
-            // Check if we need to go to MySetsPage (from lock screen hold)
-            try
-            {
-                var s = System.IO.IsolatedStorage.IsolatedStorageSettings.ApplicationSettings;
-                if (s.Contains("GoToMySets") && (bool)s["GoToMySets"])
-                {
-                    s.Remove("GoToMySets");
-                    s.Save();
-                    RootFrame.Dispatcher.BeginInvoke(() =>
-                    {
-                        RootFrame.Navigate(
-                            new Uri("/Pages/MySetsPage.xaml", UriKind.Relative));
-                    });
-                }
-            }
-            catch { }
         }
 
         // Code to execute when the application is deactivated (sent to background)

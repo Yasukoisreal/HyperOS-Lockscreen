@@ -58,11 +58,12 @@
         <Grid x:Name="PreviewArea" Background="Black">
 
             <!-- Background image -->
-            <Border Tap="Background_Tap">
+            <Border Tap="Background_Tap" DoubleTap="PreviewArea_DoubleTap">
                 <Border.Background>
                     <ImageBrush x:Name="PreviewBgBrush" Stretch="UniformToFill"/>
                 </Border.Background>
             </Border>
+
 
             <!-- Bottom gradient for readability -->
             <Rectangle VerticalAlignment="Bottom" Height="420" IsHitTestVisible="False">
@@ -108,6 +109,9 @@
                             FontFamily="/Assets/Fonts/MiSans-Demibold.ttf#MiSans"
                             FontSize="105" Foreground="White"/>
                     </StackPanel>
+                    <!-- Analog Clock Preview (Collapsed by default) -->
+                    <Canvas x:Name="PAnalogClock" Width="200" Height="200"
+                            HorizontalAlignment="Center" Visibility="Collapsed"/>
                 </StackPanel>
             </Border>
 
@@ -210,7 +214,7 @@
         <!-- ═══════════════════════════════════════════════════ -->
         <!--              HEADER OVERLAY (top)                  -->
         <!-- ═══════════════════════════════════════════════════ -->
-        <Grid VerticalAlignment="Top" Height="56" IsHitTestVisible="True">
+        <Grid x:Name="HeaderBar" VerticalAlignment="Top" Height="56" IsHitTestVisible="True">
             <Grid.Background>
                 <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
                     <GradientStop Color="#DD080810" Offset="0"/>
@@ -228,6 +232,10 @@
             </StackPanel>
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right"
                         VerticalAlignment="Center" Margin="0,0,8,0">
+                <Border Tap="Settings_Tap" Width="44" Height="44" Background="Transparent" Margin="0,0,8,0">
+                    <TextBlock Text="⚙" FontSize="20" Foreground="#AAFFFFFF"
+                        HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
                 <Border Tap="SaveAndBack_Tap" CornerRadius="14" Padding="12,6"
                         Background="#FF3A7BF2"
                         ToolTipService.ToolTip="Save">
@@ -241,7 +249,7 @@
         <!-- ═══════════════════════════════════════════════════ -->
         <!--       BOTTOM CONTROLS (tab bar + properties)       -->
         <!-- ═══════════════════════════════════════════════════ -->
-        <Grid VerticalAlignment="Bottom">
+        <Grid x:Name="BottomControls" VerticalAlignment="Bottom">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
@@ -285,7 +293,30 @@
 
                         <!-- ══ CLOCK PROPERTIES ══ -->
                         <StackPanel x:Name="ClockProps" Visibility="Visible">
-                            <!-- Font -->
+                            <!-- Layout -->
+                            <TextBlock Text="LAYOUT" Style="{StaticResource PropLabel}"/>
+                            <ScrollViewer HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled">
+                            <StackPanel x:Name="LayoutPanel" Orientation="Horizontal">
+                                <Border x:Name="LayoutHoriz" Tap="Layout_Tap" Tag="0" Style="{StaticResource PropOptionPill}">
+                                    <TextBlock Text="Horizontal" Style="{StaticResource PropOptionText}"/>
+                                </Border>
+                                <Border x:Name="LayoutVert" Tap="Layout_Tap" Tag="1" Style="{StaticResource PropOptionPill}">
+                                    <TextBlock Text="Vertical" Style="{StaticResource PropOptionText}"/>
+                                </Border>
+                                <Border x:Name="LayoutAnalog1" Tap="Layout_Tap" Tag="2" Style="{StaticResource PropOptionPill}">
+                                    <TextBlock Text="Minimal" Style="{StaticResource PropOptionText}"/>
+                                </Border>
+                                <Border x:Name="LayoutAnalog2" Tap="Layout_Tap" Tag="3" Style="{StaticResource PropOptionPill}">
+                                    <TextBlock Text="Classic" Style="{StaticResource PropOptionText}"/>
+                                </Border>
+                                <Border x:Name="LayoutAnalog3" Tap="Layout_Tap" Tag="4" Style="{StaticResource PropOptionPill}">
+                                    <TextBlock Text="Swiss" Style="{StaticResource PropOptionText}"/>
+                                </Border>
+                            </StackPanel>
+                            </ScrollViewer>
+
+                            <!-- Font (hidden for analog) -->
+                            <StackPanel x:Name="FontSection">
                             <TextBlock Text="FONT" Style="{StaticResource PropLabel}"/>
                             <StackPanel Orientation="Horizontal">
                                 <Border Tap="FontPrev_Tap" Style="{StaticResource PropOptionPill}">
@@ -299,6 +330,7 @@
                                 <Border Tap="FontNext_Tap" Style="{StaticResource PropOptionPill}">
                                     <TextBlock Text="▶" Style="{StaticResource PropOptionText}"/>
                                 </Border>
+                            </StackPanel>
                             </StackPanel>
 
                             <!-- Size -->
@@ -397,7 +429,7 @@
 
                             <!-- Date Align -->
                             <TextBlock Text="DATE ALIGN" Style="{StaticResource PropLabel}"/>
-                            <StackPanel x:Name="DateAlignPanel" Orientation="Horizontal">
+                            <StackPanel x:Name="DateAlignPanel" Orientation="Horizontal" Visibility="Visible">
                                 <Border x:Name="AlignLeft" Tap="DateAlign_Tap" Tag="0" Style="{StaticResource PropOptionPill}">
                                     <TextBlock Text="Left" Style="{StaticResource PropOptionText}"/>
                                 </Border>
@@ -494,7 +526,17 @@
 
                             <StackPanel x:Name="EdDepthLayers" Visibility="Collapsed">
                                 <TextBlock Text="DEPTH LAYERS  (ON = Behind)" Style="{StaticResource PropLabel}"/>
-                                <Grid><Grid.ColumnDefinitions>
+                                <!-- Analog: single clock toggle -->
+                                <Grid x:Name="DepthRowClock" Visibility="Collapsed"><Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                    <TextBlock Text="Clock" FontSize="14" Foreground="#CCC" VerticalAlignment="Center"
+                                        FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"/>
+                                    <toolkit:ToggleSwitch x:Name="EdDepthClock" Grid.Column="1"
+                                        Checked="EdDepthLayer_Changed" Unchecked="EdDepthLayer_Changed"/>
+                                </Grid>
+                                <!-- Digital: Hour -->
+                                <Grid x:Name="DepthRowHour"><Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
                                     <TextBlock Text="Hour" FontSize="14" Foreground="#CCC" VerticalAlignment="Center"
@@ -502,7 +544,8 @@
                                     <toolkit:ToggleSwitch x:Name="EdDepthHour" Grid.Column="1"
                                         Checked="EdDepthLayer_Changed" Unchecked="EdDepthLayer_Changed"/>
                                 </Grid>
-                                <Grid><Grid.ColumnDefinitions>
+                                <!-- Digital: Colon (hidden for vertical/analog) -->
+                                <Grid x:Name="DepthRowColon"><Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
                                     <TextBlock Text="Colon" FontSize="14" Foreground="#CCC" VerticalAlignment="Center"
@@ -510,7 +553,8 @@
                                     <toolkit:ToggleSwitch x:Name="EdDepthColon" Grid.Column="1"
                                         Checked="EdDepthLayer_Changed" Unchecked="EdDepthLayer_Changed"/>
                                 </Grid>
-                                <Grid><Grid.ColumnDefinitions>
+                                <!-- Digital: Minute -->
+                                <Grid x:Name="DepthRowMinute"><Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
                                     <TextBlock Text="Minute" FontSize="14" Foreground="#CCC" VerticalAlignment="Center"

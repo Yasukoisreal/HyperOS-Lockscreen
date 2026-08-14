@@ -96,6 +96,7 @@
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Helpers\ClockRenderer.cs" />
     <Compile Include="LocalizedStrings.cs" />
     <Compile Include="LockScreenPage.xaml.cs">
       <DependentUpon>LockScreenPage.xaml</DependentUpon>
@@ -108,9 +109,6 @@
     </Compile>
     <Compile Include="Pages\EditorPage.xaml.cs">
       <DependentUpon>EditorPage.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="Pages\MySetsPage.xaml.cs">
-      <DependentUpon>MySetsPage.xaml</DependentUpon>
     </Compile>
     <Compile Include="Pages\About.xaml.cs">
       <DependentUpon>About.xaml</DependentUpon>
@@ -145,10 +143,6 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Pages\EditorPage.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="Pages\MySetsPage.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -225,6 +219,8 @@
     <Content Include="Assets\BlurBackground.jpg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+
+    <!-- Wallpaper Pictures -->
 
     <!-- Tiles -->
     <Content Include="Assets\Tiles\FlipCycleTileLarge.png">
