@@ -62,25 +62,33 @@ namespace HyperOS.Helpers
             // Prevent memory leak on WP8.1: reuse existing elements if already drawn
             if (canvas.Children.Count > 0)
             {
-                Line hHand = null, mHand = null;
+                Rectangle hHand = null, mHand = null;
                 foreach (UIElement el in canvas.Children)
                 {
                     var fe = el as FrameworkElement;
                     if (fe != null)
                     {
-                        if ((string)fe.Tag == "HourHand") hHand = el as Line;
-                        else if ((string)fe.Tag == "MinuteHand") mHand = el as Line;
+                        if ((string)fe.Tag == "HourHand") hHand = el as Rectangle;
+                        else if ((string)fe.Tag == "MinuteHand") mHand = el as Rectangle;
                     }
                 }
                 if (hHand != null && mHand != null)
                 {
-                    double ha = (((hour % 12) + minute / 60.0) * 30 - 90) * Math.PI / 180;
-                    hHand.X2 = cx + (r * 0.5) * Math.Cos(ha);
-                    hHand.Y2 = cy + (r * 0.5) * Math.Sin(ha);
+                    double haRot = ((hour % 12) + minute / 60.0) * 30 + 180;
+                    var ht = (TransformGroup)hHand.RenderTransform;
+                    if (ht.Children.Count > 0)
+                    {
+                        var hr = ht.Children[0] as RotateTransform;
+                        if (hr != null) hr.Angle = haRot;
+                    }
 
-                    double ma = (minute * 6 - 90) * Math.PI / 180;
-                    mHand.X2 = cx + (r * 0.72) * Math.Cos(ma);
-                    mHand.Y2 = cy + (r * 0.72) * Math.Sin(ma);
+                    double maRot = minute * 6 + 180;
+                    var mt = (TransformGroup)mHand.RenderTransform;
+                    if (mt.Children.Count > 0)
+                    {
+                        var mr = mt.Children[0] as RotateTransform;
+                        if (mr != null) mr.Angle = maRot;
+                    }
                 }
                 return;
             }
@@ -89,21 +97,6 @@ namespace HyperOS.Helpers
 
             Brush shapeBrush = clockBrush;
             Brush textBrush = clockBrush;
-
-            if (clockBrush is LinearGradientBrush)
-            {
-                var oldLg = (LinearGradientBrush)clockBrush;
-                if (oldLg.GradientStops.Count >= 2)
-                {
-                    var c1 = oldLg.GradientStops[0].Color;
-                    var c2 = oldLg.GradientStops[oldLg.GradientStops.Count - 1].Color;
-                    byte avgR = (byte)((c1.R + c2.R) / 2);
-                    byte avgG = (byte)((c1.G + c2.G) / 2);
-                    byte avgB = (byte)((c1.B + c2.B) / 2);
-                    shapeBrush = new SolidColorBrush(MC.FromArgb(255, avgR, avgG, avgB));
-                    textBrush = shapeBrush;
-                }
-            }
 
             // Outer circle
             var circle = new Ellipse
@@ -147,55 +140,65 @@ namespace HyperOS.Helpers
             {
                 for (int i = 0; i < 12; i++)
                 {
-                    double a = (i * 30 - 90) * Math.PI / 180;
+                    double tickAngle = i * 30 + 180;
                     double r1 = r * 0.85;
                     double r2 = (i % 3 == 0) ? r * 0.7 : r * 0.78;
                     double thick = (i % 3 == 0) ? 2.5 : 1.2;
-                    var tick = new Line
+                    double tickLen = r1 - r2;
+                    
+                    var tgTick = new TransformGroup();
+                    tgTick.Children.Add(new TranslateTransform { Y = r2 });
+                    tgTick.Children.Add(new RotateTransform { Angle = tickAngle, CenterX = thick / 2, CenterY = 0 });
+
+                    var tick = new Rectangle
                     {
-                        X1 = cx + r1 * Math.Cos(a), Y1 = cy + r1 * Math.Sin(a),
-                        X2 = cx + r2 * Math.Cos(a), Y2 = cy + r2 * Math.Sin(a),
-                        Stroke = shapeBrush,
-                        StrokeThickness = thick,
+                        Width = thick,
+                        Height = tickLen,
+                        Fill = shapeBrush,
+                        RenderTransform = tgTick,
                         Opacity = 0.8
                     };
+                    Canvas.SetLeft(tick, cx - thick / 2);
+                    Canvas.SetTop(tick, cy);
                     canvas.Children.Add(tick);
                 }
             }
             // style == 2: Minimal — no decorations
 
             // Hour hand
-            double hourAngle = ((hour % 12) + minute / 60.0) * 30 - 90;
-            double ha2 = hourAngle * Math.PI / 180;
+            double haRotate = ((hour % 12) + minute / 60.0) * 30 + 180;
             double hourLen = r * 0.5;
-            var hourHand = new Line
+            var tgHour = new TransformGroup();
+            tgHour.Children.Add(new RotateTransform { Angle = haRotate, CenterX = 2, CenterY = 0 });
+            var hourHand = new Rectangle
             {
                 Tag = "HourHand",
-                X1 = cx, Y1 = cy,
-                X2 = cx + hourLen * Math.Cos(ha2),
-                Y2 = cy + hourLen * Math.Sin(ha2),
-                Stroke = shapeBrush,
-                StrokeThickness = 4,
-                StrokeStartLineCap = PenLineCap.Round,
-                StrokeEndLineCap = PenLineCap.Round
+                Width = 4,
+                Height = hourLen,
+                Fill = shapeBrush,
+                RadiusX = 2, RadiusY = 2,
+                RenderTransform = tgHour
             };
+            Canvas.SetLeft(hourHand, cx - 2);
+            Canvas.SetTop(hourHand, cy);
             canvas.Children.Add(hourHand);
 
             // Minute hand
-            double minAngle = minute * 6 - 90;
-            double ma2 = minAngle * Math.PI / 180;
+            double maRotate = minute * 6 + 180;
             double minLen = r * 0.72;
-            var minHand = new Line
+            var tgMin = new TransformGroup();
+            tgMin.Children.Add(new RotateTransform { Angle = maRotate, CenterX = 1.5, CenterY = 0 });
+            var minHand = new Rectangle
             {
                 Tag = "MinuteHand",
-                X1 = cx, Y1 = cy,
-                X2 = cx + minLen * Math.Cos(ma2),
-                Y2 = cy + minLen * Math.Sin(ma2),
-                Stroke = shapeBrush,
-                StrokeThickness = 3,
-                StrokeStartLineCap = PenLineCap.Round,
-                StrokeEndLineCap = PenLineCap.Round
+                Width = 3,
+                Height = minLen,
+                Fill = shapeBrush,
+                RadiusX = 1.5, RadiusY = 1.5,
+                RenderTransform = tgMin
             };
+            Canvas.SetLeft(minHand, cx - 1.5);
+            Canvas.SetTop(minHand, cy);
             canvas.Children.Add(minHand);
 
             // Center dot
