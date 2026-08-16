@@ -578,6 +578,19 @@ namespace HyperOS.Pages
                     if (s.Contains(key)) s.Remove(key);
                 }
             }
+            
+            // Ensure background image is passed to Editor
+            if (!string.IsNullOrEmpty(preset.BackgroundImage))
+            {
+                s[px + "BackgroundImage"] = preset.BackgroundImage;
+                s["BackgroundImage"] = preset.BackgroundImage; // also sync to global if needed
+            }
+            else
+            {
+                if (s.Contains(px + "BackgroundImage")) s.Remove(px + "BackgroundImage");
+                if (s.Contains("BackgroundImage")) s.Remove("BackgroundImage");
+            }
+            
             s.Save();
 
             // Navigate to editor with preset index

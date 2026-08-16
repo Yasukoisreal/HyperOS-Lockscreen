@@ -242,32 +242,6 @@ namespace HyperOS.Pages
                                 ? (string)s["Set" + editingPreset + "_BackgroundImage"]
                                 : null;
 
-                            // If no setting, use hardcoded preset backgrounds
-                            if (string.IsNullOrEmpty(defaultBg))
-                            {
-                                string[] presetBgs = {
-                                    "/Assets/Pictures/classic02.jpg",
-                                    "/Assets/Pictures/east07.jpg",
-                                    "/Assets/Pictures/east05.jpg",
-                                    "/Assets/Pictures/east06.jpg",
-                                    "/Assets/Pictures/magazine01.jpg",
-                                    "/Assets/Pictures/magazine05.jpg",
-                                    "/Assets/Pictures/east02.jpg",
-                                    "/Assets/Pictures/magazine06.jpg",
-                                    "/Assets/Pictures/east01.jpg",
-                                    "/Assets/Pictures/AI Static 3.jpg",
-                                    "/Assets/Pictures/AI Static 4.jpg",
-                                    "/Assets/Pictures/magazine04.jpg",
-                                    "/Assets/Pictures/magazine02.jpg",
-                                    "/Assets/Pictures/classic03.jpg",
-                                    "/Assets/Pictures/magazine03.jpg",
-                                    "/Assets/Pictures/magazine07.jpg",
-                                    null, null, null  // Analog presets — no bg
-                                };
-                                if (editingPreset < presetBgs.Length)
-                                    defaultBg = presetBgs[editingPreset];
-                            }
-
                             if (!string.IsNullOrEmpty(defaultBg))
                             {
                                 try
