@@ -102,7 +102,6 @@ namespace HyperOS.Pages
             ApplyClockPosition();
             ApplyClockHAlign();
             ApplyClockColor();
-            ApplyClockSize();
             ApplyFreePositions();
             UpdateTime();
 
@@ -177,7 +176,9 @@ namespace HyperOS.Pages
                     ApplyClockPosition();
                     ApplyClockHAlign();
                     ApplyClockColor();
-                    ApplyClockSize();
+                    ApplyDateAlign();
+                    ApplyClockOpacity();
+                    ApplyDepthEffect();
                     lastTimeText = ""; // Force time refresh
                     UpdateTime();
                     UpdateBattery();
@@ -1042,45 +1043,6 @@ namespace HyperOS.Pages
 
         private static int[] SizeValues { get { return ClockRenderer.SizeValues; } }
 
-        private void ApplyClockSize()
-        {
-            int idx = clockSize;
-            if (idx < 0 || idx >= SizeValues.Length) idx = 2;
-            int sz = SizeValues[idx];
-            HourPart.FontSize = sz;
-            ColonPart.FontSize = sz;
-            MinutePart.FontSize = sz;
-            HourPartBehind.FontSize = sz;
-            ColonPartBehind.FontSize = sz;
-            MinutePartBehind.FontSize = sz;
-            // Pull clock closer to date
-            double pull = (clockLayout == 1) ? -sz * 0.22 : -sz * 0.16;
-            TimePanel.Margin = new Thickness(0, pull, 0, 0);
-            BehindTimePanel.Margin = new Thickness(0, pull, 0, 0);
-
-            // Vertical: pull minute up close to hour
-            if (clockLayout == 1)
-            {
-                var vMargin = new Thickness(0, -sz * 0.35, 0, 0);
-                MinutePart.Margin = vMargin;
-                MinutePartBehind.Margin = vMargin;
-            }
-            else
-            {
-                MinutePart.Margin = new Thickness(0);
-                MinutePartBehind.Margin = new Thickness(0);
-            }
-
-            // Analog size
-            if (clockLayout >= 2)
-            {
-                double diameter = sz * 1.6;
-                AnalogClockCanvas.Width = diameter;
-                AnalogClockCanvas.Height = diameter;
-                AnalogClockCanvasBehind.Width = diameter;
-                AnalogClockCanvasBehind.Height = diameter;
-            }
-        }
 
         /// <summary>
         /// Draws an analog clock face on the given canvas.
@@ -2004,7 +1966,6 @@ namespace HyperOS.Pages
             ApplyClockPosition();
             ApplyClockHAlign();
             ApplyClockColor();
-            ApplyClockSize();
             ApplyFreePositions();
             lastTimeText = "";
             UpdateTime();
