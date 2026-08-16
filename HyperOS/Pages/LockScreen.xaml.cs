@@ -176,9 +176,6 @@ namespace HyperOS.Pages
                     ApplyClockPosition();
                     ApplyClockHAlign();
                     ApplyClockColor();
-                    ApplyDateAlign();
-                    ApplyClockOpacity();
-                    ApplyDepthEffect();
                     lastTimeText = ""; // Force time refresh
                     UpdateTime();
                     UpdateBattery();
