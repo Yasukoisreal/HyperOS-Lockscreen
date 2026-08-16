@@ -335,6 +335,7 @@
                         </TextBlock>
                     </StackPanel>
                     <Grid x:Name="RhombusGridBehind" Visibility="Collapsed" HorizontalAlignment="Center">
+                        <Grid.RenderTransform><CompositeTransform/></Grid.RenderTransform>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
@@ -412,6 +413,7 @@
                         </TextBlock>
                     </StackPanel>
                     <Grid x:Name="RhombusGrid" Visibility="Collapsed" HorizontalAlignment="Center">
+                        <Grid.RenderTransform><CompositeTransform/></Grid.RenderTransform>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
