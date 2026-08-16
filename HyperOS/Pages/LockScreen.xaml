@@ -332,6 +332,24 @@
                             <TextBlock.RenderTransform><CompositeTransform/></TextBlock.RenderTransform>
                         </TextBlock>
                     </StackPanel>
+                    <Grid x:Name="RhombusGridBehind" Visibility="Collapsed" HorizontalAlignment="Center">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        
+                        <TextBlock x:Name="RhombusH1Behind" Grid.Row="0" Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center" Text="1" FontFamily="/Assets/Fonts/MiSans-Demibold.ttf#MiSans" Foreground="White" FontSize="105"/>
+                        <TextBlock x:Name="RhombusH2Behind" Grid.Row="1" Grid.Column="0" HorizontalAlignment="Center" VerticalAlignment="Center" Text="0" FontFamily="/Assets/Fonts/MiSans-Demibold.ttf#MiSans" Foreground="White" FontSize="105"/>
+                        <TextBlock x:Name="RhombusM1Behind" Grid.Row="1" Grid.Column="2" HorizontalAlignment="Center" VerticalAlignment="Center" Text="5" FontFamily="/Assets/Fonts/MiSans-Demibold.ttf#MiSans" Foreground="White" FontSize="105"/>
+                        <TextBlock x:Name="RhombusM2Behind" Grid.Row="2" Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center" Text="7" FontFamily="/Assets/Fonts/MiSans-Demibold.ttf#MiSans" Foreground="White" FontSize="105"/>
+                        <Ellipse x:Name="RhombusDotBehind" Grid.Row="1" Grid.Column="1" Width="12" Height="12" Fill="#FFDC3232" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Grid>
                     <!-- Analog Clock Behind (Collapsed by default) -->
                     <Canvas x:Name="AnalogClockCanvasBehind" Width="200" Height="200"
                             HorizontalAlignment="Center" Visibility="Collapsed">
@@ -391,6 +409,24 @@
                             <TextBlock.RenderTransform><CompositeTransform/></TextBlock.RenderTransform>
                         </TextBlock>
                     </StackPanel>
+                    <Grid x:Name="RhombusGrid" Visibility="Collapsed" HorizontalAlignment="Center">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        
+                        <TextBlock x:Name="RhombusH1" Grid.Row="0" Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center" Text="1" FontFamily="/Assets/Fonts/MiSans-Demibold.ttf#MiSans" Foreground="White" FontSize="105"/>
+                        <TextBlock x:Name="RhombusH2" Grid.Row="1" Grid.Column="0" HorizontalAlignment="Center" VerticalAlignment="Center" Text="0" FontFamily="/Assets/Fonts/MiSans-Demibold.ttf#MiSans" Foreground="White" FontSize="105"/>
+                        <TextBlock x:Name="RhombusM1" Grid.Row="1" Grid.Column="2" HorizontalAlignment="Center" VerticalAlignment="Center" Text="5" FontFamily="/Assets/Fonts/MiSans-Demibold.ttf#MiSans" Foreground="White" FontSize="105"/>
+                        <TextBlock x:Name="RhombusM2" Grid.Row="2" Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center" Text="7" FontFamily="/Assets/Fonts/MiSans-Demibold.ttf#MiSans" Foreground="White" FontSize="105"/>
+                        <Ellipse x:Name="RhombusDot" Grid.Row="1" Grid.Column="1" Width="12" Height="12" Fill="#FFDC3232" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Grid>
                     <!-- Analog Clock (Collapsed by default) -->
                     <Canvas x:Name="AnalogClockCanvas" Width="200" Height="200"
                             HorizontalAlignment="Center" Visibility="Collapsed">

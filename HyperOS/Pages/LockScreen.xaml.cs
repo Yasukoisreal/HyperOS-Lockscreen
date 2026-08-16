@@ -733,48 +733,69 @@ namespace HyperOS.Pages
 
         private void ApplyClockStyle()
         {
-            // Set font — use shared cached fonts (CPU: avoids creating new FontFamily per call)
-            SetClockFont(ClockRenderer.GetFont(clockStyle));
+            // Font
+            var ff = ClockRenderer.GetFont(clockStyle);
+            SetClockFont(ff);
+            RhombusH1.FontFamily = ff; RhombusH2.FontFamily = ff;
+            RhombusM1.FontFamily = ff; RhombusM2.FontFamily = ff;
+            RhombusH1Behind.FontFamily = ff; RhombusH2Behind.FontFamily = ff;
+            RhombusM1Behind.FontFamily = ff; RhombusM2Behind.FontFamily = ff;
 
-            bool isAnalog = clockLayout >= 2;
+            bool isAnalog = clockLayout >= 2 && clockLayout <= 4;
             bool isVertical = clockLayout == 1;
+            bool isRhombus = clockLayout == 5;
+            bool isGiant = clockLayout == 6;
 
-            // Show/hide digital vs analog
-            TimePanel.Visibility = isAnalog ? Visibility.Collapsed : Visibility.Visible;
-            AnalogClockCanvas.Visibility = isAnalog ? Visibility.Visible : Visibility.Collapsed;
-            BehindTimePanel.Visibility = isAnalog ? Visibility.Collapsed : Visibility.Visible;
-            AnalogClockCanvasBehind.Visibility = Visibility.Collapsed; // Managed by ApplyDepthLayers
+            // Show/hide digital vs analog vs rhombus
+            if (isAnalog)
+            {
+                TimePanel.Visibility = Visibility.Collapsed;
+                BehindTimePanel.Visibility = Visibility.Collapsed;
+                RhombusGrid.Visibility = Visibility.Collapsed;
+                RhombusGridBehind.Visibility = Visibility.Collapsed;
+                AnalogClockCanvas.Visibility = Visibility.Visible;
+                // AnalogClockCanvasBehind is managed by ApplyDepthLayers
+            }
+            else if (isRhombus)
+            {
+                TimePanel.Visibility = Visibility.Collapsed;
+                BehindTimePanel.Visibility = Visibility.Collapsed;
+                AnalogClockCanvas.Visibility = Visibility.Collapsed;
+                AnalogClockCanvasBehind.Visibility = Visibility.Collapsed;
+                RhombusGrid.Visibility = Visibility.Visible;
+                RhombusGridBehind.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                TimePanel.Visibility = Visibility.Visible;
+                BehindTimePanel.Visibility = Visibility.Visible;
+                RhombusGrid.Visibility = Visibility.Collapsed;
+                RhombusGridBehind.Visibility = Visibility.Collapsed;
+                AnalogClockCanvas.Visibility = Visibility.Collapsed;
+                AnalogClockCanvasBehind.Visibility = Visibility.Collapsed;
+            }
 
-            // Vertical: stack vertically, hide colon
+            // Vertical / Giant: stack vertically, hide colon
+            ColonPart.Visibility = (isVertical || isGiant) ? Visibility.Collapsed : Visibility.Visible;
+            ColonPartBehind.Visibility = (isVertical || isGiant) ? Visibility.Collapsed : Visibility.Visible;
+
             if (isVertical)
             {
                 TimePanel.Orientation = System.Windows.Controls.Orientation.Vertical;
-                ColonPart.Visibility = Visibility.Collapsed;
-                ColonPartBehind.Visibility = Visibility.Collapsed;
-                HourPart.HorizontalAlignment = HorizontalAlignment.Stretch;
-                MinutePart.HorizontalAlignment = HorizontalAlignment.Stretch;
-                HourPart.TextAlignment = TextAlignment.Center;
-                MinutePart.TextAlignment = TextAlignment.Center;
-                HourPartBehind.HorizontalAlignment = HorizontalAlignment.Stretch;
-                MinutePartBehind.HorizontalAlignment = HorizontalAlignment.Stretch;
-                HourPartBehind.TextAlignment = TextAlignment.Center;
-                MinutePartBehind.TextAlignment = TextAlignment.Center;
                 BehindTimePanel.Orientation = System.Windows.Controls.Orientation.Vertical;
+                HourPart.HorizontalAlignment = HorizontalAlignment.Center;
+                MinutePart.HorizontalAlignment = HorizontalAlignment.Center;
+                HourPartBehind.HorizontalAlignment = HorizontalAlignment.Center;
+                MinutePartBehind.HorizontalAlignment = HorizontalAlignment.Center;
             }
             else
             {
                 TimePanel.Orientation = System.Windows.Controls.Orientation.Horizontal;
-                ColonPart.Visibility = isAnalog ? Visibility.Collapsed : Visibility.Visible;
-                ColonPartBehind.Visibility = isAnalog ? Visibility.Collapsed : Visibility.Visible;
+                BehindTimePanel.Orientation = System.Windows.Controls.Orientation.Horizontal;
                 HourPart.HorizontalAlignment = HorizontalAlignment.Left;
                 MinutePart.HorizontalAlignment = HorizontalAlignment.Left;
-                HourPart.TextAlignment = TextAlignment.Left;
-                MinutePart.TextAlignment = TextAlignment.Left;
                 HourPartBehind.HorizontalAlignment = HorizontalAlignment.Left;
                 MinutePartBehind.HorizontalAlignment = HorizontalAlignment.Left;
-                HourPartBehind.TextAlignment = TextAlignment.Left;
-                MinutePartBehind.TextAlignment = TextAlignment.Left;
-                BehindTimePanel.Orientation = System.Windows.Controls.Orientation.Horizontal;
             }
 
             // Draw analog clock if needed
@@ -790,6 +811,80 @@ namespace HyperOS.Pages
                 DrawAnalogClock(AnalogClockCanvas, diameter, now.Hour, now.Minute, clockLayout);
                 DrawAnalogClock(AnalogClockCanvasBehind, diameter, now.Hour, now.Minute, clockLayout);
             }
+
+            // Apply size
+            int sizeIndex = Math.Max(0, Math.Min(clockSize, SizeValues.Length - 1));
+            int baseSize = SizeValues[sizeIndex];
+
+            double hourSz = baseSize;
+            double minuteSz = baseSize;
+            if (isGiant) { hourSz = baseSize * 1.6; minuteSz = baseSize * 1.6; }
+            
+            HourPart.FontSize = hourSz;
+            HourPartBehind.FontSize = hourSz;
+            ColonPart.FontSize = baseSize;
+            ColonPartBehind.FontSize = baseSize;
+            MinutePart.FontSize = minuteSz;
+            MinutePartBehind.FontSize = minuteSz;
+            
+            double rhombSz = baseSize * 1.2;
+            RhombusH1.FontSize = rhombSz; RhombusH2.FontSize = rhombSz;
+            RhombusM1.FontSize = rhombSz; RhombusM2.FontSize = rhombSz;
+            RhombusH1Behind.FontSize = rhombSz; RhombusH2Behind.FontSize = rhombSz;
+            RhombusM1Behind.FontSize = rhombSz; RhombusM2Behind.FontSize = rhombSz;
+
+            if (isVertical)
+            {
+                TimePanel.Margin = new Thickness(0, -baseSize * 0.22, 0, 0);
+                BehindTimePanel.Margin = new Thickness(0, -baseSize * 0.22, 0, 0);
+                MinutePart.Margin = new Thickness(0, -baseSize * 0.35, 0, 0);
+                MinutePartBehind.Margin = new Thickness(0, -baseSize * 0.35, 0, 0);
+            }
+            else if (isGiant)
+            {
+                TimePanel.Margin = new Thickness(0, -baseSize * 0.25, 0, 0);
+                BehindTimePanel.Margin = new Thickness(0, -baseSize * 0.25, 0, 0);
+                MinutePart.Margin = new Thickness(baseSize * 0.1, 0, 0, 0);
+                MinutePartBehind.Margin = new Thickness(baseSize * 0.1, 0, 0, 0);
+            }
+            else
+            {
+                TimePanel.Margin = new Thickness(0, -baseSize * 0.16, 0, 0);
+                BehindTimePanel.Margin = new Thickness(0, -baseSize * 0.16, 0, 0);
+                MinutePart.Margin = new Thickness(0, 0, 0, 0);
+                MinutePartBehind.Margin = new Thickness(0, 0, 0, 0);
+            }
+            
+            if (isRhombus)
+            {
+                RhombusGrid.Margin = new Thickness(0, -rhombSz * 0.15, 0, 0);
+                RhombusGridBehind.Margin = new Thickness(0, -rhombSz * 0.15, 0, 0);
+                
+                var h1M = new Thickness(0, 0, 0, -rhombSz * 0.1);
+                var h2M = new Thickness(0, 0, -rhombSz * 0.05, 0);
+                var m1M = new Thickness(-rhombSz * 0.05, 0, 0, 0);
+                var m2M = new Thickness(0, -rhombSz * 0.1, 0, 0);
+                
+                RhombusH1.Margin = h1M; RhombusH1Behind.Margin = h1M;
+                RhombusH2.Margin = h2M; RhombusH2Behind.Margin = h2M;
+                RhombusM1.Margin = m1M; RhombusM1Behind.Margin = m1M;
+                RhombusM2.Margin = m2M; RhombusM2Behind.Margin = m2M;
+            }
+
+            // Time & Date format
+            var dt = DateTime.Now;
+            string hStr = dt.Hour.ToString("D2");
+            string mStr = dt.Minute.ToString("D2");
+            
+            HourPart.Text = hStr;
+            HourPartBehind.Text = hStr;
+            MinutePart.Text = mStr;
+            MinutePartBehind.Text = mStr;
+            
+            RhombusH1.Text = hStr[0].ToString(); RhombusH1Behind.Text = hStr[0].ToString();
+            RhombusH2.Text = hStr[1].ToString(); RhombusH2Behind.Text = hStr[1].ToString();
+            RhombusM1.Text = mStr[0].ToString(); RhombusM1Behind.Text = mStr[0].ToString();
+            RhombusM2.Text = mStr[1].ToString(); RhombusM2Behind.Text = mStr[1].ToString();
         }
 
         private void ApplyClockPosition()
@@ -885,6 +980,11 @@ namespace HyperOS.Pages
             HourPartBehind.Foreground = brush;
             ColonPartBehind.Foreground = brush;
             MinutePartBehind.Foreground = brush;
+            
+            RhombusH1.Foreground = brush; RhombusH2.Foreground = brush;
+            RhombusM1.Foreground = brush; RhombusM2.Foreground = brush;
+            RhombusH1Behind.Foreground = brush; RhombusH2Behind.Foreground = brush;
+            RhombusM1Behind.Foreground = brush; RhombusM2Behind.Foreground = brush;
         }
 
         private LinearGradientBrush MakeGradient(System.Windows.Media.Color from, System.Windows.Media.Color to)

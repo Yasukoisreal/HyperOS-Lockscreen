@@ -501,8 +501,10 @@ namespace HyperOS.Pages
         {
             // Time
             var now = DateTime.Now;
-            PHour.Text = now.Hour.ToString("D2");
-            PMinute.Text = now.Minute.ToString("D2");
+            string hStr = now.Hour.ToString("D2");
+            string mStr = now.Minute.ToString("D2");
+            PHour.Text = hStr;
+            PMinute.Text = mStr;
             PDay.Text = now.DayOfWeek.ToString();
             PDate.Text = now.ToString("MMMM d");
 
@@ -511,15 +513,36 @@ namespace HyperOS.Pages
             bool isRhombus = clockLayout == 5;
             bool isGiant = clockLayout == 6;
 
-            // Show/hide digital vs analog
-            PTimePanel.Visibility = isAnalog ? Visibility.Collapsed : Visibility.Visible;
-            PAnalogClock.Visibility = isAnalog ? Visibility.Visible : Visibility.Collapsed;
+            // Update Rhombus digits
+            PRhombusH1.Text = hStr[0].ToString();
+            PRhombusH2.Text = hStr[1].ToString();
+            PRhombusM1.Text = mStr[0].ToString();
+            PRhombusM2.Text = mStr[1].ToString();
 
-            // Vertical / Rhombus: stack vertically, hide colon
-            PRhombusDot.Visibility = isRhombus ? Visibility.Visible : Visibility.Collapsed;
-            PColon.Visibility = (isVertical || isRhombus || isGiant) ? Visibility.Collapsed : Visibility.Visible;
+            // Show/hide digital vs analog vs rhombus
+            if (isAnalog)
+            {
+                PTimePanel.Visibility = Visibility.Collapsed;
+                PRhombusGrid.Visibility = Visibility.Collapsed;
+                PAnalogClock.Visibility = Visibility.Visible;
+            }
+            else if (isRhombus)
+            {
+                PTimePanel.Visibility = Visibility.Collapsed;
+                PAnalogClock.Visibility = Visibility.Collapsed;
+                PRhombusGrid.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                PTimePanel.Visibility = Visibility.Visible;
+                PRhombusGrid.Visibility = Visibility.Collapsed;
+                PAnalogClock.Visibility = Visibility.Collapsed;
+            }
 
-            if (isVertical || isRhombus)
+            // Vertical / Giant: stack vertically, hide colon
+            PColon.Visibility = (isVertical || isGiant) ? Visibility.Collapsed : Visibility.Visible;
+
+            if (isVertical)
             {
                 PTimePanel.Orientation = System.Windows.Controls.Orientation.Vertical;
                 PHour.HorizontalAlignment = HorizontalAlignment.Center;
@@ -534,9 +557,14 @@ namespace HyperOS.Pages
 
             // Font (applies to digital modes only)
             int fi = Math.Max(0, Math.Min(clockStyle, Fonts.Length - 1));
-            PHour.FontFamily = Fonts[fi];
-            PColon.FontFamily = Fonts[fi];
-            PMinute.FontFamily = Fonts[fi];
+            var font = Fonts[fi];
+            PHour.FontFamily = font;
+            PColon.FontFamily = font;
+            PMinute.FontFamily = font;
+            PRhombusH1.FontFamily = font;
+            PRhombusH2.FontFamily = font;
+            PRhombusM1.FontFamily = font;
+            PRhombusM2.FontFamily = font;
 
             // Size
             int si = Math.Max(0, Math.Min(clockSize, SizeValues.Length - 1));
@@ -545,35 +573,40 @@ namespace HyperOS.Pages
             double hourSz = sz;
             double minuteSz = sz;
             if (isGiant) { hourSz = sz * 1.6; minuteSz = sz * 1.6; }
-            else if (isRhombus) { hourSz = sz * 0.6; minuteSz = sz * 1.2; }
             
             PHour.FontSize = hourSz;
             PColon.FontSize = sz;
             PMinute.FontSize = minuteSz;
+            
+            double rhombSz = sz * 1.2;
+            PRhombusH1.FontSize = rhombSz;
+            PRhombusH2.FontSize = rhombSz;
+            PRhombusM1.FontSize = rhombSz;
+            PRhombusM2.FontSize = rhombSz;
 
             if (isVertical)
             {
                 PTimePanel.Margin = new Thickness(0, -sz * 0.22, 0, 0);
                 PMinute.Margin = new Thickness(0, -sz * 0.35, 0, 0);
-                PRhombusDot.Margin = new Thickness(0);
-            }
-            else if (isRhombus)
-            {
-                PTimePanel.Margin = new Thickness(0, -sz * 0.1, 0, 0);
-                PRhombusDot.Margin = new Thickness(0, -sz * 0.1, 0, -sz * 0.1);
-                PMinute.Margin = new Thickness(0, -sz * 0.25, 0, 0);
             }
             else if (isGiant)
             {
                 PTimePanel.Margin = new Thickness(0, -sz * 0.25, 0, 0);
                 PMinute.Margin = new Thickness(sz * 0.1, 0, 0, 0);
-                PRhombusDot.Margin = new Thickness(0);
             }
             else
             {
                 PTimePanel.Margin = new Thickness(0, -sz * 0.16, 0, 0);
                 PMinute.Margin = new Thickness(0, 0, 0, 0);
-                PRhombusDot.Margin = new Thickness(0);
+            }
+
+            if (isRhombus)
+            {
+                PRhombusGrid.Margin = new Thickness(0, -rhombSz * 0.15, 0, 0);
+                PRhombusH1.Margin = new Thickness(0, 0, 0, -rhombSz * 0.1);
+                PRhombusH2.Margin = new Thickness(0, 0, -rhombSz * 0.05, 0);
+                PRhombusM1.Margin = new Thickness(-rhombSz * 0.05, 0, 0, 0);
+                PRhombusM2.Margin = new Thickness(0, -rhombSz * 0.1, 0, 0);
             }
 
             if (isAnalog)
@@ -797,6 +830,10 @@ namespace HyperOS.Pages
             PHour.Foreground = brush;
             PColon.Foreground = brush;
             PMinute.Foreground = brush;
+            PRhombusH1.Foreground = brush;
+            PRhombusH2.Foreground = brush;
+            PRhombusM1.Foreground = brush;
+            PRhombusM2.Foreground = brush;
         }
 
         private LinearGradientBrush MakeGrad(Color from, Color to)

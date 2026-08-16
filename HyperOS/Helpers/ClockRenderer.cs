@@ -245,38 +245,44 @@ namespace HyperOS.Helpers
             else if (clockLayout == 5)
             {
                 // Rhombus digital
-                var timeP = new StackPanel
+                var timeGrid = new Grid
                 {
-                    Orientation = Orientation.Vertical,
                     HorizontalAlignment = HorizontalAlignment.Center,
-                    Margin = new Thickness(0, -sz * 0.1, 0, 0)
+                    Margin = new Thickness(0, -sz * 0.15, 0, 0)
                 };
-                timeP.Children.Add(new TextBlock
-                {
-                    Text = DateTime.Now.ToString("HH"),
-                    FontFamily = Fonts[fi],
-                    FontSize = sz * 0.6,
-                    Foreground = hourBrush,
-                    HorizontalAlignment = HorizontalAlignment.Center
-                });
-                timeP.Children.Add(new System.Windows.Shapes.Ellipse
-                {
-                    Width = Math.Max(4, 12 * scale),
-                    Height = Math.Max(4, 12 * scale),
-                    Fill = new SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 220, 50, 50)),
-                    HorizontalAlignment = HorizontalAlignment.Center,
-                    Margin = new Thickness(0, -sz * 0.1, 0, -sz * 0.1)
-                });
-                timeP.Children.Add(new TextBlock
-                {
-                    Text = DateTime.Now.ToString("mm"),
-                    FontFamily = Fonts[fi],
-                    FontSize = sz * 1.2,
-                    Foreground = minuteBrush,
-                    HorizontalAlignment = HorizontalAlignment.Center,
-                    Margin = new Thickness(0, -sz * 0.25, 0, 0)
-                });
-                stack.Children.Add(timeP);
+                timeGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+                timeGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+                timeGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+                timeGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+                timeGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+                timeGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+                string hStr = DateTime.Now.ToString("HH");
+                string mStr = DateTime.Now.ToString("mm");
+                double rhombSz = sz * 1.2;
+
+                var h1 = new TextBlock { Text = hStr[0].ToString(), FontFamily = Fonts[fi], FontSize = rhombSz, Foreground = hourBrush, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 0, -rhombSz * 0.1) };
+                Grid.SetRow(h1, 0); Grid.SetColumn(h1, 1);
+                
+                var h2 = new TextBlock { Text = hStr[1].ToString(), FontFamily = Fonts[fi], FontSize = rhombSz, Foreground = hourBrush, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, -rhombSz * 0.05, 0) };
+                Grid.SetRow(h2, 1); Grid.SetColumn(h2, 0);
+
+                var m1 = new TextBlock { Text = mStr[0].ToString(), FontFamily = Fonts[fi], FontSize = rhombSz, Foreground = minuteBrush, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(-rhombSz * 0.05, 0, 0, 0) };
+                Grid.SetRow(m1, 1); Grid.SetColumn(m1, 2);
+
+                var m2 = new TextBlock { Text = mStr[1].ToString(), FontFamily = Fonts[fi], FontSize = rhombSz, Foreground = minuteBrush, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, -rhombSz * 0.1, 0, 0) };
+                Grid.SetRow(m2, 2); Grid.SetColumn(m2, 1);
+
+                var dot = new System.Windows.Shapes.Ellipse { Width = Math.Max(4, 12 * scale), Height = Math.Max(4, 12 * scale), Fill = new SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 220, 50, 50)), HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+                Grid.SetRow(dot, 1); Grid.SetColumn(dot, 1);
+
+                timeGrid.Children.Add(h1);
+                timeGrid.Children.Add(h2);
+                timeGrid.Children.Add(m1);
+                timeGrid.Children.Add(m2);
+                timeGrid.Children.Add(dot);
+
+                stack.Children.Add(timeGrid);
             }
             else if (clockLayout == 6)
             {
