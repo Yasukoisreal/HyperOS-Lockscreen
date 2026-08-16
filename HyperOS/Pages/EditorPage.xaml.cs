@@ -1189,11 +1189,7 @@ namespace HyperOS.Pages
             clockStyle = (clockStyle - 1 + FontNames.Length) % FontNames.Length;
             Save("ClockStyle", clockStyle);
             FontLabel.Text = FontNames[clockStyle];
-            int fi = Math.Max(0, Math.Min(clockStyle, Fonts.Length - 1));
-            PHour.FontFamily = Fonts[fi];
-            PColon.FontFamily = Fonts[fi];
-            PMinute.FontFamily = Fonts[fi];
-            Dispatcher.BeginInvoke(() => UpdateDepthFrontLayer());
+            ApplyPreview();
         }
 
         private void FontNext_Tap(object sender, System.Windows.Input.GestureEventArgs e)
@@ -1201,11 +1197,7 @@ namespace HyperOS.Pages
             clockStyle = (clockStyle + 1) % FontNames.Length;
             Save("ClockStyle", clockStyle);
             FontLabel.Text = FontNames[clockStyle];
-            int fi = Math.Max(0, Math.Min(clockStyle, Fonts.Length - 1));
-            PHour.FontFamily = Fonts[fi];
-            PColon.FontFamily = Fonts[fi];
-            PMinute.FontFamily = Fonts[fi];
-            Dispatcher.BeginInvoke(() => UpdateDepthFrontLayer());
+            ApplyPreview();
         }
 
         private void Size_Tap(object sender, System.Windows.Input.GestureEventArgs e)
@@ -1214,21 +1206,7 @@ namespace HyperOS.Pages
             clockSize = int.Parse((string)border.Tag);
             Save("ClockSize", clockSize);
             UpdateSizeSelection();
-            int sz = SizeValues[clockSize];
-            PHour.FontSize = sz;
-            PColon.FontSize = sz;
-            PMinute.FontSize = sz;
-            bool isVertical = clockLayout == 1;
-            PTimePanel.Margin = new Thickness(0, isVertical ? -sz * 0.22 : -sz * 0.16, 0, 0);
-            if (isVertical) PMinute.Margin = new Thickness(0, -sz * 0.35, 0, 0);
-            if (clockLayout >= 2)
-            {
-                double diameter = sz * 1.6;
-                PAnalogClock.Width = diameter;
-                PAnalogClock.Height = diameter;
-                DrawAnalogClock(PAnalogClock, diameter, DateTime.Now.Hour, DateTime.Now.Minute, clockLayout);
-            }
-            Dispatcher.BeginInvoke(() => UpdateDepthFrontLayer());
+            ApplyPreview();
         }
 
         private void UpdateSizeSelection()
