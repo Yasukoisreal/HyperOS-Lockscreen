@@ -93,13 +93,16 @@ namespace HyperOS.Helpers
             if (clockBrush is LinearGradientBrush)
             {
                 var oldLg = (LinearGradientBrush)clockBrush;
-                var newLg = new LinearGradientBrush();
-                newLg.MappingMode = BrushMappingMode.Absolute;
-                newLg.StartPoint = new Point(0, 0);
-                newLg.EndPoint = new Point(diameter, diameter);
-                foreach (var s in oldLg.GradientStops)
-                    newLg.GradientStops.Add(new GradientStop { Color = s.Color, Offset = s.Offset });
-                shapeBrush = newLg;
+                if (oldLg.GradientStops.Count >= 2)
+                {
+                    var c1 = oldLg.GradientStops[0].Color;
+                    var c2 = oldLg.GradientStops[oldLg.GradientStops.Count - 1].Color;
+                    byte avgR = (byte)((c1.R + c2.R) / 2);
+                    byte avgG = (byte)((c1.G + c2.G) / 2);
+                    byte avgB = (byte)((c1.B + c2.B) / 2);
+                    shapeBrush = new SolidColorBrush(MC.FromArgb(255, avgR, avgG, avgB));
+                    textBrush = shapeBrush;
+                }
             }
 
             // Outer circle
