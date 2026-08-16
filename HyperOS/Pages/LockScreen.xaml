@@ -13,17 +13,19 @@
 
     <phone:PhoneApplicationPage.Resources>
         <!-- Battery flash animation -->
-        <Storyboard x:Name="FlashBattery" AutoReverse="True" RepeatBehavior="Forever">
-            <DoubleAnimationUsingKeyFrames
+        <Storyboard x:Name="FlashBattery" AutoReverse="True" RepeatBehavior="3x">
+            <DoubleAnimation
                 Storyboard.TargetProperty="(UIElement.Opacity)"
-                Storyboard.TargetName="BatteryLowIcon">
-                <EasingDoubleKeyFrame KeyTime="0" Value="1"/>
-                <EasingDoubleKeyFrame KeyTime="0:0:0.40" Value="0"/>
-            </DoubleAnimationUsingKeyFrames>
+                Storyboard.TargetName="BatteryLowIcon"
+                From="0" To="1" Duration="0:0:1">
+                <DoubleAnimation.EasingFunction>
+                    <SineEase EasingMode="EaseInOut"/>
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
         </Storyboard>
 
         <!-- Charging pulse animation -->
-        <Storyboard x:Name="ChargingPulse" AutoReverse="True" RepeatBehavior="Forever">
+        <Storyboard x:Name="ChargingPulse" AutoReverse="True" RepeatBehavior="3x">
             <DoubleAnimationUsingKeyFrames
                 Storyboard.TargetProperty="(UIElement.Opacity)"
                 Storyboard.TargetName="ChargingIcon">

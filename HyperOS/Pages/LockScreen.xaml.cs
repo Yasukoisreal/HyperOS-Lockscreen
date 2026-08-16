@@ -141,6 +141,24 @@ namespace HyperOS.Pages
             isFirstLoad = false;
         }
 
+        protected override void OnNavigatedFrom(System.Windows.Navigation.NavigationEventArgs e)
+        {
+            base.OnNavigatedFrom(e);
+
+            // AGENTS.md: Always set ImageBrush.ImageSource = null to free memory immediately
+            BackgroundBrush.ImageSource = null;
+            ForegroundBrush.ImageSource = null;
+            backgroundLoaded = false; // Force reload next time
+            
+            if (msForeground != null)
+                msForeground = null;
+            
+            // Stop timers to save battery while screen is off
+            if (timer != null) timer.Stop();
+            if (batteryTimer != null) batteryTimer.Stop();
+            if (weatherTimer != null) weatherTimer.Stop();
+        }
+
         protected override void OnNavigatedTo(System.Windows.Navigation.NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
@@ -1234,7 +1252,6 @@ namespace HyperOS.Pages
                             System.IO.FileMode.Open, System.IO.FileAccess.Read))
                         {
                             var bitmap = new BitmapImage();
-                            bitmap.DecodePixelWidth = 480;
                             bitmap.SetSource(stream);
                             BackgroundBrush.ImageSource = bitmap;
                         }
@@ -1417,7 +1434,6 @@ namespace HyperOS.Pages
                             System.IO.FileMode.Open, System.IO.FileAccess.Read))
                         {
                             var bitmap = new BitmapImage();
-                            bitmap.DecodePixelWidth = 480; // RAM optimization
                             bitmap.SetSource(stream);
                             ForegroundBrush.ImageSource = bitmap;
                             ForegroundOverlay.Visibility = Visibility.Visible;
