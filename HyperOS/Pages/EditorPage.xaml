@@ -372,6 +372,7 @@
                                 </Border>
                             </StackPanel>
 
+                            <StackPanel x:Name="ColorSectionContainer">
                             <!-- Color -->
                             <TextBlock Text="COLOR" Style="{StaticResource PropLabel}"/>
                             <ScrollViewer HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled">
@@ -445,6 +446,7 @@
                                 </Border>
                             </StackPanel>
                             </ScrollViewer>
+                            </StackPanel>
 
                             <!-- Date Align (manual) -->
                             <TextBlock Text="DATE ALIGN" Style="{StaticResource PropLabel}"/>

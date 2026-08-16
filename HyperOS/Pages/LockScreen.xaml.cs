@@ -35,7 +35,6 @@ namespace HyperOS.Pages
         private int clockHAlign = 1;    // 0=Left, 1=Center, 2=Right
         private int clockColor = 0;     // 0=White, 1=Gold, 2=SkyBlue, 3=Pink, 4=Red
         private int clockBlend = 0;     // 0=None, 1=Sunset, 2=Ocean, 3=Aurora, 4=Neon
-        private Brush _currentClockBrush;
         private int clockSize = 2;      // 0=S..4=XXL (default 2=L)
         private int dateAlign = 1;      // 0=Left, 1=Center, 2=Right
         private int clockLayout = 0;    // 0=Horiz, 1=Vert, 2=Analog Minimal, 3=Classic, 4=Swiss
@@ -1012,7 +1011,6 @@ namespace HyperOS.Pages
                     default: brush = new SolidColorBrush(Colors.White); break;
                 }
             }
-            _currentClockBrush = brush;
             HourPart.Foreground = brush;
             ColonPart.Foreground = brush;
             MinutePart.Foreground = brush;
@@ -1084,7 +1082,8 @@ namespace HyperOS.Pages
         /// </summary>
         private void DrawAnalogClock(Canvas canvas, double diameter, int hour, int minute, int style)
         {
-            ClockRenderer.DrawAnalogClock(canvas, diameter, hour, minute, style, _currentClockBrush);
+            Brush clockBrush = HourPart.Foreground;
+            ClockRenderer.DrawAnalogClock(canvas, diameter, hour, minute, style, clockBrush);
         }
 
 

@@ -596,6 +596,9 @@ namespace HyperOS.Pages
                 DrawAnalogClock(PAnalogClock, diameter, now.Hour, now.Minute, clockLayout);
             }
 
+            // Hide color options for analog clock
+            ColorSectionContainer.Visibility = isAnalog ? Visibility.Collapsed : Visibility.Visible;
+
             // Date alignment
             ApplyDateAlign();
 
