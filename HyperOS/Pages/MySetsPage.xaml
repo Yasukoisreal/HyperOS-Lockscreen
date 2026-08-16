@@ -23,7 +23,11 @@
         </Grid>
 
         <!-- Title -->
-        <StackPanel VerticalAlignment="Top" Margin="24,70,24,0" Canvas.ZIndex="10">
+        <StackPanel VerticalAlignment="Top" Margin="24,60,24,0" Canvas.ZIndex="10">
+            <TextBlock x:Name="SetCategory" Text="CLASSIC"
+                FontFamily="/Assets/Fonts/MiSans-Demibold.ttf#MiSans"
+                FontSize="12" Foreground="#AAFFFFFF" HorizontalAlignment="Center"
+                Margin="0,0,0,2"/>
             <TextBlock x:Name="SetTitle" Text="Classic"
                 FontFamily="/Assets/Fonts/MiSans-Demibold.ttf#MiSans"
                 FontSize="32" Foreground="White" HorizontalAlignment="Center"/>

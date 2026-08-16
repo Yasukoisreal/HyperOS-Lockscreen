@@ -13,6 +13,7 @@ using Microsoft.Xna.Framework;
 using MC = System.Windows.Media.Color;
 using Windows.Phone.System;
 using Microsoft.Phone.Info;
+using HyperOS.Helpers;
 using System.Net;
 using System.Device.Location;
 using System.Windows.Shapes;
@@ -36,6 +37,7 @@ namespace HyperOS.Pages
         private int clockBlend = 0;     // 0=None, 1=Sunset, 2=Ocean, 3=Aurora, 4=Neon
         private int clockSize = 2;      // 0=S..4=XXL (default 2=L)
         private int dateAlign = 1;      // 0=Left, 1=Center, 2=Right
+        private int clockLayout = 0;    // 0=Horiz, 1=Vert, 2=Analog Minimal, 3=Classic, 4=Swiss
 
         // PIN
         private string passwordText = "";
@@ -83,22 +85,7 @@ namespace HyperOS.Pages
         private double weatherFreeX, weatherFreeY;
         private double countdownFreeX, countdownFreeY;
 
-        // Font families for My Sets card preview
-        private static readonly FontFamily[] ClockFontFamilies = {
-            new FontFamily("/Assets/Fonts/MiSans-Regular.ttf#MiSans"),
-            new FontFamily("/Assets/Fonts/MiSans-Demibold.ttf#MiSans"),
-            new FontFamily("/Assets/Fonts/MiSans-Light.ttf#MiSans"),
-            new FontFamily("/Assets/Fonts/BebasNeue-Regular.ttf#Bebas Neue"),
-            new FontFamily("/Assets/Fonts/PlayfairDisplay-Regular.ttf#Playfair Display"),
-            new FontFamily("/Assets/Fonts/DMSerifDisplay-Regular.ttf#DM Serif Display"),
-            new FontFamily("/Assets/Fonts/InstrumentSerif-Regular.ttf#Instrument Serif"),
-            new FontFamily("/Assets/Fonts/Montserrat-Bold.ttf#Montserrat"),
-            new FontFamily("/Assets/Fonts/Poppins-SemiBold.ttf#Poppins"),
-            new FontFamily("/Assets/Fonts/Raleway-Light.ttf#Raleway"),
-            new FontFamily("/Assets/Fonts/AbrilFatface-Regular.ttf#Abril Fatface"),
-            new FontFamily("Segoe WP"),
-            new FontFamily("Segoe WP Black"),
-        };
+        // Font families now shared from ClockRenderer.Fonts
 
         public LockScreen()
         {
@@ -133,12 +120,12 @@ namespace HyperOS.Pages
             batteryTimer.Start();
             UpdateBattery();
 
-            // Weather timer (every 30 min)
+            // Weather timer (every 30 min) — only start if weather is enabled
             weatherTimer = new DispatcherTimer { Interval = TimeSpan.FromMinutes(30) };
             weatherTimer.Tick += (s, a) => FetchWeather();
-            weatherTimer.Start();
             if (showWeather)
             {
+                weatherTimer.Start();
                 LoadCachedWeather(); // Show cached data immediately
                 FetchWeather();      // Then refresh from API
             }
@@ -177,7 +164,16 @@ namespace HyperOS.Pages
                     UpdateTime();
                     UpdateBattery();
                     UpdateCountdown();
-                    if (showWeather) FetchWeather();
+                    if (showWeather)
+                    {
+                        if (!weatherTimer.IsEnabled) weatherTimer.Start();
+                        FetchWeather();
+                    }
+                    else
+                    {
+                        weatherTimer.Stop();
+                        WeatherText.Visibility = Visibility.Collapsed;
+                    }
                     LoadForeground();
                     ApplyDepthLayers();
                     ApplyFreePositions();
@@ -207,29 +203,43 @@ namespace HyperOS.Pages
                 try
                 {
                     // Build clock animation in code to respect depth layers.
-                    // Animate the visible version of each part (front or behind).
                     var sb = new Storyboard();
-                    int delayMs = 0;
 
-                    // Hour
-                    if (useDepthEffect && depthHourBehind)
-                        AddFadeSlide(sb, HourPartBehind, delayMs, 600);
+                    if (clockLayout >= 2)
+                    {
+                        // Analog clock — animate the whole canvas
+                        if (useDepthEffect)
+                            AddFadeSlide(sb, AnalogClockCanvasBehind, 0, 700);
+                        else
+                            AddFadeSlide(sb, AnalogClockCanvas, 0, 700);
+                    }
                     else
-                        AddFadeSlide(sb, HourPart, delayMs, 600);
-                    delayMs += 100;
+                    {
+                        int delayMs = 0;
 
-                    // Colon
-                    if (useDepthEffect && depthColonBehind)
-                        AddFadeSlide(sb, ColonPartBehind, delayMs, 600);
-                    else
-                        AddFadeSlide(sb, ColonPart, delayMs, 600);
-                    delayMs += 100;
+                        // Hour
+                        if (useDepthEffect && depthHourBehind)
+                            AddFadeSlide(sb, HourPartBehind, delayMs, 600);
+                        else
+                            AddFadeSlide(sb, HourPart, delayMs, 600);
+                        delayMs += 100;
 
-                    // Minute
-                    if (useDepthEffect && depthMinuteBehind)
-                        AddFadeSlide(sb, MinutePartBehind, delayMs, 600);
-                    else
-                        AddFadeSlide(sb, MinutePart, delayMs, 600);
+                        // Colon (skip for vertical)
+                        if (clockLayout != 1)
+                        {
+                            if (useDepthEffect && depthColonBehind)
+                                AddFadeSlide(sb, ColonPartBehind, delayMs, 600);
+                            else
+                                AddFadeSlide(sb, ColonPart, delayMs, 600);
+                            delayMs += 100;
+                        }
+
+                        // Minute
+                        if (useDepthEffect && depthMinuteBehind)
+                            AddFadeSlide(sb, MinutePartBehind, delayMs, 600);
+                        else
+                            AddFadeSlide(sb, MinutePart, delayMs, 600);
+                    }
 
                     sb.Begin();
 
@@ -290,6 +300,15 @@ namespace HyperOS.Pages
                 // Behind parts (for depth effect)
                 HourPartBehind.Text = h;
                 MinutePartBehind.Text = m;
+
+                // Redraw analog clock if active
+                if (clockLayout >= 2)
+                {
+                    var now = DateTime.Now;
+                    double diameter = AnalogClockCanvas.Width;
+                    DrawAnalogClock(AnalogClockCanvas, diameter, now.Hour, now.Minute, clockLayout);
+                    DrawAnalogClock(AnalogClockCanvasBehind, diameter, now.Hour, now.Minute, clockLayout);
+                }
 
                 string newDay = DateTime.Now.ToString("dddd");
                 string newDate = DateTime.Now.ToString("MMMM d");
@@ -644,6 +663,8 @@ namespace HyperOS.Pages
                 clockSize = (int)s["ClockSize"];
             if (s.Contains("DateAlign"))
                 dateAlign = (int)s["DateAlign"];
+            if (s.Contains("ClockLayout"))
+                clockLayout = (int)s["ClockLayout"];
 
             // Owner info
             if (s.Contains("OwnerInfo"))
@@ -712,22 +733,62 @@ namespace HyperOS.Pages
 
         private void ApplyClockStyle()
         {
-            switch (clockStyle)
+            // Set font — use shared cached fonts (CPU: avoids creating new FontFamily per call)
+            SetClockFont(ClockRenderer.GetFont(clockStyle));
+
+            bool isAnalog = clockLayout >= 2;
+            bool isVertical = clockLayout == 1;
+
+            // Show/hide digital vs analog
+            TimePanel.Visibility = isAnalog ? Visibility.Collapsed : Visibility.Visible;
+            AnalogClockCanvas.Visibility = isAnalog ? Visibility.Visible : Visibility.Collapsed;
+            BehindTimePanel.Visibility = isAnalog ? Visibility.Collapsed : Visibility.Visible;
+            AnalogClockCanvasBehind.Visibility = Visibility.Collapsed; // Managed by ApplyDepthLayers
+
+            // Vertical: stack vertically, hide colon
+            if (isVertical)
             {
-                case 0: SetClockFont(new FontFamily("/Assets/Fonts/MiSans-Regular.ttf#MiSans")); break;
-                case 1: SetClockFont(new FontFamily("/Assets/Fonts/MiSans-Demibold.ttf#MiSans")); break;
-                case 2: SetClockFont(new FontFamily("/Assets/Fonts/MiSans-Light.ttf#MiSans")); break;
-                case 3: SetClockFont(new FontFamily("/Assets/Fonts/BebasNeue-Regular.ttf#Bebas Neue")); break;
-                case 4: SetClockFont(new FontFamily("/Assets/Fonts/PlayfairDisplay-Regular.ttf#Playfair Display")); break;
-                case 5: SetClockFont(new FontFamily("/Assets/Fonts/DMSerifDisplay-Regular.ttf#DM Serif Display")); break;
-                case 6: SetClockFont(new FontFamily("/Assets/Fonts/InstrumentSerif-Regular.ttf#Instrument Serif")); break;
-                case 7: SetClockFont(new FontFamily("/Assets/Fonts/Montserrat-Bold.ttf#Montserrat")); break;
-                case 8: SetClockFont(new FontFamily("/Assets/Fonts/Poppins-SemiBold.ttf#Poppins")); break;
-                case 9: SetClockFont(new FontFamily("/Assets/Fonts/Raleway-Light.ttf#Raleway")); break;
-                case 10: SetClockFont(new FontFamily("/Assets/Fonts/AbrilFatface-Regular.ttf#Abril Fatface")); break;
-                case 11: SetClockFont(new FontFamily("Segoe WP")); break;
-                case 12: SetClockFont(new FontFamily("Segoe WP Black")); break;
-                default: SetClockFont(new FontFamily("/Assets/Fonts/MiSans-Regular.ttf#MiSans")); break;
+                TimePanel.Orientation = System.Windows.Controls.Orientation.Vertical;
+                ColonPart.Visibility = Visibility.Collapsed;
+                ColonPartBehind.Visibility = Visibility.Collapsed;
+                HourPart.HorizontalAlignment = HorizontalAlignment.Stretch;
+                MinutePart.HorizontalAlignment = HorizontalAlignment.Stretch;
+                HourPart.TextAlignment = TextAlignment.Center;
+                MinutePart.TextAlignment = TextAlignment.Center;
+                HourPartBehind.HorizontalAlignment = HorizontalAlignment.Stretch;
+                MinutePartBehind.HorizontalAlignment = HorizontalAlignment.Stretch;
+                HourPartBehind.TextAlignment = TextAlignment.Center;
+                MinutePartBehind.TextAlignment = TextAlignment.Center;
+                BehindTimePanel.Orientation = System.Windows.Controls.Orientation.Vertical;
+            }
+            else
+            {
+                TimePanel.Orientation = System.Windows.Controls.Orientation.Horizontal;
+                ColonPart.Visibility = isAnalog ? Visibility.Collapsed : Visibility.Visible;
+                ColonPartBehind.Visibility = isAnalog ? Visibility.Collapsed : Visibility.Visible;
+                HourPart.HorizontalAlignment = HorizontalAlignment.Left;
+                MinutePart.HorizontalAlignment = HorizontalAlignment.Left;
+                HourPart.TextAlignment = TextAlignment.Left;
+                MinutePart.TextAlignment = TextAlignment.Left;
+                HourPartBehind.HorizontalAlignment = HorizontalAlignment.Left;
+                MinutePartBehind.HorizontalAlignment = HorizontalAlignment.Left;
+                HourPartBehind.TextAlignment = TextAlignment.Left;
+                MinutePartBehind.TextAlignment = TextAlignment.Left;
+                BehindTimePanel.Orientation = System.Windows.Controls.Orientation.Horizontal;
+            }
+
+            // Draw analog clock if needed
+            if (isAnalog)
+            {
+                var now = DateTime.Now;
+                int sz = SizeValues[Math.Max(0, Math.Min(clockSize, SizeValues.Length - 1))];
+                double diameter = sz * 1.6;
+                AnalogClockCanvas.Width = diameter;
+                AnalogClockCanvas.Height = diameter;
+                AnalogClockCanvasBehind.Width = diameter;
+                AnalogClockCanvasBehind.Height = diameter;
+                DrawAnalogClock(AnalogClockCanvas, diameter, now.Hour, now.Minute, clockLayout);
+                DrawAnalogClock(AnalogClockCanvasBehind, diameter, now.Hour, now.Minute, clockLayout);
             }
         }
 
@@ -807,9 +868,9 @@ namespace HyperOS.Pages
                 switch (clockColor)
                 {
                     case 1: brush = new SolidColorBrush(C(255, 215, 0)); break;   // Gold
-                    case 2: brush = new SolidColorBrush(C(135, 206, 250)); break; // Sky Blue
+                    case 2: brush = new SolidColorBrush(C(135, 206, 235)); break; // Sky Blue
                     case 3: brush = new SolidColorBrush(C(255, 182, 193)); break; // Pink
-                    case 4: brush = new SolidColorBrush(C(255, 99, 99)); break;   // Red
+                    case 4: brush = new SolidColorBrush(C(255, 68, 68)); break;   // Red
                     case 5: brush = new SolidColorBrush(C(91, 255, 176)); break;  // Mint
                     case 6: brush = new SolidColorBrush(C(196, 167, 255)); break; // Lavender
                     case 7: brush = new SolidColorBrush(C(255, 140, 66)); break;  // Orange
@@ -836,7 +897,7 @@ namespace HyperOS.Pages
             return lg;
         }
 
-        private static readonly int[] SizeValues = { 80, 95, 105, 120, 140 };
+        private static int[] SizeValues { get { return ClockRenderer.SizeValues; } }
 
         private void ApplyClockSize()
         {
@@ -850,13 +911,50 @@ namespace HyperOS.Pages
             ColonPartBehind.FontSize = sz;
             MinutePartBehind.FontSize = sz;
             // Pull clock closer to date
-            double pull = -sz * 0.16;
+            double pull = (clockLayout == 1) ? -sz * 0.22 : -sz * 0.16;
             TimePanel.Margin = new Thickness(0, pull, 0, 0);
             BehindTimePanel.Margin = new Thickness(0, pull, 0, 0);
+
+            // Vertical: pull minute up close to hour
+            if (clockLayout == 1)
+            {
+                var vMargin = new Thickness(0, -sz * 0.35, 0, 0);
+                MinutePart.Margin = vMargin;
+                MinutePartBehind.Margin = vMargin;
+            }
+            else
+            {
+                MinutePart.Margin = new Thickness(0);
+                MinutePartBehind.Margin = new Thickness(0);
+            }
+
+            // Analog size
+            if (clockLayout >= 2)
+            {
+                double diameter = sz * 1.6;
+                AnalogClockCanvas.Width = diameter;
+                AnalogClockCanvas.Height = diameter;
+                AnalogClockCanvasBehind.Width = diameter;
+                AnalogClockCanvasBehind.Height = diameter;
+            }
         }
+
+        /// <summary>
+        /// Draws an analog clock face on the given canvas.
+        /// style: 2=Minimal (hands only), 3=Classic (12/3/6/9), 4=Swiss (tick marks)
+        /// </summary>
+        private void DrawAnalogClock(Canvas canvas, double diameter, int hour, int minute, int style)
+        {
+            Brush clockBrush = HourPart.Foreground;
+            ClockRenderer.DrawAnalogClock(canvas, diameter, hour, minute, style, clockBrush);
+        }
+
+
 
         private void ApplyDepthLayers()
         {
+            bool isAnalog = clockLayout >= 2;
+
             if (!useDepthEffect)
             {
                 // No depth — all front, hide behind layer
@@ -864,6 +962,8 @@ namespace HyperOS.Pages
                 HourPart.Opacity = 1;
                 ColonPart.Opacity = 1;
                 MinutePart.Opacity = 1;
+                AnalogClockCanvas.Opacity = 1;
+                AnalogClockCanvasBehind.Visibility = Visibility.Collapsed;
                 return;
             }
 
@@ -872,20 +972,35 @@ namespace HyperOS.Pages
             BehindClockPanel.Margin = ClockPanel.Margin;
             BehindClockPanel.HorizontalAlignment = ClockPanel.HorizontalAlignment;
 
-            bool anyBehind = depthHourBehind || depthColonBehind || depthMinuteBehind;
-            BehindForegroundGrid.Visibility = anyBehind ? Visibility.Visible : Visibility.Collapsed;
+            if (isAnalog)
+            {
+                // Analog: treat entire clock as behind
+                BehindForegroundGrid.Visibility = Visibility.Visible;
+                AnalogClockCanvas.Opacity = 0;
+                AnalogClockCanvasBehind.Visibility = Visibility.Visible;
+                HourPart.Opacity = 0;
+                ColonPart.Opacity = 0;
+                MinutePart.Opacity = 0;
+            }
+            else
+            {
+                bool anyBehind = depthHourBehind || depthColonBehind || depthMinuteBehind;
+                BehindForegroundGrid.Visibility = anyBehind ? Visibility.Visible : Visibility.Collapsed;
+                AnalogClockCanvasBehind.Visibility = Visibility.Collapsed;
+                AnalogClockCanvas.Opacity = 1;
 
-            // Hour
-            HourPart.Opacity = depthHourBehind ? 0 : 1;
-            HourPartBehind.Opacity = depthHourBehind ? 1 : 0;
+                // Hour
+                HourPart.Opacity = depthHourBehind ? 0 : 1;
+                HourPartBehind.Opacity = depthHourBehind ? 1 : 0;
 
-            // Colon
-            ColonPart.Opacity = depthColonBehind ? 0 : 1;
-            ColonPartBehind.Opacity = depthColonBehind ? 1 : 0;
+                // Colon
+                ColonPart.Opacity = depthColonBehind ? 0 : 1;
+                ColonPartBehind.Opacity = depthColonBehind ? 1 : 0;
 
-            // Minute
-            MinutePart.Opacity = depthMinuteBehind ? 0 : 1;
-            MinutePartBehind.Opacity = depthMinuteBehind ? 1 : 0;
+                // Minute
+                MinutePart.Opacity = depthMinuteBehind ? 0 : 1;
+                MinutePartBehind.Opacity = depthMinuteBehind ? 1 : 0;
+            }
         }
 
         private void ApplyFreePositions()
@@ -902,7 +1017,7 @@ namespace HyperOS.Pages
                 ClockPanel.Margin = new Thickness(clockFreeX + PAD, clockFreeY + PAD, 0, 0);
 
                 // Force child elements to Left alignment (free positioning is absolute)
-                // Then apply user's date alignment preference
+                // Use dateAlign auto-computed by Editor (based on clock center)
                 TimePanel.HorizontalAlignment = HorizontalAlignment.Left;
                 BehindTimePanel.HorizontalAlignment = HorizontalAlignment.Left;
                 switch (dateAlign)
@@ -1268,32 +1383,50 @@ namespace HyperOS.Pages
 
         private class MSPreset
         {
-            public string Name, Subtitle;
+            public string Name, Subtitle, Category;
             public int ClockStyle, ClockSize, ClockColor, ClockBlend, DateAlign;
+            public int ClockLayout; // 0=Horiz, 1=Vert, 2=Minimal, 3=Classic, 4=Swiss, 5=Rhombus, 6=Giant
             public MC PreviewBg, PreviewClockColor;
             public double ClockX = -1, ClockY = -1;
             public bool UseDepthEffect;
             public bool DepthHourBehind = true, DepthColonBehind = true, DepthMinuteBehind = true;
+            public string BackgroundImage; // e.g. "Assets/Pictures/classic02.jpg"
         }
 
-        private static readonly List<MSPreset> msPresets = new List<MSPreset>
+        private static readonly List<MSPreset> msPresetsOriginal = new List<MSPreset>
         {
-            new MSPreset { Name="Classic", Subtitle="What's classic never goes out of style.", ClockStyle=0, ClockSize=2, ClockColor=0, ClockBlend=0, DateAlign=1, PreviewBg=MC.FromArgb(255,60,60,80), PreviewClockColor=MC.FromArgb(255,255,255,255) },
-            new MSPreset { Name="Bold", Subtitle="Make a statement with bold typography.", ClockStyle=1, ClockSize=4, ClockColor=0, ClockBlend=1, DateAlign=1, PreviewBg=MC.FromArgb(255,40,20,60), PreviewClockColor=MC.FromArgb(255,255,120,80) },
-            new MSPreset { Name="Elegant", Subtitle="Refined beauty in every detail.", ClockStyle=4, ClockSize=3, ClockColor=1, ClockBlend=0, DateAlign=1, PreviewBg=MC.FromArgb(255,30,30,30), PreviewClockColor=MC.FromArgb(255,255,215,0) },
-            new MSPreset { Name="Neon", Subtitle="Electrify your screen.", ClockStyle=3, ClockSize=3, ClockColor=8, ClockBlend=4, DateAlign=0, PreviewBg=MC.FromArgb(255,10,10,30), PreviewClockColor=MC.FromArgb(255,0,229,255) },
-            new MSPreset { Name="Magazine", Subtitle="Turn your lock screen into a cover.", ClockStyle=6, ClockSize=2, ClockColor=0, ClockBlend=0, DateAlign=1, PreviewBg=MC.FromArgb(255,180,120,80), PreviewClockColor=MC.FromArgb(255,255,255,255) },
-            new MSPreset { Name="Minimal", Subtitle="Less is more.", ClockStyle=9, ClockSize=1, ClockColor=9, ClockBlend=0, DateAlign=1, PreviewBg=MC.FromArgb(255,20,20,25), PreviewClockColor=MC.FromArgb(255,160,160,176) },
-            new MSPreset { Name="Serif", Subtitle="Timeless serif elegance.", ClockStyle=5, ClockSize=3, ClockColor=0, ClockBlend=0, DateAlign=1, PreviewBg=MC.FromArgb(255,50,40,60), PreviewClockColor=MC.FromArgb(255,255,255,255) },
-            new MSPreset { Name="Display", Subtitle="Time is important. Make it count.", ClockStyle=10, ClockSize=4, ClockColor=0, ClockBlend=5, DateAlign=1, PreviewBg=MC.FromArgb(255,20,10,10), PreviewClockColor=MC.FromArgb(255,255,105,180) },
-            new MSPreset { Name="Fire", Subtitle="Feel the heat.", ClockStyle=1, ClockSize=3, ClockColor=4, ClockBlend=6, DateAlign=0, PreviewBg=MC.FromArgb(255,40,10,5), PreviewClockColor=MC.FromArgb(255,255,80,0) },
-            new MSPreset { Name="Ocean", Subtitle="Calm waves, deep blue.", ClockStyle=7, ClockSize=2, ClockColor=2, ClockBlend=2, DateAlign=1, PreviewBg=MC.FromArgb(255,10,30,60), PreviewClockColor=MC.FromArgb(255,0,180,255) },
-            new MSPreset { Name="Aurora", Subtitle="Northern lights on your screen.", ClockStyle=2, ClockSize=2, ClockColor=5, ClockBlend=3, DateAlign=1, PreviewBg=MC.FromArgb(255,10,20,30), PreviewClockColor=MC.FromArgb(255,80,255,120) },
-            new MSPreset { Name="Poppins", Subtitle="Modern geometric beauty.", ClockStyle=8, ClockSize=3, ClockColor=3, ClockBlend=0, DateAlign=1, PreviewBg=MC.FromArgb(255,60,40,50), PreviewClockColor=MC.FromArgb(255,255,182,193) },
-            new MSPreset { Name="Twilight", Subtitle="Between day and night.", ClockStyle=4, ClockSize=2, ClockColor=6, ClockBlend=9, DateAlign=1, PreviewBg=MC.FromArgb(255,25,10,50), PreviewClockColor=MC.FromArgb(255,148,100,255) },
-            new MSPreset { Name="Ice", Subtitle="Cool and crisp.", ClockStyle=9, ClockSize=2, ClockColor=0, ClockBlend=7, DateAlign=1, PreviewBg=MC.FromArgb(255,200,220,240), PreviewClockColor=MC.FromArgb(255,255,255,255) },
-            new MSPreset { Name="Lime", Subtitle="Fresh and vibrant energy.", ClockStyle=7, ClockSize=3, ClockColor=5, ClockBlend=8, DateAlign=0, PreviewBg=MC.FromArgb(255,15,40,15), PreviewClockColor=MC.FromArgb(255,100,255,100) },
+            // CLASSIC
+            new MSPreset { Category="Classic", Name="Classic", Subtitle="What's classic never goes out of style.", ClockStyle=0, ClockSize=2, ClockColor=0, ClockBlend=0, DateAlign=0, ClockX=30, ClockY=100, PreviewBg=MC.FromArgb(255,60,60,80), PreviewClockColor=MC.FromArgb(255,255,255,255), BackgroundImage="/Assets/Pictures/classic02.jpg" },
+            new MSPreset { Category="Classic", Name="Ice", Subtitle="Cool and crisp.", ClockStyle=9, ClockSize=2, ClockColor=0, ClockBlend=0, DateAlign=0, ClockX=20, ClockY=50, PreviewBg=MC.FromArgb(255,120,160,200), PreviewClockColor=MC.FromArgb(255,255,255,255), BackgroundImage="/Assets/Pictures/classic03.jpg" },
+            new MSPreset { Category="Classic", Name="Ocean", Subtitle="Calm waves, deep blue.", ClockStyle=0, ClockSize=2, ClockColor=0, ClockBlend=0, DateAlign=0, ClockLayout=3, ClockX=30, ClockY=50, PreviewBg=MC.FromArgb(255,20,100,120), PreviewClockColor=MC.FromArgb(255,255,255,255), BackgroundImage="/Assets/Pictures/AI Static 3.jpg" },
+            new MSPreset { Category="Classic", Name="Analog", Subtitle="Classic analog elegance.", ClockStyle=0, ClockSize=2, ClockColor=0, ClockBlend=0, DateAlign=1, ClockLayout=2, PreviewBg=MC.FromArgb(255,20,20,30), PreviewClockColor=MC.FromArgb(255,255,255,255) },
+            new MSPreset { Category="Classic", Name="Classic Clock", Subtitle="Numbers on the dial.", ClockStyle=0, ClockSize=2, ClockColor=1, ClockBlend=0, DateAlign=1, ClockLayout=3, PreviewBg=MC.FromArgb(255,40,30,20), PreviewClockColor=MC.FromArgb(255,255,215,0) },
+            new MSPreset { Category="Classic", Name="Swiss", Subtitle="Precision Swiss design.", ClockStyle=0, ClockSize=2, ClockColor=0, ClockBlend=0, DateAlign=1, ClockLayout=4, PreviewBg=MC.FromArgb(255,10,10,15), PreviewClockColor=MC.FromArgb(255,255,255,255) },
+
+            // RHOMBUS
+            new MSPreset { Category="Rhombus", Name="Floral", Subtitle="Beauty in nature.", ClockStyle=11, ClockSize=3, ClockColor=0, ClockBlend=0, DateAlign=1, ClockLayout=5, ClockX=160, ClockY=100, PreviewBg=MC.FromArgb(255,20,20,20), PreviewClockColor=MC.FromArgb(255,255,255,255), BackgroundImage="/Assets/Pictures/10062799164539040.jpg" },
+            new MSPreset { Category="Rhombus", Name="Blossom", Subtitle="Soft and elegant.", ClockStyle=13, ClockSize=3, ClockColor=0, ClockBlend=0, DateAlign=1, ClockLayout=5, ClockX=160, ClockY=100, PreviewBg=MC.FromArgb(255,40,30,30), PreviewClockColor=MC.FromArgb(255,255,255,255), BackgroundImage="/Assets/Pictures/10696117861097790.jpg" },
+            new MSPreset { Category="Rhombus", Name="Architecture", Subtitle="Structured heights.", ClockStyle=11, ClockSize=3, ClockColor=0, ClockBlend=0, DateAlign=1, ClockLayout=5, ClockX=160, ClockY=100, PreviewBg=MC.FromArgb(255,10,30,40), PreviewClockColor=MC.FromArgb(255,255,255,255), BackgroundImage="/Assets/Pictures/Tall Building Wallpaper.jpg" },
+            new MSPreset { Category="Rhombus", Name="Hyper", Subtitle="Flowing gradient.", ClockStyle=13, ClockSize=3, ClockColor=0, ClockBlend=0, DateAlign=1, ClockLayout=5, ClockX=160, ClockY=100, PreviewBg=MC.FromArgb(255,20,10,40), PreviewClockColor=MC.FromArgb(255,255,255,255), BackgroundImage="/Assets/Pictures/Xiaomi HyperOS Wallpapers.jpg" },
+
+            // MAGAZINE
+            new MSPreset { Category="Magazine", Name="Magazine", Subtitle="Turn your lock screen into a cover.", ClockStyle=6, ClockSize=2, ClockColor=0, ClockBlend=0, DateAlign=0, ClockX=25, ClockY=580, PreviewBg=MC.FromArgb(255,180,140,80), PreviewClockColor=MC.FromArgb(255,255,255,255), BackgroundImage="/Assets/Pictures/magazine01.jpg" },
+            new MSPreset { Category="Magazine", Name="Bold", Subtitle="Make a statement with bold typography.", ClockStyle=3, ClockSize=4, ClockColor=1, ClockBlend=0, DateAlign=0, ClockLayout=1, ClockX=20, ClockY=480, PreviewBg=MC.FromArgb(255,120,20,20), PreviewClockColor=MC.FromArgb(255,255,215,0), BackgroundImage="/Assets/Pictures/east07.jpg" },
+            new MSPreset { Category="Magazine", Name="Elegant", Subtitle="Refined beauty in every detail.", ClockStyle=4, ClockSize=3, ClockColor=1, ClockBlend=0, DateAlign=1, ClockX=220, ClockY=80, PreviewBg=MC.FromArgb(255,15,15,12), PreviewClockColor=MC.FromArgb(255,255,215,0), BackgroundImage="/Assets/Pictures/east05.jpg" },
+            new MSPreset { Category="Magazine", Name="Neon", Subtitle="Electrify your screen.", ClockStyle=0, ClockSize=3, ClockColor=5, ClockBlend=3, DateAlign=1, ClockLayout=4, PreviewBg=MC.FromArgb(255,15,50,40), PreviewClockColor=MC.FromArgb(255,80,255,150), BackgroundImage="/Assets/Pictures/east06.jpg" },
+            new MSPreset { Category="Magazine", Name="Minimal", Subtitle="Less is more.", ClockStyle=9, ClockSize=0, ClockColor=0, ClockBlend=0, DateAlign=0, ClockX=30, ClockY=60, PreviewBg=MC.FromArgb(255,60,60,60), PreviewClockColor=MC.FromArgb(255,255,255,255), BackgroundImage="/Assets/Pictures/magazine05.jpg" },
+            new MSPreset { Category="Magazine", Name="Serif", Subtitle="Timeless serif elegance.", ClockStyle=5, ClockSize=3, ClockColor=0, ClockBlend=0, DateAlign=1, ClockLayout=1, PreviewBg=MC.FromArgb(255,20,60,70), PreviewClockColor=MC.FromArgb(255,255,255,255), BackgroundImage="/Assets/Pictures/east02.jpg" },
+            new MSPreset { Category="Magazine", Name="Display", Subtitle="Time is important. Make it count.", ClockStyle=10, ClockSize=4, ClockColor=7, ClockBlend=0, DateAlign=1, ClockX=180, ClockY=600, PreviewBg=MC.FromArgb(255,40,40,120), PreviewClockColor=MC.FromArgb(255,255,140,66), BackgroundImage="/Assets/Pictures/magazine06.jpg" },
+            new MSPreset { Category="Magazine", Name="Fire", Subtitle="Feel the heat.", ClockStyle=7, ClockSize=3, ClockColor=1, ClockBlend=0, DateAlign=0, ClockX=20, ClockY=520, PreviewBg=MC.FromArgb(255,120,30,20), PreviewClockColor=MC.FromArgb(255,255,215,0), BackgroundImage="/Assets/Pictures/east01.jpg" },
+            new MSPreset { Category="Magazine", Name="Aurora", Subtitle="Northern lights on your screen.", ClockStyle=2, ClockSize=2, ClockColor=6, ClockBlend=0, DateAlign=1, PreviewBg=MC.FromArgb(255,15,30,50), PreviewClockColor=MC.FromArgb(255,196,167,255), BackgroundImage="/Assets/Pictures/AI Static 4.jpg" },
+            new MSPreset { Category="Magazine", Name="Poppins", Subtitle="Modern geometric beauty.", ClockStyle=8, ClockSize=1, ClockColor=0, ClockBlend=0, DateAlign=1, ClockX=230, ClockY=40, PreviewBg=MC.FromArgb(255,80,120,90), PreviewClockColor=MC.FromArgb(255,255,255,255), BackgroundImage="/Assets/Pictures/magazine04.jpg" },
+            new MSPreset { Category="Magazine", Name="Twilight", Subtitle="Between day and night.", ClockStyle=10, ClockSize=3, ClockColor=7, ClockBlend=1, DateAlign=0, ClockLayout=1, ClockX=20, ClockY=500, PreviewBg=MC.FromArgb(255,15,20,50), PreviewClockColor=MC.FromArgb(255,255,180,80), BackgroundImage="/Assets/Pictures/magazine02.jpg" },
+            new MSPreset { Category="Magazine", Name="Lime", Subtitle="Fresh and vibrant energy.", ClockStyle=4, ClockSize=2, ClockColor=1, ClockBlend=0, DateAlign=1, ClockX=200, ClockY=580, PreviewBg=MC.FromArgb(255,50,55,60), PreviewClockColor=MC.FromArgb(255,255,215,0), BackgroundImage="/Assets/Pictures/magazine03.jpg" },
+            new MSPreset { Category="Magazine", Name="Vertical", Subtitle="Time stacked vertically.", ClockStyle=3, ClockSize=3, ClockColor=2, ClockBlend=0, DateAlign=0, ClockLayout=1, ClockX=20, ClockY=500, PreviewBg=MC.FromArgb(255,130,180,230), PreviewClockColor=MC.FromArgb(255,135,206,235), BackgroundImage="/Assets/Pictures/magazine07.jpg" },
         };
+
+        // Working copy — rebuilt from originals each time to prevent static mutation
+        private List<MSPreset> msPresets = new List<MSPreset>();
 
         private const double MS_CW = 200, MS_CH = 360, MS_GAP = 16, MS_STEP = 216, MS_SW = 480;
         private int msCurrentIndex;
@@ -1302,36 +1435,50 @@ namespace HyperOS.Pages
         private List<Ellipse> msDots = new List<Ellipse>();
         private Dictionary<int, BitmapImage> msWallpapers = new Dictionary<int, BitmapImage>();
         private BitmapImage msForeground;
+        // Cached dot brushes (CPU: avoids allocating per swipe)
+        private static readonly SolidColorBrush msDotActive = new SolidColorBrush(MC.FromArgb(255, 255, 255, 255));
+        private static readonly SolidColorBrush msDotInactive = new SolidColorBrush(MC.FromArgb(80, 255, 255, 255));
 
         private void LayoutRoot_Hold(object sender, System.Windows.Input.GestureEventArgs e)
         {
+            // Guard: don't open MySets if security panel is open or if user is mid-swipe
+            if (PassGrid.Visibility == Visibility.Visible
+                || PatternGrid.Visibility == Visibility.Visible
+                || RecoverGrid.Visibility == Visibility.Visible
+                || MySetsOverlay.Visibility == Visibility.Visible)
+                return;
+
+            var t = (CompositeTransform)OverlayInformationPanel.RenderTransform;
+            if (Math.Abs(t.TranslateY) > 20) return; // mid-swipe
+
             ShowMySetsOverlay();
         }
 
         private void ShowMySetsOverlay()
         {
-            // Load per-preset wallpapers
-            msWallpapers.Clear();
-            try
+            // Rebuild working presets from originals (prevents static mutation — BUG 3 fix)
+            msPresets.Clear();
+            for (int i = 0; i < msPresetsOriginal.Count; i++)
             {
-                using (var store = IsolatedStorageFile.GetUserStoreForApplication())
+                var o = msPresetsOriginal[i];
+                msPresets.Add(new MSPreset
                 {
-                    for (int i = 0; i < msPresets.Count; i++)
-                    {
-                        string file = "Background_" + i + ".jpg";
-                        if (store.FileExists(file))
-                        {
-                            using (var stream = store.OpenFile(file, System.IO.FileMode.Open, System.IO.FileAccess.Read))
-                            {
-                                var bmp = new BitmapImage();
-                                bmp.SetSource(stream);
-                                msWallpapers[i] = bmp;
-                            }
-                        }
-                    }
-                }
+                    Name = o.Name, Subtitle = o.Subtitle,
+                    ClockStyle = o.ClockStyle, ClockSize = o.ClockSize,
+                    ClockColor = o.ClockColor, ClockBlend = o.ClockBlend,
+                    DateAlign = o.DateAlign, ClockLayout = o.ClockLayout,
+                    ClockX = o.ClockX, ClockY = o.ClockY,
+                    UseDepthEffect = o.UseDepthEffect,
+                    DepthHourBehind = o.DepthHourBehind,
+                    DepthColonBehind = o.DepthColonBehind,
+                    DepthMinuteBehind = o.DepthMinuteBehind,
+                    PreviewBg = o.PreviewBg, PreviewClockColor = o.PreviewClockColor,
+                    BackgroundImage = o.BackgroundImage
+                });
             }
-            catch { }
+
+            // Don't preload all wallpapers — use lazy loading in BuildMSCard to avoid OOM
+            msWallpapers.Clear();
 
             // Read saved preset overrides
             var s = IsolatedStorageSettings.ApplicationSettings;
@@ -1342,6 +1489,7 @@ namespace HyperOS.Pages
             if (s.Contains("ClockSize")) try { first.ClockSize = (int)s["ClockSize"]; } catch { }
             if (s.Contains("ClockColor")) try { first.ClockColor = (int)s["ClockColor"]; } catch { }
             if (s.Contains("ClockBlend")) try { first.ClockBlend = (int)s["ClockBlend"]; } catch { }
+            if (s.Contains("ClockLayout")) try { first.ClockLayout = (int)s["ClockLayout"]; } catch { }
             if (s.Contains("ClockX")) try { first.ClockX = (double)s["ClockX"]; } catch { }
             if (s.Contains("ClockY")) try { first.ClockY = (double)s["ClockY"]; } catch { }
             if (s.Contains("UseDepthEffect")) try { first.UseDepthEffect = (bool)s["UseDepthEffect"]; } catch { }
@@ -1359,6 +1507,7 @@ namespace HyperOS.Pages
                     if (s.Contains(pfx + "ClockSize")) try { p.ClockSize = (int)s[pfx + "ClockSize"]; } catch { }
                     if (s.Contains(pfx + "ClockColor")) try { p.ClockColor = (int)s[pfx + "ClockColor"]; } catch { }
                     if (s.Contains(pfx + "ClockBlend")) try { p.ClockBlend = (int)s[pfx + "ClockBlend"]; } catch { }
+                    if (s.Contains(pfx + "ClockLayout")) try { p.ClockLayout = (int)s[pfx + "ClockLayout"]; } catch { }
                     if (s.Contains(pfx + "ClockX")) try { p.ClockX = (double)s[pfx + "ClockX"]; } catch { }
                     if (s.Contains(pfx + "ClockY")) try { p.ClockY = (double)s[pfx + "ClockY"]; } catch { }
                     if (s.Contains(pfx + "UseDepthEffect")) try { p.UseDepthEffect = (bool)s[pfx + "UseDepthEffect"]; } catch { }
@@ -1378,6 +1527,7 @@ namespace HyperOS.Pages
                         using (var stream = store.OpenFile("Foreground.png", System.IO.FileMode.Open, System.IO.FileAccess.Read))
                         {
                             var bmp = new BitmapImage();
+                            bmp.DecodePixelWidth = 220; // Thumbnail size for cards
                             bmp.SetSource(stream);
                             msForeground = bmp;
                         }
@@ -1418,12 +1568,34 @@ namespace HyperOS.Pages
 
         private Border BuildMSCard(MSPreset preset, int index)
         {
-            Brush bg;
-            BitmapImage wp;
-            if (msWallpapers.TryGetValue(index, out wp))
-                bg = new ImageBrush { ImageSource = wp, Stretch = Stretch.UniformToFill };
-            else
-                bg = new SolidColorBrush(preset.PreviewBg);
+            Brush bg = new SolidColorBrush(preset.PreviewBg); // fallback
+
+            // Lazy-load wallpaper with small decode size to prevent OOM
+            try
+            {
+                using (var store = IsolatedStorageFile.GetUserStoreForApplication())
+                {
+                    string savedFile = "Background_" + index + ".jpg";
+                    if (store.FileExists(savedFile))
+                    {
+                        using (var stream = store.OpenFile(savedFile, System.IO.FileMode.Open, System.IO.FileAccess.Read))
+                        {
+                            var bmp = new BitmapImage();
+                            bmp.DecodePixelWidth = 220; // Thumbnail only
+                            bmp.SetSource(stream);
+                            bg = new ImageBrush { ImageSource = bmp, Stretch = Stretch.UniformToFill };
+                        }
+                    }
+                    else if (!string.IsNullOrEmpty(preset.BackgroundImage))
+                    {
+                        var bmp = new BitmapImage();
+                        bmp.DecodePixelWidth = 220;
+                        bmp.UriSource = new Uri(preset.BackgroundImage, UriKind.Relative);
+                        bg = new ImageBrush { ImageSource = bmp, Stretch = Stretch.UniformToFill };
+                    }
+                }
+            }
+            catch { }
 
             var card = new Border
             {
@@ -1453,15 +1625,14 @@ namespace HyperOS.Pages
             });
 
             // Clock setup
-            int fi = Math.Min(preset.ClockStyle, ClockFontFamilies.Length - 1);
-            int[] sizes = { 36, 42, 48, 54, 64 };
-            int sz = sizes[Math.Min(preset.ClockSize, sizes.Length - 1)];
             var brush = new SolidColorBrush(preset.PreviewClockColor);
             var transBrush = new SolidColorBrush(Colors.Transparent);
             bool hasDepth = preset.UseDepthEffect && msForeground != null;
 
             // --- BEHIND LAYER (or full layer if no depth) ---
-            var behindStack = BuildMSClockStack(preset, fi, sz,
+            var behindStack = ClockRenderer.BuildCardPreview(
+                preset.ClockLayout, preset.ClockStyle, preset.ClockSize,
+                preset.ClockX, preset.ClockY, preset.DateAlign, MS_CW, MS_CH,
                 hasDepth ? (preset.DepthHourBehind ? brush : transBrush) : brush,
                 hasDepth ? (preset.DepthColonBehind ? brush : transBrush) : brush,
                 hasDepth ? (preset.DepthMinuteBehind ? brush : transBrush) : brush,
@@ -1478,7 +1649,9 @@ namespace HyperOS.Pages
                 });
 
                 // --- FRONT LAYER ---
-                var frontStack = BuildMSClockStack(preset, fi, sz,
+                var frontStack = ClockRenderer.BuildCardPreview(
+                    preset.ClockLayout, preset.ClockStyle, preset.ClockSize,
+                    preset.ClockX, preset.ClockY, preset.DateAlign, MS_CW, MS_CH,
                     preset.DepthHourBehind ? transBrush : brush,
                     preset.DepthColonBehind ? transBrush : brush,
                     preset.DepthMinuteBehind ? transBrush : brush,
@@ -1492,40 +1665,10 @@ namespace HyperOS.Pages
             return card;
         }
 
-        private StackPanel BuildMSClockStack(MSPreset preset, int fi, int sz,
-            Brush hourBrush, Brush colonBrush, Brush minuteBrush, Brush dateBrush)
-        {
-            var stack = new StackPanel();
-            if (preset.ClockX >= 0 && preset.ClockY >= 0)
-            {
-                stack.HorizontalAlignment = HorizontalAlignment.Left;
-                stack.VerticalAlignment = VerticalAlignment.Top;
-                stack.Margin = new Thickness(preset.ClockX * (MS_CW / 480.0), preset.ClockY * (MS_CH / 800.0), 0, 0);
-            }
-            else
-            {
-                stack.VerticalAlignment = VerticalAlignment.Center;
-                stack.HorizontalAlignment = HorizontalAlignment.Center;
-                stack.Margin = new Thickness(0, -10, 0, 0);
-            }
-            stack.IsHitTestVisible = false;
 
-            stack.Children.Add(new TextBlock
-            {
-                Text = DateTime.Now.DayOfWeek.ToString() + "  ·  " + DateTime.Now.ToString("MMMM d"),
-                FontFamily = new FontFamily("/Assets/Fonts/MiSans-Regular.ttf#MiSans"),
-                FontSize = 10, Foreground = dateBrush,
-                HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 0, 0, 2)
-            });
+        // Card clock rendering now handled by ClockRenderer.BuildCardPreview()
 
-            var timeP = new StackPanel { Orientation = System.Windows.Controls.Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, -sz * 0.16, 0, 0) };
-            timeP.Children.Add(new TextBlock { Text = DateTime.Now.ToString("HH"), FontFamily = ClockFontFamilies[fi], FontSize = sz, Foreground = hourBrush });
-            timeP.Children.Add(new TextBlock { Text = ":", FontFamily = ClockFontFamilies[fi], FontSize = sz, Foreground = colonBrush, Margin = new Thickness(0, -sz * 0.08, 0, 0) });
-            timeP.Children.Add(new TextBlock { Text = DateTime.Now.ToString("mm"), FontFamily = ClockFontFamilies[fi], FontSize = sz, Foreground = minuteBrush });
-            stack.Children.Add(timeP);
 
-            return stack;
-        }
 
         // Drag & snap
         private void MySets_ManipulationDelta(object sender, System.Windows.Input.ManipulationDeltaEventArgs e)
@@ -1582,13 +1725,15 @@ namespace HyperOS.Pages
             }
             else { msOffsetX = target; MSLayoutCards(); }
 
+            MySetsCategory.Text = (msPresets[msCurrentIndex].Category ?? "").ToUpper();
             MySetsTitle.Text = msPresets[msCurrentIndex].Name;
             MySetsSubtitle.Text = msPresets[msCurrentIndex].Subtitle;
             for (int i = 0; i < msDots.Count; i++)
             {
-                msDots[i].Fill = new SolidColorBrush(i == msCurrentIndex ? MC.FromArgb(255, 255, 255, 255) : MC.FromArgb(80, 255, 255, 255));
-                msDots[i].Width = i == msCurrentIndex ? 8 : 6;
-                msDots[i].Height = i == msCurrentIndex ? 8 : 6;
+                bool active = i == msCurrentIndex;
+                msDots[i].Fill = active ? msDotActive : msDotInactive;
+                msDots[i].Width = active ? 8 : 6;
+                msDots[i].Height = active ? 8 : 6;
             }
         }
 
@@ -1620,6 +1765,7 @@ namespace HyperOS.Pages
             {
                 // Copy all saved preset slot settings to global keys
                 string[] keys = { "ClockStyle", "ClockPosition", "ClockHAlign", "ClockColor", "ClockBlend", "ClockSize",
+                    "ClockLayout",
                     "ShowWeather", "ShowCountdown", "UseDepthEffect", "DepthHourBehind", "DepthColonBehind", "DepthMinuteBehind",
                     "ClockX", "ClockY", "WeatherX", "WeatherY", "CountdownX", "CountdownY",
                     "bIsAnimOn", "DateAlign", "CountdownName", "CountdownTarget", "OwnerInfo" };
@@ -1637,11 +1783,23 @@ namespace HyperOS.Pages
                 s["ClockColor"] = preset.ClockColor;
                 s["ClockBlend"] = preset.ClockBlend;
                 s["DateAlign"] = preset.DateAlign;
+                s["ClockLayout"] = preset.ClockLayout;
                 s["ClockPosition"] = 1;   // Center
                 s["ClockHAlign"] = 1;     // Center
 
-                // Remove free layout positions so it uses default center
-                string[] posKeys = { "ClockX", "ClockY", "WeatherX", "WeatherY", "CountdownX", "CountdownY" };
+                // Set position from preset defaults if available (ISSUE 12 fix)
+                if (preset.ClockX >= 0)
+                    s["ClockX"] = preset.ClockX;
+                else if (s.Contains("ClockX"))
+                    s.Remove("ClockX");
+
+                if (preset.ClockY >= 0)
+                    s["ClockY"] = preset.ClockY;
+                else if (s.Contains("ClockY"))
+                    s.Remove("ClockY");
+
+                // Remove remaining free layout positions
+                string[] posKeys = { "WeatherX", "WeatherY", "CountdownX", "CountdownY" };
                 foreach (var pk in posKeys)
                     if (s.Contains(pk)) s.Remove(pk);
             }
@@ -1661,9 +1819,33 @@ namespace HyperOS.Pages
                     }
                     else
                     {
-                        // No custom wallpaper for this preset — remove old one
-                        if (store.FileExists("Background.jpg"))
-                            store.DeleteFile("Background.jpg");
+                        // No saved wallpaper — copy default from app resources
+                        string defaultBg = (preset.BackgroundImage ?? "").TrimStart('/');
+                        if (!string.IsNullOrEmpty(defaultBg))
+                        {
+                            try
+                            {
+                                var sri = Application.GetResourceStream(new Uri(defaultBg, UriKind.Relative));
+                                if (sri != null && sri.Stream != null)
+                                {
+                                    if (store.FileExists("Background.jpg"))
+                                        store.DeleteFile("Background.jpg");
+                                    using (var iso = store.OpenFile("Background.jpg",
+                                        System.IO.FileMode.Create, System.IO.FileAccess.Write))
+                                    {
+                                        sri.Stream.CopyTo(iso);
+                                    }
+                                    sri.Stream.Dispose();
+                                }
+                            }
+                            catch { }
+                        }
+                        else
+                        {
+                            // Truly no wallpaper (analog presets) — remove old one
+                            if (store.FileExists("Background.jpg"))
+                                store.DeleteFile("Background.jpg");
+                        }
                     }
                 }
             }

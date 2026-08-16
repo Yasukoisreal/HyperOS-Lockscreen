@@ -8,6 +8,7 @@ using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using HyperOS.Helpers;
 using Microsoft.Phone.Controls;
 
 namespace HyperOS.Pages
@@ -18,6 +19,7 @@ namespace HyperOS.Pages
 
         private class Preset
         {
+            public string Category { get; set; }
             public string Name { get; set; }
             public string Subtitle { get; set; }
             public int ClockStyle { get; set; }
@@ -33,57 +35,42 @@ namespace HyperOS.Pages
             public bool DepthHourBehind { get; set; }
             public bool DepthColonBehind { get; set; }
             public bool DepthMinuteBehind { get; set; }
+            public int ClockLayout { get; set; } // 0=Horiz, 1=Vert, 2=Minimal, 3=Classic, 4=Swiss, 5=Rhombus, 6=Giant
+            public string BackgroundImage { get; set; } // e.g. "Assets/Pictures/classic02.jpg"
 
             public Preset() { ClockX = -1; ClockY = -1; DepthHourBehind = true; DepthColonBehind = true; DepthMinuteBehind = true; }
         }
 
         private static readonly List<Preset> Presets = new List<Preset>
         {
-            new Preset { Name = "Classic", Subtitle = "What's classic never goes out of style.",
-                ClockStyle = 0, ClockSize = 2, ClockColor = 0, ClockBlend = 0, DateAlign = 1,
-                PreviewBg = Color.FromArgb(255, 60, 60, 80), PreviewClockColor = Colors.White },
-            new Preset { Name = "Bold", Subtitle = "Make a statement with bold typography.",
-                ClockStyle = 1, ClockSize = 4, ClockColor = 0, ClockBlend = 1, DateAlign = 1,
-                PreviewBg = Color.FromArgb(255, 40, 20, 60), PreviewClockColor = Color.FromArgb(255, 255, 120, 80) },
-            new Preset { Name = "Elegant", Subtitle = "Refined beauty in every detail.",
-                ClockStyle = 4, ClockSize = 3, ClockColor = 1, ClockBlend = 0, DateAlign = 1,
-                PreviewBg = Color.FromArgb(255, 30, 30, 30), PreviewClockColor = Color.FromArgb(255, 255, 215, 0) },
-            new Preset { Name = "Neon", Subtitle = "Electrify your screen.",
-                ClockStyle = 3, ClockSize = 3, ClockColor = 8, ClockBlend = 4, DateAlign = 0,
-                PreviewBg = Color.FromArgb(255, 10, 10, 30), PreviewClockColor = Color.FromArgb(255, 0, 229, 255) },
-            new Preset { Name = "Magazine", Subtitle = "Turn your lock screen into a cover.",
-                ClockStyle = 6, ClockSize = 2, ClockColor = 0, ClockBlend = 0, DateAlign = 1,
-                PreviewBg = Color.FromArgb(255, 180, 120, 80), PreviewClockColor = Colors.White },
-            new Preset { Name = "Minimal", Subtitle = "Less is more.",
-                ClockStyle = 9, ClockSize = 1, ClockColor = 9, ClockBlend = 0, DateAlign = 1,
-                PreviewBg = Color.FromArgb(255, 20, 20, 25), PreviewClockColor = Color.FromArgb(255, 160, 160, 176) },
-            new Preset { Name = "Serif", Subtitle = "Timeless serif elegance.",
-                ClockStyle = 5, ClockSize = 3, ClockColor = 0, ClockBlend = 0, DateAlign = 1,
-                PreviewBg = Color.FromArgb(255, 50, 40, 60), PreviewClockColor = Colors.White },
-            new Preset { Name = "Display", Subtitle = "Time is important. Make it count.",
-                ClockStyle = 10, ClockSize = 4, ClockColor = 0, ClockBlend = 5, DateAlign = 1,
-                PreviewBg = Color.FromArgb(255, 20, 10, 10), PreviewClockColor = Color.FromArgb(255, 255, 105, 180) },
-            new Preset { Name = "Fire", Subtitle = "Feel the heat.",
-                ClockStyle = 1, ClockSize = 3, ClockColor = 4, ClockBlend = 6, DateAlign = 0,
-                PreviewBg = Color.FromArgb(255, 40, 10, 5), PreviewClockColor = Color.FromArgb(255, 255, 80, 0) },
-            new Preset { Name = "Ocean", Subtitle = "Calm waves, deep blue.",
-                ClockStyle = 7, ClockSize = 2, ClockColor = 2, ClockBlend = 2, DateAlign = 1,
-                PreviewBg = Color.FromArgb(255, 10, 30, 60), PreviewClockColor = Color.FromArgb(255, 0, 180, 255) },
-            new Preset { Name = "Aurora", Subtitle = "Northern lights on your screen.",
-                ClockStyle = 2, ClockSize = 2, ClockColor = 5, ClockBlend = 3, DateAlign = 1,
-                PreviewBg = Color.FromArgb(255, 10, 20, 30), PreviewClockColor = Color.FromArgb(255, 80, 255, 120) },
-            new Preset { Name = "Poppins", Subtitle = "Modern geometric beauty.",
-                ClockStyle = 8, ClockSize = 3, ClockColor = 3, ClockBlend = 0, DateAlign = 1,
-                PreviewBg = Color.FromArgb(255, 60, 40, 50), PreviewClockColor = Color.FromArgb(255, 255, 182, 193) },
-            new Preset { Name = "Twilight", Subtitle = "Between day and night.",
-                ClockStyle = 4, ClockSize = 2, ClockColor = 6, ClockBlend = 9, DateAlign = 1,
-                PreviewBg = Color.FromArgb(255, 25, 10, 50), PreviewClockColor = Color.FromArgb(255, 148, 100, 255) },
-            new Preset { Name = "Ice", Subtitle = "Cool and crisp.",
-                ClockStyle = 9, ClockSize = 2, ClockColor = 0, ClockBlend = 7, DateAlign = 1,
-                PreviewBg = Color.FromArgb(255, 200, 220, 240), PreviewClockColor = Colors.White },
-            new Preset { Name = "Lime", Subtitle = "Fresh and vibrant energy.",
-                ClockStyle = 7, ClockSize = 3, ClockColor = 5, ClockBlend = 8, DateAlign = 0,
-                PreviewBg = Color.FromArgb(255, 15, 40, 15), PreviewClockColor = Color.FromArgb(255, 100, 255, 100) },
+            // CLASSIC
+            new Preset { Category="Classic", Name="Classic", Subtitle="What's classic never goes out of style.", ClockStyle=0, ClockSize=2, ClockColor=0, ClockBlend=0, DateAlign=0, ClockX=30, ClockY=100, PreviewBg=Color.FromArgb(255,60,60,80), PreviewClockColor=Color.FromArgb(255,255,255,255), BackgroundImage="/Assets/Pictures/classic02.jpg" },
+            new Preset { Category="Classic", Name="Ice", Subtitle="Cool and crisp.", ClockStyle=9, ClockSize=2, ClockColor=0, ClockBlend=0, DateAlign=0, ClockX=20, ClockY=50, PreviewBg=Color.FromArgb(255,120,160,200), PreviewClockColor=Color.FromArgb(255,255,255,255), BackgroundImage="/Assets/Pictures/classic03.jpg" },
+            new Preset { Category="Classic", Name="Ocean", Subtitle="Calm waves, deep blue.", ClockStyle=0, ClockSize=2, ClockColor=0, ClockBlend=0, DateAlign=0, ClockLayout=3, ClockX=30, ClockY=50, PreviewBg=Color.FromArgb(255,20,100,120), PreviewClockColor=Color.FromArgb(255,255,255,255), BackgroundImage="/Assets/Pictures/AI Static 3.jpg" },
+            new Preset { Category="Classic", Name="Analog", Subtitle="Classic analog elegance.", ClockStyle=0, ClockSize=2, ClockColor=0, ClockBlend=0, DateAlign=1, ClockLayout=2, PreviewBg=Color.FromArgb(255,20,20,30), PreviewClockColor=Color.FromArgb(255,255,255,255) },
+            new Preset { Category="Classic", Name="Classic Clock", Subtitle="Numbers on the dial.", ClockStyle=0, ClockSize=2, ClockColor=1, ClockBlend=0, DateAlign=1, ClockLayout=3, PreviewBg=Color.FromArgb(255,40,30,20), PreviewClockColor=Color.FromArgb(255,255,215,0) },
+            new Preset { Category="Classic", Name="Swiss", Subtitle="Precision Swiss design.", ClockStyle=0, ClockSize=2, ClockColor=0, ClockBlend=0, DateAlign=1, ClockLayout=4, PreviewBg=Color.FromArgb(255,10,10,15), PreviewClockColor=Color.FromArgb(255,255,255,255) },
+
+            // RHOMBUS
+            new Preset { Category="Rhombus", Name="Floral", Subtitle="Beauty in nature.", ClockStyle=11, ClockSize=3, ClockColor=0, ClockBlend=0, DateAlign=1, ClockLayout=5, ClockX=160, ClockY=100, PreviewBg=Color.FromArgb(255,20,20,20), PreviewClockColor=Color.FromArgb(255,255,255,255), BackgroundImage="/Assets/Pictures/10062799164539040.jpg" },
+            new Preset { Category="Rhombus", Name="Blossom", Subtitle="Soft and elegant.", ClockStyle=13, ClockSize=3, ClockColor=0, ClockBlend=0, DateAlign=1, ClockLayout=5, ClockX=160, ClockY=100, PreviewBg=Color.FromArgb(255,40,30,30), PreviewClockColor=Color.FromArgb(255,255,255,255), BackgroundImage="/Assets/Pictures/10696117861097790.jpg" },
+            new Preset { Category="Rhombus", Name="Architecture", Subtitle="Structured heights.", ClockStyle=11, ClockSize=3, ClockColor=0, ClockBlend=0, DateAlign=1, ClockLayout=5, ClockX=160, ClockY=100, PreviewBg=Color.FromArgb(255,10,30,40), PreviewClockColor=Color.FromArgb(255,255,255,255), BackgroundImage="/Assets/Pictures/Tall Building Wallpaper.jpg" },
+            new Preset { Category="Rhombus", Name="Hyper", Subtitle="Flowing gradient.", ClockStyle=13, ClockSize=3, ClockColor=0, ClockBlend=0, DateAlign=1, ClockLayout=5, ClockX=160, ClockY=100, PreviewBg=Color.FromArgb(255,20,10,40), PreviewClockColor=Color.FromArgb(255,255,255,255), BackgroundImage="/Assets/Pictures/Xiaomi HyperOS Wallpapers.jpg" },
+
+            // MAGAZINE
+            new Preset { Category="Magazine", Name="Magazine", Subtitle="Turn your lock screen into a cover.", ClockStyle=6, ClockSize=2, ClockColor=0, ClockBlend=0, DateAlign=0, ClockX=25, ClockY=580, PreviewBg=Color.FromArgb(255,180,140,80), PreviewClockColor=Color.FromArgb(255,255,255,255), BackgroundImage="/Assets/Pictures/magazine01.jpg" },
+            new Preset { Category="Magazine", Name="Bold", Subtitle="Make a statement with bold typography.", ClockStyle=3, ClockSize=4, ClockColor=1, ClockBlend=0, DateAlign=0, ClockLayout=1, ClockX=20, ClockY=480, PreviewBg=Color.FromArgb(255,120,20,20), PreviewClockColor=Color.FromArgb(255,255,215,0), BackgroundImage="/Assets/Pictures/east07.jpg" },
+            new Preset { Category="Magazine", Name="Elegant", Subtitle="Refined beauty in every detail.", ClockStyle=4, ClockSize=3, ClockColor=1, ClockBlend=0, DateAlign=1, ClockX=220, ClockY=80, PreviewBg=Color.FromArgb(255,15,15,12), PreviewClockColor=Color.FromArgb(255,255,215,0), BackgroundImage="/Assets/Pictures/east05.jpg" },
+            new Preset { Category="Magazine", Name="Neon", Subtitle="Electrify your screen.", ClockStyle=0, ClockSize=3, ClockColor=5, ClockBlend=3, DateAlign=1, ClockLayout=4, PreviewBg=Color.FromArgb(255,15,50,40), PreviewClockColor=Color.FromArgb(255,80,255,150), BackgroundImage="/Assets/Pictures/east06.jpg" },
+            new Preset { Category="Magazine", Name="Minimal", Subtitle="Less is more.", ClockStyle=9, ClockSize=0, ClockColor=0, ClockBlend=0, DateAlign=0, ClockX=30, ClockY=60, PreviewBg=Color.FromArgb(255,60,60,60), PreviewClockColor=Color.FromArgb(255,255,255,255), BackgroundImage="/Assets/Pictures/magazine05.jpg" },
+            new Preset { Category="Magazine", Name="Serif", Subtitle="Timeless serif elegance.", ClockStyle=5, ClockSize=3, ClockColor=0, ClockBlend=0, DateAlign=1, ClockLayout=1, PreviewBg=Color.FromArgb(255,20,60,70), PreviewClockColor=Color.FromArgb(255,255,255,255), BackgroundImage="/Assets/Pictures/east02.jpg" },
+            new Preset { Category="Magazine", Name="Display", Subtitle="Time is important. Make it count.", ClockStyle=10, ClockSize=4, ClockColor=7, ClockBlend=0, DateAlign=1, ClockX=180, ClockY=600, PreviewBg=Color.FromArgb(255,40,40,120), PreviewClockColor=Color.FromArgb(255,255,140,66), BackgroundImage="/Assets/Pictures/magazine06.jpg" },
+            new Preset { Category="Magazine", Name="Fire", Subtitle="Feel the heat.", ClockStyle=7, ClockSize=3, ClockColor=1, ClockBlend=0, DateAlign=0, ClockX=20, ClockY=520, PreviewBg=Color.FromArgb(255,120,30,20), PreviewClockColor=Color.FromArgb(255,255,215,0), BackgroundImage="/Assets/Pictures/east01.jpg" },
+            new Preset { Category="Magazine", Name="Aurora", Subtitle="Northern lights on your screen.", ClockStyle=2, ClockSize=2, ClockColor=6, ClockBlend=0, DateAlign=1, PreviewBg=Color.FromArgb(255,15,30,50), PreviewClockColor=Color.FromArgb(255,196,167,255), BackgroundImage="/Assets/Pictures/AI Static 4.jpg" },
+            new Preset { Category="Magazine", Name="Poppins", Subtitle="Modern geometric beauty.", ClockStyle=8, ClockSize=1, ClockColor=0, ClockBlend=0, DateAlign=1, ClockX=230, ClockY=40, PreviewBg=Color.FromArgb(255,80,120,90), PreviewClockColor=Color.FromArgb(255,255,255,255), BackgroundImage="/Assets/Pictures/magazine04.jpg" },
+            new Preset { Category="Magazine", Name="Twilight", Subtitle="Between day and night.", ClockStyle=10, ClockSize=3, ClockColor=7, ClockBlend=1, DateAlign=0, ClockLayout=1, ClockX=20, ClockY=500, PreviewBg=Color.FromArgb(255,15,20,50), PreviewClockColor=Color.FromArgb(255,255,180,80), BackgroundImage="/Assets/Pictures/magazine02.jpg" },
+            new Preset { Category="Magazine", Name="Lime", Subtitle="Fresh and vibrant energy.", ClockStyle=4, ClockSize=2, ClockColor=1, ClockBlend=0, DateAlign=1, ClockX=200, ClockY=580, PreviewBg=Color.FromArgb(255,50,55,60), PreviewClockColor=Color.FromArgb(255,255,215,0), BackgroundImage="/Assets/Pictures/magazine03.jpg" },
+            new Preset { Category="Magazine", Name="Vertical", Subtitle="Time stacked vertically.", ClockStyle=3, ClockSize=3, ClockColor=2, ClockBlend=0, DateAlign=0, ClockLayout=1, ClockX=20, ClockY=500, PreviewBg=Color.FromArgb(255,130,180,230), PreviewClockColor=Color.FromArgb(255,135,206,235), BackgroundImage="/Assets/Pictures/magazine07.jpg" },
         };
 
         #endregion
@@ -98,23 +85,13 @@ namespace HyperOS.Pages
         private List<Border> cards = new List<Border>();
         private List<Ellipse> dots = new List<Ellipse>();
 
+        // Cached dot brushes (CPU: avoids allocating per swipe)
+        private static readonly SolidColorBrush DotActive = new SolidColorBrush(Colors.White);
+        private static readonly SolidColorBrush DotInactive = new SolidColorBrush(Color.FromArgb(80, 255, 255, 255));
+
         private double offsetX; // current horizontal offset (positive = first card visible)
 
-        private static readonly FontFamily[] PreviewFonts = {
-            new FontFamily("/Assets/Fonts/MiSans-Regular.ttf#MiSans"),
-            new FontFamily("/Assets/Fonts/MiSans-Demibold.ttf#MiSans"),
-            new FontFamily("/Assets/Fonts/MiSans-Light.ttf#MiSans"),
-            new FontFamily("/Assets/Fonts/BebasNeue-Regular.ttf#Bebas Neue"),
-            new FontFamily("/Assets/Fonts/PlayfairDisplay-Regular.ttf#Playfair Display"),
-            new FontFamily("/Assets/Fonts/DMSerifDisplay-Regular.ttf#DM Serif Display"),
-            new FontFamily("/Assets/Fonts/InstrumentSerif-Regular.ttf#Instrument Serif"),
-            new FontFamily("/Assets/Fonts/Montserrat-Bold.ttf#Montserrat"),
-            new FontFamily("/Assets/Fonts/Poppins-SemiBold.ttf#Poppins"),
-            new FontFamily("/Assets/Fonts/Raleway-Light.ttf#Raleway"),
-            new FontFamily("/Assets/Fonts/AbrilFatface-Regular.ttf#Abril Fatface"),
-            new FontFamily("Segoe WP"),
-            new FontFamily("Segoe WP Black"),
-        };
+        // Fonts/sizes now in ClockRenderer shared class
         private Dictionary<int, BitmapImage> presetWallpapers = new Dictionary<int, BitmapImage>();
         private BitmapImage globalForeground;
 
@@ -123,8 +100,13 @@ namespace HyperOS.Pages
             InitializeComponent();
         }
 
+        private bool firstLoad = true;
+
         private void Page_Loaded(object sender, RoutedEventArgs e)
         {
+            if (!firstLoad) return; // OnNavigatedTo handles subsequent loads
+            firstLoad = false;
+
             LoadPresetWallpapers();
             LoadForegroundImage();
             ReadSavedPresets();
@@ -145,6 +127,7 @@ namespace HyperOS.Pages
                             System.IO.FileMode.Open, System.IO.FileAccess.Read))
                         {
                             var bmp = new BitmapImage();
+                            bmp.DecodePixelWidth = 220; // RAM: thumbnail size for cards
                             bmp.SetSource(stream);
                             globalForeground = bmp;
                         }
@@ -156,56 +139,71 @@ namespace HyperOS.Pages
 
         private void LoadPresetWallpapers()
         {
+            // Don't preload — lazy-load in CreateCard with DecodePixelWidth to prevent OOM
             presetWallpapers.Clear();
+        }
 
-            try
+        // Original defaults — used to reset Presets before reading saved overrides
+        private static readonly List<Preset> OriginalDefaults = new List<Preset>();
+        private static bool defaultsCaptured = false;
+
+        /// <summary>
+        /// Capture the original preset defaults on first access so we can always
+        /// reset before reading saved overrides (prevents static mutation).
+        /// </summary>
+        private void CaptureOriginalDefaults()
+        {
+            if (defaultsCaptured) return;
+            for (int i = 0; i < Presets.Count; i++)
             {
-                using (var store = IsolatedStorageFile.GetUserStoreForApplication())
+                var src = Presets[i];
+                OriginalDefaults.Add(new Preset
                 {
-                    // Only load per-preset wallpapers — no fallback to shared Background.jpg
-                    for (int i = 0; i < Presets.Count; i++)
-                    {
-                        string file = "Background_" + i + ".jpg";
-                        if (store.FileExists(file))
-                        {
-                            using (var stream = store.OpenFile(file,
-                                System.IO.FileMode.Open, System.IO.FileAccess.Read))
-                            {
-                                var bmp = new BitmapImage();
-                                bmp.SetSource(stream);
-                                presetWallpapers[i] = bmp;
-                            }
-                        }
-                    }
-                }
+                    Name = src.Name, Subtitle = src.Subtitle,
+                    ClockStyle = src.ClockStyle, ClockSize = src.ClockSize,
+                    ClockColor = src.ClockColor, ClockBlend = src.ClockBlend,
+                    DateAlign = src.DateAlign, ClockLayout = src.ClockLayout,
+                    ClockX = src.ClockX, ClockY = src.ClockY,
+                    UseDepthEffect = src.UseDepthEffect,
+                    DepthHourBehind = src.DepthHourBehind,
+                    DepthColonBehind = src.DepthColonBehind,
+                    DepthMinuteBehind = src.DepthMinuteBehind,
+                    PreviewBg = src.PreviewBg,
+                    PreviewClockColor = src.PreviewClockColor,
+                    BackgroundImage = src.BackgroundImage
+                });
             }
-            catch { }
+            defaultsCaptured = true;
         }
 
         /// <summary>
         /// Read saved preset settings from IsolatedStorage and override defaults.
+        /// Always resets to original defaults first to prevent static mutation.
         /// </summary>
         private void ReadSavedPresets()
         {
+            CaptureOriginalDefaults();
+
             var s = IsolatedStorageSettings.ApplicationSettings;
 
-            // First preset (Classic) reflects the live/active settings
-            var first = Presets[0];
-            first.ClockStyle = GetSetting(s, "ClockStyle", first.ClockStyle);
-            first.ClockSize = GetSetting(s, "ClockSize", first.ClockSize);
-            first.ClockColor = GetSetting(s, "ClockColor", first.ClockColor);
-            first.ClockBlend = GetSetting(s, "ClockBlend", first.ClockBlend);
-            first.DateAlign = GetSetting(s, "DateAlign", first.DateAlign);
-            first.ClockX = GetSetting(s, "ClockX", first.ClockX);
-            first.ClockY = GetSetting(s, "ClockY", first.ClockY);
-            first.UseDepthEffect = GetSetting(s, "UseDepthEffect", false);
-            first.DepthHourBehind = GetSetting(s, "DepthHourBehind", true);
-            first.DepthColonBehind = GetSetting(s, "DepthColonBehind", true);
-            first.DepthMinuteBehind = GetSetting(s, "DepthMinuteBehind", true);
-            first.PreviewClockColor = ResolveClockColor(first.ClockColor, first.ClockBlend);
+            // Reset all presets to original defaults first
+            for (int i = 0; i < Presets.Count && i < OriginalDefaults.Count; i++)
+            {
+                var orig = OriginalDefaults[i];
+                var p = Presets[i];
+                p.ClockStyle = orig.ClockStyle; p.ClockSize = orig.ClockSize;
+                p.ClockColor = orig.ClockColor; p.ClockBlend = orig.ClockBlend;
+                p.DateAlign = orig.DateAlign; p.ClockLayout = orig.ClockLayout;
+                p.ClockX = orig.ClockX; p.ClockY = orig.ClockY;
+                p.UseDepthEffect = orig.UseDepthEffect;
+                p.DepthHourBehind = orig.DepthHourBehind;
+                p.DepthColonBehind = orig.DepthColonBehind;
+                p.DepthMinuteBehind = orig.DepthMinuteBehind;
+                p.PreviewClockColor = orig.PreviewClockColor;
+            }
 
-            // Other presets use their own saved values
-            for (int i = 1; i < Presets.Count; i++)
+            // Now apply saved overrides
+            for (int i = 0; i < Presets.Count; i++)
             {
                 string prefix = "Set" + i + "_";
                 if (s.Contains(prefix + "ClockStyle"))
@@ -222,44 +220,13 @@ namespace HyperOS.Pages
                     p.DepthHourBehind = GetSetting(s, prefix + "DepthHourBehind", true);
                     p.DepthColonBehind = GetSetting(s, prefix + "DepthColonBehind", true);
                     p.DepthMinuteBehind = GetSetting(s, prefix + "DepthMinuteBehind", true);
-                    p.PreviewClockColor = ResolveClockColor(p.ClockColor, p.ClockBlend);
+                    p.ClockLayout = GetSetting(s, prefix + "ClockLayout", p.ClockLayout);
+                    p.PreviewClockColor = ClockRenderer.ResolveClockColor(p.ClockColor, p.ClockBlend);
                 }
             }
         }
 
-        private static Color ResolveClockColor(int colorIdx, int blendIdx)
-        {
-            if (blendIdx > 0)
-            {
-                switch (blendIdx)
-                {
-                    case 1: return Color.FromArgb(255, 255, 120, 50);   // Sunset
-                    case 2: return Color.FromArgb(255, 0, 180, 255);    // Ocean
-                    case 3: return Color.FromArgb(255, 0, 255, 150);    // Aurora
-                    case 4: return Color.FromArgb(255, 255, 0, 200);    // Neon
-                    case 5: return Color.FromArgb(255, 255, 105, 180);  // Rose
-                    case 6: return Color.FromArgb(255, 255, 50, 0);     // Fire
-                    case 7: return Colors.White;                         // Ice
-                    case 8: return Color.FromArgb(255, 50, 205, 50);    // Lime
-                    case 9: return Color.FromArgb(255, 75, 0, 130);     // Twilight
-                    default: return Colors.White;
-                }
-            }
-            switch (colorIdx)
-            {
-                case 1: return Color.FromArgb(255, 255, 215, 0);   // Gold
-                case 2: return Color.FromArgb(255, 135, 206, 235); // Sky Blue
-                case 3: return Color.FromArgb(255, 255, 182, 193); // Pink
-                case 4: return Color.FromArgb(255, 255, 68, 68);   // Red
-                case 5: return Color.FromArgb(255, 91, 255, 176);  // Mint
-                case 6: return Color.FromArgb(255, 196, 167, 255); // Lavender
-                case 7: return Color.FromArgb(255, 255, 140, 66);  // Orange
-                case 8: return Color.FromArgb(255, 0, 229, 255);   // Cyan
-                case 9: return Color.FromArgb(255, 160, 160, 176); // Silver
-                default: return Colors.White;
-            }
-        }
-
+        
         private static T GetSetting<T>(IsolatedStorageSettings s, string key, T def)
         {
             if (s.Contains(key))
@@ -303,12 +270,35 @@ namespace HyperOS.Pages
 
         private Border CreateCard(Preset preset, int index)
         {
-            Brush bg;
-            BitmapImage wp;
-            if (presetWallpapers.TryGetValue(index, out wp))
-                bg = new ImageBrush { ImageSource = wp, Stretch = Stretch.UniformToFill };
-            else
-                bg = new SolidColorBrush(preset.PreviewBg);
+            Brush bg = new SolidColorBrush(preset.PreviewBg); // fallback
+
+            // Lazy-load wallpaper with small decode size to prevent OOM
+            try
+            {
+                using (var store = IsolatedStorageFile.GetUserStoreForApplication())
+                {
+                    string savedFile = "Background_" + index + ".jpg";
+                    if (store.FileExists(savedFile))
+                    {
+                        using (var stream = store.OpenFile(savedFile,
+                            System.IO.FileMode.Open, System.IO.FileAccess.Read))
+                        {
+                            var bmp = new BitmapImage();
+                            bmp.DecodePixelWidth = 220; // RAM: thumbnail only
+                            bmp.SetSource(stream);
+                            bg = new ImageBrush { ImageSource = bmp, Stretch = Stretch.UniformToFill };
+                        }
+                    }
+                    else if (!string.IsNullOrEmpty(preset.BackgroundImage))
+                    {
+                        var bmp = new BitmapImage();
+                        bmp.DecodePixelWidth = 220;
+                        bmp.UriSource = new Uri(preset.BackgroundImage, UriKind.Relative);
+                        bg = new ImageBrush { ImageSource = bmp, Stretch = Stretch.UniformToFill };
+                    }
+                }
+            }
+            catch { }
 
             var card = new Border
             {
@@ -347,15 +337,14 @@ namespace HyperOS.Pages
             });
 
             // Clock setup
-            int fi = Math.Min(preset.ClockStyle, PreviewFonts.Length - 1);
-            int[] sizes = { 36, 42, 48, 54, 64 };
-            int sz = sizes[Math.Min(preset.ClockSize, sizes.Length - 1)];
             var brush = new SolidColorBrush(preset.PreviewClockColor);
             var transBrush = new SolidColorBrush(Colors.Transparent);
             bool hasDepth = preset.UseDepthEffect && globalForeground != null;
 
             // --- BEHIND LAYER (or full layer if no depth) ---
-            var behindStack = BuildClockStack(preset, fi, sz,
+            var behindStack = ClockRenderer.BuildCardPreview(
+                preset.ClockLayout, preset.ClockStyle, preset.ClockSize,
+                preset.ClockX, preset.ClockY, preset.DateAlign, CARD_W, CARD_H,
                 hasDepth ? (preset.DepthHourBehind ? brush : transBrush) : brush,
                 hasDepth ? (preset.DepthColonBehind ? brush : transBrush) : brush,
                 hasDepth ? (preset.DepthMinuteBehind ? brush : transBrush) : brush,
@@ -372,7 +361,9 @@ namespace HyperOS.Pages
                 });
 
                 // --- FRONT LAYER (parts NOT behind) ---
-                var frontStack = BuildClockStack(preset, fi, sz,
+                var frontStack = ClockRenderer.BuildCardPreview(
+                    preset.ClockLayout, preset.ClockStyle, preset.ClockSize,
+                    preset.ClockX, preset.ClockY, preset.DateAlign, CARD_W, CARD_H,
                     preset.DepthHourBehind ? transBrush : brush,
                     preset.DepthColonBehind ? transBrush : brush,
                     preset.DepthMinuteBehind ? transBrush : brush,
@@ -392,48 +383,9 @@ namespace HyperOS.Pages
             return card;
         }
 
-        private StackPanel BuildClockStack(Preset preset, int fi, int sz,
-            Brush hourBrush, Brush colonBrush, Brush minuteBrush, Brush dateBrush)
-        {
-            var stack = new StackPanel();
-            if (preset.ClockX >= 0 && preset.ClockY >= 0)
-            {
-                double scaleX = CARD_W / 480.0;
-                double scaleY = CARD_H / 800.0;
-                stack.HorizontalAlignment = HorizontalAlignment.Left;
-                stack.VerticalAlignment = VerticalAlignment.Top;
-                stack.Margin = new Thickness(preset.ClockX * scaleX, preset.ClockY * scaleY, 0, 0);
-            }
-            else
-            {
-                stack.VerticalAlignment = VerticalAlignment.Center;
-                stack.HorizontalAlignment = HorizontalAlignment.Center;
-                stack.Margin = new Thickness(0, -10, 0, 0);
-            }
-            stack.IsHitTestVisible = false;
 
-            stack.Children.Add(new TextBlock
-            {
-                Text = DateTime.Now.DayOfWeek.ToString() + "  ·  " + DateTime.Now.ToString("MMMM d"),
-                FontFamily = new FontFamily("/Assets/Fonts/MiSans-Regular.ttf#MiSans"),
-                FontSize = 10, Foreground = dateBrush,
-                HorizontalAlignment = HorizontalAlignment.Center,
-                Margin = new Thickness(0, 0, 0, 2)
-            });
+        // Clock rendering now handled by ClockRenderer.BuildCardPreview()
 
-            var timePanel = new StackPanel
-            {
-                Orientation = System.Windows.Controls.Orientation.Horizontal,
-                HorizontalAlignment = HorizontalAlignment.Center,
-                Margin = new Thickness(0, -sz * 0.16, 0, 0)
-            };
-            timePanel.Children.Add(new TextBlock { Text = DateTime.Now.ToString("HH"), FontFamily = PreviewFonts[fi], FontSize = sz, Foreground = hourBrush });
-            timePanel.Children.Add(new TextBlock { Text = ":", FontFamily = PreviewFonts[fi], FontSize = sz, Foreground = colonBrush, Margin = new Thickness(0, -sz * 0.08, 0, 0) });
-            timePanel.Children.Add(new TextBlock { Text = DateTime.Now.ToString("mm"), FontFamily = PreviewFonts[fi], FontSize = sz, Foreground = minuteBrush });
-            stack.Children.Add(timePanel);
-
-            return stack;
-        }
 
         #endregion
 
@@ -541,16 +493,17 @@ namespace HyperOS.Pages
             }
 
             // Update title
+            SetCategory.Text = (Presets[currentIndex].Category ?? "").ToUpper();
             SetTitle.Text = Presets[currentIndex].Name;
             SetSubtitle.Text = Presets[currentIndex].Subtitle;
 
-            // Update dots
+            // Update dots (CPU: reuse cached brushes)
             for (int i = 0; i < dots.Count; i++)
             {
-                dots[i].Fill = new SolidColorBrush(
-                    i == currentIndex ? Colors.White : Color.FromArgb(80, 255, 255, 255));
-                dots[i].Width = i == currentIndex ? 8 : 6;
-                dots[i].Height = i == currentIndex ? 8 : 6;
+                bool active = i == currentIndex;
+                dots[i].Fill = active ? DotActive : DotInactive;
+                dots[i].Width = active ? 8 : 6;
+                dots[i].Height = active ? 8 : 6;
             }
         }
 
@@ -589,14 +542,42 @@ namespace HyperOS.Pages
 
         private void Customise_Tap(object sender, System.Windows.Input.GestureEventArgs e)
         {
-            // Apply defaults for this preset first
             var preset = Presets[currentIndex];
             var s = IsolatedStorageSettings.ApplicationSettings;
-            s["ClockStyle"] = preset.ClockStyle;
-            s["ClockSize"] = preset.ClockSize;
-            s["ClockColor"] = preset.ClockColor;
-            s["ClockBlend"] = preset.ClockBlend;
-            s["DateAlign"] = preset.DateAlign;
+            string px = "Set" + currentIndex + "_";
+
+            // Ensure Set{n}_ keys exist with preset defaults for first-time cards
+            if (!s.Contains(px + "ClockStyle"))
+            {
+                s[px + "ClockStyle"] = preset.ClockStyle;
+                s[px + "ClockSize"] = preset.ClockSize;
+                s[px + "ClockColor"] = preset.ClockColor;
+                s[px + "ClockBlend"] = preset.ClockBlend;
+                s[px + "DateAlign"] = preset.DateAlign;
+                s[px + "ClockLayout"] = preset.ClockLayout;
+                // Include position and depth keys (BUG 1 fix)
+                if (preset.ClockX >= 0) s[px + "ClockX"] = preset.ClockX;
+                if (preset.ClockY >= 0) s[px + "ClockY"] = preset.ClockY;
+                s[px + "UseDepthEffect"] = preset.UseDepthEffect;
+                s[px + "DepthHourBehind"] = preset.DepthHourBehind;
+                s[px + "DepthColonBehind"] = preset.DepthColonBehind;
+                s[px + "DepthMinuteBehind"] = preset.DepthMinuteBehind;
+            }
+
+            // Sync ALL Set{n}_ keys to global keys so EditorPage reads correctly (BUG 4 fix)
+            string[] keys = { "ClockStyle", "ClockSize", "ClockColor", "ClockBlend", "DateAlign", "ClockLayout",
+                "ClockX", "ClockY", "UseDepthEffect", "DepthHourBehind", "DepthColonBehind", "DepthMinuteBehind",
+                "ShowWeather", "ShowCountdown", "WeatherX", "WeatherY", "CountdownX", "CountdownY" };
+            foreach (var key in keys)
+            {
+                if (s.Contains(px + key))
+                    s[key] = s[px + key];
+                else if (key == "ClockX" || key == "ClockY")
+                {
+                    // Remove global position keys if preset doesn't have them (center default)
+                    if (s.Contains(key)) s.Remove(key);
+                }
+            }
             s.Save();
 
             // Navigate to editor with preset index
@@ -616,8 +597,8 @@ namespace HyperOS.Pages
         {
             base.OnNavigatedTo(e);
 
-            // Rebuild cards to reflect any saved changes
-            if (cards.Count > 0)
+            // Only rebuild cards when returning from editor (Back), not on initial load
+            if (cards.Count > 0 && e.NavigationMode == NavigationMode.Back)
             {
                 int savedIdx = currentIndex;
                 LoadPresetWallpapers();

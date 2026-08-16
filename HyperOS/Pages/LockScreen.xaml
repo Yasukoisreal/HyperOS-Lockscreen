@@ -332,6 +332,11 @@
                             <TextBlock.RenderTransform><CompositeTransform/></TextBlock.RenderTransform>
                         </TextBlock>
                     </StackPanel>
+                    <!-- Analog Clock Behind (Collapsed by default) -->
+                    <Canvas x:Name="AnalogClockCanvasBehind" Width="200" Height="200"
+                            HorizontalAlignment="Center" Visibility="Collapsed">
+                        <Canvas.RenderTransform><CompositeTransform/></Canvas.RenderTransform>
+                    </Canvas>
                 </StackPanel>
             </Grid>
 
@@ -386,6 +391,11 @@
                             <TextBlock.RenderTransform><CompositeTransform/></TextBlock.RenderTransform>
                         </TextBlock>
                     </StackPanel>
+                    <!-- Analog Clock (Collapsed by default) -->
+                    <Canvas x:Name="AnalogClockCanvas" Width="200" Height="200"
+                            HorizontalAlignment="Center" Visibility="Collapsed">
+                        <Canvas.RenderTransform><CompositeTransform/></Canvas.RenderTransform>
+                    </Canvas>
                 </StackPanel>
 
                 <!-- Weather widget (independent position) -->
@@ -625,7 +635,11 @@
             </Grid>
 
             <!-- Title -->
-            <StackPanel VerticalAlignment="Top" Margin="24,70,24,0" Canvas.ZIndex="10">
+            <StackPanel VerticalAlignment="Top" Margin="24,60,24,0" Canvas.ZIndex="10">
+                <TextBlock x:Name="MySetsCategory" Text="CLASSIC"
+                    FontFamily="/Assets/Fonts/MiSans-Demibold.ttf#MiSans"
+                    FontSize="12" Foreground="#AAFFFFFF" HorizontalAlignment="Center"
+                    Margin="0,0,0,2"/>
                 <TextBlock x:Name="MySetsTitle" Text="Classic"
                     FontFamily="/Assets/Fonts/MiSans-Demibold.ttf#MiSans"
                     FontSize="32" Foreground="White" HorizontalAlignment="Center"/>

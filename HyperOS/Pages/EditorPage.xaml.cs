@@ -10,6 +10,7 @@ using System.Windows.Shapes;
 using Microsoft.Phone.Controls;
 using Microsoft.Phone.Tasks;
 using Windows.Phone.System.LockScreenExtensibility;
+using HyperOS.Helpers;
 
 namespace HyperOS.Pages
 {
@@ -34,6 +35,7 @@ namespace HyperOS.Pages
         private int clockColor = 0;
         private int clockBlend = 0;
         private int dateAlign = 1; // 0=Left, 1=Center, 2=Right
+        private int clockLayout = 0; // 0=Horizontal, 1=Vertical, 2=Analog Minimal, 3=Analog Classic, 4=Analog Swiss
 
         // Widget settings
         private bool showWeather;
@@ -45,27 +47,10 @@ namespace HyperOS.Pages
         private bool depthColonBehind = true;
         private bool depthMinuteBehind = true;
 
-        // Font & size arrays
-        private static readonly string[] FontNames = {
-            "MiSans Regular", "MiSans Bold", "MiSans Light", "Bebas Neue",
-            "Playfair Display", "DM Serif", "Instrument Serif",
-            "Montserrat", "Poppins", "Raleway Light", "Abril Fatface",
-            "Segoe WP", "Segoe WP Black" };
-        private static readonly FontFamily[] Fonts = {
-            new FontFamily("/Assets/Fonts/MiSans-Regular.ttf#MiSans"),
-            new FontFamily("/Assets/Fonts/MiSans-Demibold.ttf#MiSans"),
-            new FontFamily("/Assets/Fonts/MiSans-Light.ttf#MiSans"),
-            new FontFamily("/Assets/Fonts/BebasNeue-Regular.ttf#Bebas Neue"),
-            new FontFamily("/Assets/Fonts/PlayfairDisplay-Regular.ttf#Playfair Display"),
-            new FontFamily("/Assets/Fonts/DMSerifDisplay-Regular.ttf#DM Serif Display"),
-            new FontFamily("/Assets/Fonts/InstrumentSerif-Regular.ttf#Instrument Serif"),
-            new FontFamily("/Assets/Fonts/Montserrat-Bold.ttf#Montserrat"),
-            new FontFamily("/Assets/Fonts/Poppins-SemiBold.ttf#Poppins"),
-            new FontFamily("/Assets/Fonts/Raleway-Light.ttf#Raleway"),
-            new FontFamily("/Assets/Fonts/AbrilFatface-Regular.ttf#Abril Fatface"),
-            new FontFamily("Segoe WP"),
-            new FontFamily("Segoe WP Black") };
-        private static readonly int[] SizeValues = { 80, 95, 105, 120, 140 };
+        // Font & size arrays — redirect to ClockRenderer shared data (RAM: avoids duplicate static arrays)
+        private static string[] FontNames { get { return ClockRenderer.FontNames; } }
+        private static FontFamily[] Fonts { get { return ClockRenderer.Fonts; } }
+        private static int[] SizeValues { get { return ClockRenderer.SizeValues; } }
 
         // Accent
         private static readonly SolidColorBrush AccentBrush =
@@ -83,9 +68,43 @@ namespace HyperOS.Pages
         // Snapshot of settings at editor open, for restoring on discard
         private System.Collections.Generic.Dictionary<string, object> settingsSnapshot;
 
+        private PhotoChooserTask photoChooser;
+
         public EditorPage()
         {
             InitializeComponent();
+            photoChooser = new PhotoChooserTask();
+            photoChooser.ShowCamera = true;
+            photoChooser.Completed += PhotoChooser_Completed;
+        }
+
+        private void PhotoChooser_Completed(object sender, PhotoResult args)
+        {
+            if (args.TaskResult == TaskResult.OK && args.ChosenPhoto != null)
+            {
+                try
+                {
+                    // Copy directly to avoid OOM and quality loss
+                    using (var store = IsolatedStorageFile.GetUserStoreForApplication())
+                    using (var stream = store.CreateFile("Background.jpg"))
+                    {
+                        args.ChosenPhoto.Position = 0;
+                        args.ChosenPhoto.CopyTo(stream);
+                    }
+                    
+                    // Reload for preview
+                    args.ChosenPhoto.Position = 0;
+                    var bmp = new BitmapImage();
+                    bmp.DecodePixelWidth = 480; // Optimize RAM for preview
+                    bmp.SetSource(args.ChosenPhoto);
+                    PreviewBgBrush.ImageSource = bmp;
+                    hasUnsavedChanges = true;
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Error: " + ex.Message, "Error", MessageBoxButton.OK);
+                }
+            }
         }
 
         #region Lifecycle
@@ -152,6 +171,7 @@ namespace HyperOS.Pages
             int resClockStyle = 0, resClockSize = 2, resClockColor = 0, resClockBlend = 0, resDateAlign = 1;
             bool resShowWeather = false, resShowCountdown = false;
             bool resDepth = false, resDepthH = true, resDepthC = true, resDepthM = true;
+            int resClockLayout = 0;
             if (state.ContainsKey("EdClockX"))
             {
                 restoredFromState = true;
@@ -166,6 +186,7 @@ namespace HyperOS.Pages
                 resClockColor = (int)state["EdClockColor"];
                 resClockBlend = (int)state["EdClockBlend"];
                 resDateAlign = (int)state["EdDateAlign"];
+                if (state.ContainsKey("EdClockLayout")) resClockLayout = (int)state["EdClockLayout"];
                 resShowWeather = (bool)state["EdShowWeather"];
                 resShowCountdown = (bool)state["EdShowCountdown"];
                 resDepth = (bool)state["EdDepth"];
@@ -174,12 +195,12 @@ namespace HyperOS.Pages
                 resDepthM = (bool)state["EdDepthM"];
                 // Clean up
                 string[] stateKeys = { "EdClockX","EdClockY","EdWeatherX","EdWeatherY","EdCountdownX","EdCountdownY",
-                    "EdClockStyle","EdClockSize","EdClockColor","EdClockBlend","EdDateAlign",
+                    "EdClockStyle","EdClockSize","EdClockColor","EdClockBlend","EdDateAlign","EdClockLayout",
                     "EdShowWeather","EdShowCountdown","EdDepth","EdDepthH","EdDepthC","EdDepthM" };
                 foreach (var k in stateKeys) state.Remove(k);
             }
 
-            // Check if we're editing a specific preset
+            // Check if we're editing a specific preset (always, even on first load)
             string presetStr;
             if (NavigationContext.QueryString.TryGetValue("preset", out presetStr))
             {
@@ -188,38 +209,95 @@ namespace HyperOS.Pages
                     editingPreset = p;
             }
 
-            if (!isLoading)
+            // Load preset wallpaper to Background.jpg BEFORE Loaded fires LoadPreviewImages
+            if (e.NavigationMode == System.Windows.Navigation.NavigationMode.New && editingPreset >= 0)
             {
-                isLoading = true;
+                var s = IsolatedStorageSettings.ApplicationSettings;
 
-                // If editing a preset, load its saved settings first
-                if (editingPreset >= 0)
+                // Copy Set{n}_ keys to global keys
+                foreach (var key in SetKeys)
                 {
-                    var s = IsolatedStorageSettings.ApplicationSettings;
-                    foreach (var key in SetKeys)
-                    {
-                        string sk = "Set" + editingPreset + "_" + key;
-                        if (s.Contains(sk)) s[key] = s[sk];
-                    }
-                    s.Save();
+                    string sk = "Set" + editingPreset + "_" + key;
+                    if (s.Contains(sk)) s[key] = s[sk];
+                }
+                s.Save();
 
-                    // Load per-preset wallpaper
-                    try
+                // Load per-preset wallpaper
+                try
+                {
+                    using (var store = IsolatedStorageFile.GetUserStoreForApplication())
                     {
-                        using (var store = IsolatedStorageFile.GetUserStoreForApplication())
+                        string presetBgFile = "Background_" + editingPreset + ".jpg";
+                        if (store.FileExists(presetBgFile))
                         {
-                            string presetBg = "Background_" + editingPreset + ".jpg";
-                            if (store.FileExists(presetBg))
+                            // Copy preset wallpaper to Background.jpg for editor preview
+                            if (store.FileExists("Background.jpg"))
+                                store.DeleteFile("Background.jpg");
+                            store.CopyFile(presetBgFile, "Background.jpg");
+                        }
+                        else
+                        {
+                            // No saved wallpaper yet — copy default from app resources
+                            string defaultBg = s.Contains("Set" + editingPreset + "_BackgroundImage")
+                                ? (string)s["Set" + editingPreset + "_BackgroundImage"]
+                                : null;
+
+                            // If no setting, use hardcoded preset backgrounds
+                            if (string.IsNullOrEmpty(defaultBg))
                             {
-                                // Copy preset wallpaper to Background.jpg for editor preview
-                                if (store.FileExists("Background.jpg"))
-                                    store.DeleteFile("Background.jpg");
-                                store.CopyFile(presetBg, "Background.jpg");
+                                string[] presetBgs = {
+                                    "/Assets/Pictures/classic02.jpg",
+                                    "/Assets/Pictures/east07.jpg",
+                                    "/Assets/Pictures/east05.jpg",
+                                    "/Assets/Pictures/east06.jpg",
+                                    "/Assets/Pictures/magazine01.jpg",
+                                    "/Assets/Pictures/magazine05.jpg",
+                                    "/Assets/Pictures/east02.jpg",
+                                    "/Assets/Pictures/magazine06.jpg",
+                                    "/Assets/Pictures/east01.jpg",
+                                    "/Assets/Pictures/AI Static 3.jpg",
+                                    "/Assets/Pictures/AI Static 4.jpg",
+                                    "/Assets/Pictures/magazine04.jpg",
+                                    "/Assets/Pictures/magazine02.jpg",
+                                    "/Assets/Pictures/classic03.jpg",
+                                    "/Assets/Pictures/magazine03.jpg",
+                                    "/Assets/Pictures/magazine07.jpg",
+                                    null, null, null  // Analog presets — no bg
+                                };
+                                if (editingPreset < presetBgs.Length)
+                                    defaultBg = presetBgs[editingPreset];
+                            }
+
+                            if (!string.IsNullOrEmpty(defaultBg))
+                            {
+                                try
+                                {
+                                    // Strip leading '/' — GetResourceStream needs relative path without it
+                                    string resPath = defaultBg.TrimStart('/');
+                                    // Load from app resources and save to IsolatedStorage
+                                    var sri = Application.GetResourceStream(new Uri(resPath, UriKind.Relative));
+                                    if (sri != null && sri.Stream != null)
+                                    {
+                                        if (store.FileExists("Background.jpg"))
+                                            store.DeleteFile("Background.jpg");
+                                        using (var iso = store.OpenFile("Background.jpg", FileMode.Create, FileAccess.Write))
+                                        {
+                                            sri.Stream.CopyTo(iso);
+                                        }
+                                        sri.Stream.Dispose();
+                                    }
+                                }
+                                catch { }
                             }
                         }
                     }
-                    catch { }
                 }
+                catch { }
+            }
+
+            if (!isLoading)
+            {
+                isLoading = true;
 
                 LoadAllSettings();
                 LoadPreviewImages();
@@ -232,7 +310,7 @@ namespace HyperOS.Pages
                     countdownX = resCountdownX; countdownY = resCountdownY;
                     clockStyle = resClockStyle; clockSize = resClockSize;
                     clockColor = resClockColor; clockBlend = resClockBlend;
-                    dateAlign = resDateAlign;
+                    dateAlign = resDateAlign; clockLayout = resClockLayout;
                     showWeather = resShowWeather; showCountdown = resShowCountdown;
                     useDepthEffect = resDepth;
                     depthHourBehind = resDepthH; depthColonBehind = resDepthC; depthMinuteBehind = resDepthM;
@@ -301,6 +379,7 @@ namespace HyperOS.Pages
             clockColor = Get(s, "ClockColor", 0);
             clockBlend = Get(s, "ClockBlend", 0);
             dateAlign = Get(s, "DateAlign", 1);
+            clockLayout = Get(s, "ClockLayout", 0);
             showWeather = Get(s, "ShowWeather", false);
             showCountdown = Get(s, "ShowCountdown", false);
             useDepthEffect = Get(s, "UseDepthEffect", false);
@@ -325,6 +404,7 @@ namespace HyperOS.Pages
             UpdateColorSelection();
             UpdateBlendSelection();
             UpdateDateAlignSelection();
+            UpdateLayoutSelection();
 
             EdWeatherToggle.IsChecked = showWeather;
             EdWeatherCity.Text = Get<string>(s, "WeatherCity", "");
@@ -336,7 +416,9 @@ namespace HyperOS.Pages
             EdDepthHour.IsChecked = depthHourBehind;
             EdDepthColon.IsChecked = depthColonBehind;
             EdDepthMinute.IsChecked = depthMinuteBehind;
+            EdDepthClock.IsChecked = depthHourBehind; // For analog: entire clock behind
             EdDepthLayers.Visibility = useDepthEffect ? Visibility.Visible : Visibility.Collapsed;
+            UpdateDepthRowVisibility();
 
         }
 
@@ -389,6 +471,7 @@ namespace HyperOS.Pages
                             FileMode.Open, FileAccess.Read))
                         {
                             var bmp = new BitmapImage();
+                            bmp.DecodePixelWidth = 480; // RAM: match preview width
                             bmp.SetSource(stream);
                             PreviewBgBrush.ImageSource = bmp;
                         }
@@ -399,6 +482,7 @@ namespace HyperOS.Pages
                             FileMode.Open, FileAccess.Read))
                         {
                             var bmp = new BitmapImage();
+                            bmp.DecodePixelWidth = 480; // RAM: match preview width
                             bmp.SetSource(stream);
                             PreviewFgBrush.ImageSource = bmp;
                             PreviewFg.Visibility = Visibility.Visible;
@@ -422,7 +506,33 @@ namespace HyperOS.Pages
             PDay.Text = now.DayOfWeek.ToString();
             PDate.Text = now.ToString("MMMM d");
 
-            // Font
+            bool isAnalog = clockLayout >= 2 && clockLayout <= 4;
+            bool isVertical = clockLayout == 1;
+            bool isRhombus = clockLayout == 5;
+            bool isGiant = clockLayout == 6;
+
+            // Show/hide digital vs analog
+            PTimePanel.Visibility = isAnalog ? Visibility.Collapsed : Visibility.Visible;
+            PAnalogClock.Visibility = isAnalog ? Visibility.Visible : Visibility.Collapsed;
+
+            // Vertical / Rhombus: stack vertically, hide colon
+            PRhombusDot.Visibility = isRhombus ? Visibility.Visible : Visibility.Collapsed;
+            PColon.Visibility = (isVertical || isRhombus || isGiant) ? Visibility.Collapsed : Visibility.Visible;
+
+            if (isVertical || isRhombus)
+            {
+                PTimePanel.Orientation = System.Windows.Controls.Orientation.Vertical;
+                PHour.HorizontalAlignment = HorizontalAlignment.Center;
+                PMinute.HorizontalAlignment = HorizontalAlignment.Center;
+            }
+            else
+            {
+                PTimePanel.Orientation = System.Windows.Controls.Orientation.Horizontal;
+                PHour.HorizontalAlignment = HorizontalAlignment.Left;
+                PMinute.HorizontalAlignment = HorizontalAlignment.Left;
+            }
+
+            // Font (applies to digital modes only)
             int fi = Math.Max(0, Math.Min(clockStyle, Fonts.Length - 1));
             PHour.FontFamily = Fonts[fi];
             PColon.FontFamily = Fonts[fi];
@@ -431,17 +541,58 @@ namespace HyperOS.Pages
             // Size
             int si = Math.Max(0, Math.Min(clockSize, SizeValues.Length - 1));
             int sz = SizeValues[si];
-            PHour.FontSize = sz;
+            
+            double hourSz = sz;
+            double minuteSz = sz;
+            if (isGiant) { hourSz = sz * 1.6; minuteSz = sz * 1.6; }
+            else if (isRhombus) { hourSz = sz * 0.6; minuteSz = sz * 1.2; }
+            
+            PHour.FontSize = hourSz;
             PColon.FontSize = sz;
-            PMinute.FontSize = sz;
-            double pull = -sz * 0.16;
-            PTimePanel.Margin = new Thickness(0, pull, 0, 0);
+            PMinute.FontSize = minuteSz;
+
+            if (isVertical)
+            {
+                PTimePanel.Margin = new Thickness(0, -sz * 0.22, 0, 0);
+                PMinute.Margin = new Thickness(0, -sz * 0.35, 0, 0);
+                PRhombusDot.Margin = new Thickness(0);
+            }
+            else if (isRhombus)
+            {
+                PTimePanel.Margin = new Thickness(0, -sz * 0.1, 0, 0);
+                PRhombusDot.Margin = new Thickness(0, -sz * 0.1, 0, -sz * 0.1);
+                PMinute.Margin = new Thickness(0, -sz * 0.25, 0, 0);
+            }
+            else if (isGiant)
+            {
+                PTimePanel.Margin = new Thickness(0, -sz * 0.25, 0, 0);
+                PMinute.Margin = new Thickness(sz * 0.1, 0, 0, 0);
+                PRhombusDot.Margin = new Thickness(0);
+            }
+            else
+            {
+                PTimePanel.Margin = new Thickness(0, -sz * 0.16, 0, 0);
+                PMinute.Margin = new Thickness(0, 0, 0, 0);
+                PRhombusDot.Margin = new Thickness(0);
+            }
+
+            if (isAnalog)
+            {
+                // Scale analog clock based on size setting
+                double diameter = sz * 1.6;
+                PAnalogClock.Width = diameter;
+                PAnalogClock.Height = diameter;
+                DrawAnalogClock(PAnalogClock, diameter, now.Hour, now.Minute, clockLayout);
+            }
 
             // Color
             ApplyClockColor();
 
             // Date alignment
             ApplyDateAlign();
+
+            // Hide font section for analog, show for digital
+            FontSection.Visibility = isAnalog ? Visibility.Collapsed : Visibility.Visible;
 
             // Positions
             ClockHandle.Margin = new Thickness(clockX, clockY, 0, 0);
@@ -497,6 +648,16 @@ namespace HyperOS.Pages
             Dispatcher.BeginInvoke(() => UpdateDepthFrontLayer());
         }
 
+        /// <summary>
+        /// Draws an analog clock face on the given canvas.
+        /// style: 2=Minimal (hands only), 3=Classic (12/3/6/9), 4=Swiss (tick marks)
+        /// </summary>
+        private void DrawAnalogClock(Canvas canvas, double diameter, int hour, int minute, int style)
+        {
+            Brush colorBrush = PHour.Foreground;
+            ClockRenderer.DrawAnalogClock(canvas, diameter, hour, minute, style, colorBrush);
+        }
+
         private void UpdateDepthFrontLayer()
         {
             if (!useDepthEffect || PreviewFg.Visibility != Visibility.Visible)
@@ -510,19 +671,44 @@ namespace HyperOS.Pages
                 PColon.Opacity = 1;
                 PMinute.Opacity = 1;
                 PDatePanel.Opacity = 1;
+                PAnalogClock.Opacity = 1;
                 return;
             }
 
-            // Hide originals that should be in front (they'll be replaced by front-layer copies)
-            PHour.Opacity = depthHourBehind ? 1 : 0;
-            PColon.Opacity = depthColonBehind ? 1 : 0;
-            PMinute.Opacity = depthMinuteBehind ? 1 : 0;
-            PDatePanel.Opacity = 0; // Date always in front
+            bool isAnalog = clockLayout >= 2;
 
-            // Position front-layer copies using TransformToVisual
-            PositionFrontText(FrontHour, PHour, !depthHourBehind);
-            PositionFrontText(FrontColon, PColon, !depthColonBehind);
-            PositionFrontText(FrontMinute, PMinute, !depthMinuteBehind);
+            if (isAnalog)
+            {
+                // Analog: entire clock behind foreground
+                FrontHour.Visibility = Visibility.Collapsed;
+                FrontColon.Visibility = Visibility.Collapsed;
+                FrontMinute.Visibility = Visibility.Collapsed;
+                PHour.Opacity = 1;
+                PColon.Opacity = 1;
+                PMinute.Opacity = 1;
+                PAnalogClock.Opacity = 1; // analog stays behind foreground naturally
+                PDatePanel.Opacity = 0; // Date always in front
+            }
+            else
+            {
+                PAnalogClock.Opacity = 1;
+                bool isVertical = clockLayout == 1;
+
+                // Hide originals that should be in front (they'll be replaced by front-layer copies)
+                PHour.Opacity = depthHourBehind ? 1 : 0;
+                PColon.Opacity = (isVertical || depthColonBehind) ? 1 : 0;
+                PMinute.Opacity = depthMinuteBehind ? 1 : 0;
+                PDatePanel.Opacity = 0; // Date always in front
+
+                // Position front-layer copies using TransformToVisual
+                PositionFrontText(FrontHour, PHour, !depthHourBehind);
+                // Vertical: no colon — always hide FrontColon
+                if (isVertical)
+                    FrontColon.Visibility = Visibility.Collapsed;
+                else
+                    PositionFrontText(FrontColon, PColon, !depthColonBehind);
+                PositionFrontText(FrontMinute, PMinute, !depthMinuteBehind);
+            }
 
             // Date always in front
             try
@@ -597,9 +783,9 @@ namespace HyperOS.Pages
                 switch (clockColor)
                 {
                     case 1: brush = new SolidColorBrush(Color.FromArgb(255, 255, 215, 0)); break;   // Gold
-                    case 2: brush = new SolidColorBrush(Color.FromArgb(255, 135, 206, 250)); break; // Sky Blue
+                    case 2: brush = new SolidColorBrush(Color.FromArgb(255, 135, 206, 235)); break; // Sky Blue
                     case 3: brush = new SolidColorBrush(Color.FromArgb(255, 255, 182, 193)); break; // Pink
-                    case 4: brush = new SolidColorBrush(Color.FromArgb(255, 255, 99, 99)); break;   // Red
+                    case 4: brush = new SolidColorBrush(Color.FromArgb(255, 255, 68, 68)); break;   // Red
                     case 5: brush = new SolidColorBrush(Color.FromArgb(255, 91, 255, 176)); break;  // Mint
                     case 6: brush = new SolidColorBrush(Color.FromArgb(255, 196, 167, 255)); break; // Lavender
                     case 7: brush = new SolidColorBrush(Color.FromArgb(255, 255, 140, 66)); break;  // Orange
@@ -847,6 +1033,80 @@ namespace HyperOS.Pages
             SelectHandle(null);
         }
 
+        private bool toolbarHidden = false;
+
+        private void PreviewArea_DoubleTap(object sender, System.Windows.Input.GestureEventArgs e)
+        {
+            toolbarHidden = !toolbarHidden;
+
+            if (toolbarHidden)
+            {
+                // Slide bottom controls down (out of view)
+                var sbDown = new System.Windows.Media.Animation.Storyboard();
+                var animBottom = new System.Windows.Media.Animation.DoubleAnimation
+                {
+                    To = 400, Duration = TimeSpan.FromMilliseconds(250),
+                    EasingFunction = new System.Windows.Media.Animation.CubicEase
+                    { EasingMode = System.Windows.Media.Animation.EasingMode.EaseIn }
+                };
+                System.Windows.Media.Animation.Storyboard.SetTarget(animBottom, BottomControls);
+                System.Windows.Media.Animation.Storyboard.SetTargetProperty(animBottom,
+                    new PropertyPath("(UIElement.RenderTransform).(CompositeTransform.TranslateY)"));
+                sbDown.Children.Add(animBottom);
+
+                // Fade header out
+                var animHeader = new System.Windows.Media.Animation.DoubleAnimation
+                {
+                    To = 0, Duration = TimeSpan.FromMilliseconds(200)
+                };
+                System.Windows.Media.Animation.Storyboard.SetTarget(animHeader, HeaderBar);
+                System.Windows.Media.Animation.Storyboard.SetTargetProperty(animHeader,
+                    new PropertyPath("(UIElement.Opacity)"));
+                sbDown.Children.Add(animHeader);
+
+                sbDown.Completed += (s, ev) =>
+                {
+                    HeaderBar.IsHitTestVisible = false;
+                    BottomControls.IsHitTestVisible = false;
+                };
+                // Ensure transforms exist
+                if (!(BottomControls.RenderTransform is CompositeTransform))
+                    BottomControls.RenderTransform = new CompositeTransform();
+                sbDown.Begin();
+            }
+            else
+            {
+                // Slide bottom controls back up
+                var sbUp = new System.Windows.Media.Animation.Storyboard();
+                var animBottom = new System.Windows.Media.Animation.DoubleAnimation
+                {
+                    To = 0, Duration = TimeSpan.FromMilliseconds(250),
+                    EasingFunction = new System.Windows.Media.Animation.CubicEase
+                    { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut }
+                };
+                System.Windows.Media.Animation.Storyboard.SetTarget(animBottom, BottomControls);
+                System.Windows.Media.Animation.Storyboard.SetTargetProperty(animBottom,
+                    new PropertyPath("(UIElement.RenderTransform).(CompositeTransform.TranslateY)"));
+                sbUp.Children.Add(animBottom);
+
+                // Fade header back in
+                var animHeader = new System.Windows.Media.Animation.DoubleAnimation
+                {
+                    To = 1, Duration = TimeSpan.FromMilliseconds(200)
+                };
+                System.Windows.Media.Animation.Storyboard.SetTarget(animHeader, HeaderBar);
+                System.Windows.Media.Animation.Storyboard.SetTargetProperty(animHeader,
+                    new PropertyPath("(UIElement.Opacity)"));
+                sbUp.Children.Add(animHeader);
+
+                HeaderBar.IsHitTestVisible = true;
+                BottomControls.IsHitTestVisible = true;
+                sbUp.Begin();
+            }
+
+            e.Handled = true;
+        }
+
         #endregion
 
         #region Tab Navigation
@@ -896,6 +1156,23 @@ namespace HyperOS.Pages
 
         #region Clock Property Handlers
 
+        private void Layout_Tap(object sender, System.Windows.Input.GestureEventArgs e)
+        {
+            var border = (Border)sender;
+            clockLayout = int.Parse((string)border.Tag);
+            Save("ClockLayout", clockLayout);
+            UpdateLayoutSelection();
+            UpdateDepthRowVisibility();
+            ApplyPreview();
+        }
+
+        private void UpdateLayoutSelection()
+        {
+            Border[] pills = { LayoutHoriz, LayoutVert, LayoutAnalog1, LayoutAnalog2, LayoutAnalog3, LayoutRhombus, LayoutGiant };
+            for (int i = 0; i < pills.Length; i++)
+                pills[i].Background = (i == clockLayout) ? AccentBrush : InactiveTabBg;
+        }
+
         private void FontPrev_Tap(object sender, System.Windows.Input.GestureEventArgs e)
         {
             clockStyle = (clockStyle - 1 + FontNames.Length) % FontNames.Length;
@@ -930,7 +1207,16 @@ namespace HyperOS.Pages
             PHour.FontSize = sz;
             PColon.FontSize = sz;
             PMinute.FontSize = sz;
-            PTimePanel.Margin = new Thickness(0, -sz * 0.16, 0, 0);
+            bool isVertical = clockLayout == 1;
+            PTimePanel.Margin = new Thickness(0, isVertical ? -sz * 0.22 : -sz * 0.16, 0, 0);
+            if (isVertical) PMinute.Margin = new Thickness(0, -sz * 0.35, 0, 0);
+            if (clockLayout >= 2)
+            {
+                double diameter = sz * 1.6;
+                PAnalogClock.Width = diameter;
+                PAnalogClock.Height = diameter;
+                DrawAnalogClock(PAnalogClock, diameter, DateTime.Now.Hour, DateTime.Now.Minute, clockLayout);
+            }
             Dispatcher.BeginInvoke(() => UpdateDepthFrontLayer());
         }
 
@@ -956,6 +1242,12 @@ namespace HyperOS.Pages
             UpdateColorSelection();
             UpdateBlendSelection();
             ApplyClockColor();
+            if (clockLayout >= 2)
+            {
+                int sz = SizeValues[Math.Max(0, Math.Min(clockSize, SizeValues.Length - 1))];
+                double diameter = sz * 1.6;
+                DrawAnalogClock(PAnalogClock, diameter, DateTime.Now.Hour, DateTime.Now.Minute, clockLayout);
+            }
             Dispatcher.BeginInvoke(() => UpdateDepthFrontLayer());
         }
 
@@ -977,6 +1269,12 @@ namespace HyperOS.Pages
             UpdateBlendSelection();
             UpdateColorSelection();
             ApplyClockColor();
+            if (clockLayout >= 2)
+            {
+                int sz = SizeValues[Math.Max(0, Math.Min(clockSize, SizeValues.Length - 1))];
+                double diameter = sz * 1.6;
+                DrawAnalogClock(PAnalogClock, diameter, DateTime.Now.Hour, DateTime.Now.Minute, clockLayout);
+            }
             Dispatcher.BeginInvoke(() => UpdateDepthFrontLayer());
         }
 
@@ -1023,6 +1321,19 @@ namespace HyperOS.Pages
                 case 2: PDatePanel.HorizontalAlignment = HorizontalAlignment.Right; break;
                 default: PDatePanel.HorizontalAlignment = HorizontalAlignment.Center; break;
             }
+        }
+
+        /// <summary>
+        /// Auto-compute date alignment from clock's horizontal zone.
+        /// Left third → 0 (Left), Middle third → 1 (Center), Right third → 2 (Right)
+        /// </summary>
+        private int ComputeAutoAlign(double x, double elementWidth)
+        {
+            double zoneThird = SCREEN_W / 3.0;
+            double centerX = x + (elementWidth / 2.0);
+            if (centerX < zoneThird) return 0;      // Left
+            if (centerX > zoneThird * 2) return 2;   // Right
+            return 1;                                 // Center
         }
 
         #endregion
@@ -1216,37 +1527,12 @@ namespace HyperOS.Pages
             state["EdCountdownX"] = countdownX; state["EdCountdownY"] = countdownY;
             state["EdClockStyle"] = clockStyle; state["EdClockSize"] = clockSize;
             state["EdClockColor"] = clockColor; state["EdClockBlend"] = clockBlend;
-            state["EdDateAlign"] = dateAlign;
+            state["EdDateAlign"] = dateAlign; state["EdClockLayout"] = clockLayout;
             state["EdShowWeather"] = showWeather; state["EdShowCountdown"] = showCountdown;
             state["EdDepth"] = useDepthEffect;
             state["EdDepthH"] = depthHourBehind; state["EdDepthC"] = depthColonBehind; state["EdDepthM"] = depthMinuteBehind;
 
-            var chooser = new PhotoChooserTask();
-            chooser.ShowCamera = true;
-            chooser.Completed += (s, args) =>
-            {
-                if (args.TaskResult == TaskResult.OK && args.ChosenPhoto != null)
-                {
-                    try
-                    {
-                        var bmp = new BitmapImage();
-                        bmp.SetSource(args.ChosenPhoto);
-                        var wb = new WriteableBitmap(bmp);
-                        using (var store = IsolatedStorageFile.GetUserStoreForApplication())
-                        using (var stream = store.CreateFile("Background.jpg"))
-                        {
-                            wb.SaveJpeg(stream, wb.PixelWidth, wb.PixelHeight, 0, 90);
-                        }
-                        PreviewBgBrush.ImageSource = bmp;
-                        hasUnsavedChanges = true;
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show("Error: " + ex.Message, "Error", MessageBoxButton.OK);
-                    }
-                }
-            };
-            chooser.Show();
+            photoChooser.Show();
         }
 
         private void EdDepthToggle_Changed(object sender, RoutedEventArgs e)
@@ -1421,13 +1707,50 @@ namespace HyperOS.Pages
         private void EdDepthLayer_Changed(object sender, RoutedEventArgs e)
         {
             if (isLoading) return;
-            depthHourBehind = EdDepthHour.IsChecked == true;
-            depthColonBehind = EdDepthColon.IsChecked == true;
-            depthMinuteBehind = EdDepthMinute.IsChecked == true;
+
+            if (clockLayout >= 2)
+            {
+                // Analog: single "Clock" toggle controls all
+                bool behind = EdDepthClock.IsChecked == true;
+                depthHourBehind = behind;
+                depthColonBehind = behind;
+                depthMinuteBehind = behind;
+            }
+            else
+            {
+                depthHourBehind = EdDepthHour.IsChecked == true;
+                depthColonBehind = (clockLayout == 1) ? depthHourBehind : (EdDepthColon.IsChecked == true);
+                depthMinuteBehind = EdDepthMinute.IsChecked == true;
+            }
+
             Save("DepthHourBehind", depthHourBehind);
             Save("DepthColonBehind", depthColonBehind);
             Save("DepthMinuteBehind", depthMinuteBehind);
             Dispatcher.BeginInvoke(() => UpdateDepthFrontLayer());
+        }
+
+        /// <summary>
+        /// Shows/hides the appropriate depth layer rows based on clock layout.
+        /// Analog → hide all layer rows (just toggle is enough). Vertical → Hour+Minute. Horizontal → all.
+        /// </summary>
+        private void UpdateDepthRowVisibility()
+        {
+            bool isAnalog = clockLayout >= 2;
+            bool isVertical = clockLayout == 1;
+
+            // Analog: show single "Clock" toggle; Digital: show per-part toggles
+            DepthRowClock.Visibility = isAnalog ? Visibility.Visible : Visibility.Collapsed;
+            DepthRowHour.Visibility = isAnalog ? Visibility.Collapsed : Visibility.Visible;
+            DepthRowColon.Visibility = (isAnalog || isVertical) ? Visibility.Collapsed : Visibility.Visible;
+            DepthRowMinute.Visibility = isAnalog ? Visibility.Collapsed : Visibility.Visible;
+
+            // For analog, auto-set all behind when depth is on
+            if (isAnalog && useDepthEffect)
+            {
+                depthHourBehind = true;
+                depthColonBehind = true;
+                depthMinuteBehind = true;
+            }
         }
 
         #endregion
@@ -1436,7 +1759,7 @@ namespace HyperOS.Pages
 
         // My Sets
         private static readonly string[] SetKeys = { "ClockStyle", "ClockPosition", "ClockHAlign",
-            "ClockColor", "ClockBlend", "ClockSize",
+            "ClockColor", "ClockBlend", "ClockSize", "ClockLayout",
             "ShowWeather", "ShowCountdown", "UseDepthEffect",
             "DepthHourBehind", "DepthColonBehind", "DepthMinuteBehind",
             "ClockX", "ClockY", "WeatherX", "WeatherY", "CountdownX", "CountdownY",
@@ -1473,7 +1796,6 @@ namespace HyperOS.Pages
             foreach (var key in SetKeys)
                 if (s.Contains(key)) s["Set" + n + "_" + key] = s[key];
             s.Save();
-            MessageBox.Show("Set " + n + " saved!", "My Sets", MessageBoxButton.OK);
         }
 
         private void LoadSet(int n)
