@@ -87,19 +87,30 @@ namespace HyperOS.Helpers
 
             canvas.Children.Clear();
 
-            // Get color from brush
-            MC lineColor = Colors.White;
-            if (clockBrush is SolidColorBrush)
-                lineColor = ((SolidColorBrush)clockBrush).Color;
+            Brush shapeBrush = clockBrush;
+            Brush textBrush = clockBrush;
+
+            if (clockBrush is LinearGradientBrush)
+            {
+                var oldLg = (LinearGradientBrush)clockBrush;
+                var newLg = new LinearGradientBrush();
+                newLg.MappingMode = BrushMappingMode.Absolute;
+                newLg.StartPoint = new Point(0, 0);
+                newLg.EndPoint = new Point(diameter, diameter);
+                foreach (var s in oldLg.GradientStops)
+                    newLg.GradientStops.Add(new GradientStop { Color = s.Color, Offset = s.Offset });
+                shapeBrush = newLg;
+            }
 
             // Outer circle
             var circle = new Ellipse
             {
                 Width = diameter - 8,
                 Height = diameter - 8,
-                Stroke = new SolidColorBrush(MC.FromArgb(120, lineColor.R, lineColor.G, lineColor.B)),
+                Stroke = shapeBrush,
                 StrokeThickness = 2,
-                Fill = new SolidColorBrush(MC.FromArgb(20, 255, 255, 255))
+                Fill = new SolidColorBrush(MC.FromArgb(20, 255, 255, 255)),
+                Opacity = 0.6
             };
             Canvas.SetLeft(circle, 4);
             Canvas.SetTop(circle, 4);
@@ -118,8 +129,9 @@ namespace HyperOS.Helpers
                     {
                         Text = nums[i],
                         FontSize = diameter * 0.1,
-                        Foreground = new SolidColorBrush(MC.FromArgb(200, lineColor.R, lineColor.G, lineColor.B)),
-                        FontFamily = new FontFamily("/Assets/Fonts/MiSans-Regular.ttf#MiSans")
+                        Foreground = textBrush,
+                        FontFamily = new FontFamily("/Assets/Fonts/MiSans-Regular.ttf#MiSans"),
+                        Opacity = 0.8
                     };
                     double tw = nums[i].Length * diameter * 0.05;
                     double th = diameter * 0.1;
@@ -140,8 +152,9 @@ namespace HyperOS.Helpers
                     {
                         X1 = cx + r1 * Math.Cos(a), Y1 = cy + r1 * Math.Sin(a),
                         X2 = cx + r2 * Math.Cos(a), Y2 = cy + r2 * Math.Sin(a),
-                        Stroke = new SolidColorBrush(MC.FromArgb(200, lineColor.R, lineColor.G, lineColor.B)),
-                        StrokeThickness = thick
+                        Stroke = shapeBrush,
+                        StrokeThickness = thick,
+                        Opacity = 0.8
                     };
                     canvas.Children.Add(tick);
                 }
@@ -158,7 +171,7 @@ namespace HyperOS.Helpers
                 X1 = cx, Y1 = cy,
                 X2 = cx + hourLen * Math.Cos(ha2),
                 Y2 = cy + hourLen * Math.Sin(ha2),
-                Stroke = clockBrush,
+                Stroke = shapeBrush,
                 StrokeThickness = 4,
                 StrokeStartLineCap = PenLineCap.Round,
                 StrokeEndLineCap = PenLineCap.Round
@@ -175,8 +188,8 @@ namespace HyperOS.Helpers
                 X1 = cx, Y1 = cy,
                 X2 = cx + minLen * Math.Cos(ma2),
                 Y2 = cy + minLen * Math.Sin(ma2),
-                Stroke = clockBrush,
-                StrokeThickness = 2.5,
+                Stroke = shapeBrush,
+                StrokeThickness = 3,
                 StrokeStartLineCap = PenLineCap.Round,
                 StrokeEndLineCap = PenLineCap.Round
             };
