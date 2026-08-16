@@ -301,13 +301,22 @@ namespace HyperOS.Pages
                 HourPartBehind.Text = h;
                 MinutePartBehind.Text = m;
 
-                // Redraw analog clock if active
-                if (clockLayout >= 2)
+                // Redraw analog clock if active (only layouts 2, 3, 4)
+                if (clockLayout >= 2 && clockLayout <= 4)
                 {
                     var now = DateTime.Now;
                     double diameter = AnalogClockCanvas.Width;
                     DrawAnalogClock(AnalogClockCanvas, diameter, now.Hour, now.Minute, clockLayout);
                     DrawAnalogClock(AnalogClockCanvasBehind, diameter, now.Hour, now.Minute, clockLayout);
+                }
+                
+                // Update Rhombus
+                if (clockLayout == 5)
+                {
+                    RhombusH1.Text = h[0].ToString(); RhombusH1Behind.Text = h[0].ToString();
+                    RhombusH2.Text = h.Length > 1 ? h[1].ToString() : ""; RhombusH2Behind.Text = RhombusH2.Text;
+                    RhombusM1.Text = m[0].ToString(); RhombusM1Behind.Text = m[0].ToString();
+                    RhombusM2.Text = m.Length > 1 ? m[1].ToString() : ""; RhombusM2Behind.Text = RhombusM2.Text;
                 }
 
                 string newDay = DateTime.Now.ToString("dddd");

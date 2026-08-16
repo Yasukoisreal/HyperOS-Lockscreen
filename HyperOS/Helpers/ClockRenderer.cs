@@ -55,10 +55,37 @@ namespace HyperOS.Helpers
         /// </summary>
         public static void DrawAnalogClock(Canvas canvas, double diameter, int hour, int minute, int style, Brush clockBrush)
         {
-            canvas.Children.Clear();
             double cx = diameter / 2;
             double cy = diameter / 2;
             double r = diameter / 2 - 4;
+
+            // Prevent memory leak on WP8.1: reuse existing elements if already drawn
+            if (canvas.Children.Count > 0)
+            {
+                Line hHand = null, mHand = null;
+                foreach (UIElement el in canvas.Children)
+                {
+                    var fe = el as FrameworkElement;
+                    if (fe != null)
+                    {
+                        if ((string)fe.Tag == "HourHand") hHand = el as Line;
+                        else if ((string)fe.Tag == "MinuteHand") mHand = el as Line;
+                    }
+                }
+                if (hHand != null && mHand != null)
+                {
+                    double ha = (((hour % 12) + minute / 60.0) * 30 - 90) * Math.PI / 180;
+                    hHand.X2 = cx + (r * 0.5) * Math.Cos(ha);
+                    hHand.Y2 = cy + (r * 0.5) * Math.Sin(ha);
+
+                    double ma = (minute * 6 - 90) * Math.PI / 180;
+                    mHand.X2 = cx + (r * 0.72) * Math.Cos(ma);
+                    mHand.Y2 = cy + (r * 0.72) * Math.Sin(ma);
+                }
+                return;
+            }
+
+            canvas.Children.Clear();
 
             // Get color from brush
             MC lineColor = Colors.White;
@@ -123,13 +150,14 @@ namespace HyperOS.Helpers
 
             // Hour hand
             double hourAngle = ((hour % 12) + minute / 60.0) * 30 - 90;
-            double ha = hourAngle * Math.PI / 180;
+            double ha2 = hourAngle * Math.PI / 180;
             double hourLen = r * 0.5;
             var hourHand = new Line
             {
+                Tag = "HourHand",
                 X1 = cx, Y1 = cy,
-                X2 = cx + hourLen * Math.Cos(ha),
-                Y2 = cy + hourLen * Math.Sin(ha),
+                X2 = cx + hourLen * Math.Cos(ha2),
+                Y2 = cy + hourLen * Math.Sin(ha2),
                 Stroke = clockBrush,
                 StrokeThickness = 4,
                 StrokeStartLineCap = PenLineCap.Round,
@@ -139,13 +167,14 @@ namespace HyperOS.Helpers
 
             // Minute hand
             double minAngle = minute * 6 - 90;
-            double ma = minAngle * Math.PI / 180;
+            double ma2 = minAngle * Math.PI / 180;
             double minLen = r * 0.72;
             var minHand = new Line
             {
+                Tag = "MinuteHand",
                 X1 = cx, Y1 = cy,
-                X2 = cx + minLen * Math.Cos(ma),
-                Y2 = cy + minLen * Math.Sin(ma),
+                X2 = cx + minLen * Math.Cos(ma2),
+                Y2 = cy + minLen * Math.Sin(ma2),
                 Stroke = clockBrush,
                 StrokeThickness = 2.5,
                 StrokeStartLineCap = PenLineCap.Round,
