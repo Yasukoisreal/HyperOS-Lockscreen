@@ -188,6 +188,20 @@
                 <TextBlock x:Name="FrontMinute" Visibility="Collapsed"
                     FontFamily="/Assets/Fonts/MiSans-Demibold.ttf#MiSans"
                     FontSize="105" Foreground="White"/>
+                <TextBlock x:Name="FrontRhombusH1" Visibility="Collapsed"
+                    FontFamily="/Assets/Fonts/MiSans-Demibold.ttf#MiSans"
+                    FontSize="105" Foreground="White"/>
+                <TextBlock x:Name="FrontRhombusH2" Visibility="Collapsed"
+                    FontFamily="/Assets/Fonts/MiSans-Demibold.ttf#MiSans"
+                    FontSize="105" Foreground="White"/>
+                <TextBlock x:Name="FrontRhombusM1" Visibility="Collapsed"
+                    FontFamily="/Assets/Fonts/MiSans-Demibold.ttf#MiSans"
+                    FontSize="105" Foreground="White"/>
+                <TextBlock x:Name="FrontRhombusM2" Visibility="Collapsed"
+                    FontFamily="/Assets/Fonts/MiSans-Demibold.ttf#MiSans"
+                    FontSize="105" Foreground="White"/>
+                <Ellipse x:Name="FrontRhombusDot" Visibility="Collapsed"
+                    Width="12" Height="12" Fill="#FFDC3232"/>
             </Canvas>
 
             <!-- Battery indicator (non-draggable, top-right) -->

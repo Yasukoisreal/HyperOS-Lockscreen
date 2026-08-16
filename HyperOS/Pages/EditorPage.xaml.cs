@@ -677,16 +677,27 @@ namespace HyperOS.Pages
                 FrontColon.Visibility = Visibility.Collapsed;
                 FrontMinute.Visibility = Visibility.Collapsed;
                 FrontDate.Visibility = Visibility.Collapsed;
+                FrontRhombusH1.Visibility = Visibility.Collapsed;
+                FrontRhombusH2.Visibility = Visibility.Collapsed;
+                FrontRhombusM1.Visibility = Visibility.Collapsed;
+                FrontRhombusM2.Visibility = Visibility.Collapsed;
+                FrontRhombusDot.Visibility = Visibility.Collapsed;
                 // Restore originals
                 PHour.Opacity = 1;
                 PColon.Opacity = 1;
                 PMinute.Opacity = 1;
                 PDatePanel.Opacity = 1;
                 PAnalogClock.Opacity = 1;
+                PRhombusH1.Opacity = 1;
+                PRhombusH2.Opacity = 1;
+                PRhombusM1.Opacity = 1;
+                PRhombusM2.Opacity = 1;
+                PRhombusCenterDot.Opacity = 1;
                 return;
             }
 
-            bool isAnalog = clockLayout >= 2;
+            bool isAnalog = clockLayout >= 2 && clockLayout <= 4;
+            bool isRhombus = clockLayout == 5;
 
             if (isAnalog)
             {
@@ -694,6 +705,11 @@ namespace HyperOS.Pages
                 FrontHour.Visibility = Visibility.Collapsed;
                 FrontColon.Visibility = Visibility.Collapsed;
                 FrontMinute.Visibility = Visibility.Collapsed;
+                FrontRhombusH1.Visibility = Visibility.Collapsed;
+                FrontRhombusH2.Visibility = Visibility.Collapsed;
+                FrontRhombusM1.Visibility = Visibility.Collapsed;
+                FrontRhombusM2.Visibility = Visibility.Collapsed;
+                FrontRhombusDot.Visibility = Visibility.Collapsed;
                 PHour.Opacity = 1;
                 PColon.Opacity = 1;
                 PMinute.Opacity = 1;
@@ -709,6 +725,13 @@ namespace HyperOS.Pages
                 PHour.Opacity = depthHourBehind ? 1 : 0;
                 PColon.Opacity = (isVertical || depthColonBehind) ? 1 : 0;
                 PMinute.Opacity = depthMinuteBehind ? 1 : 0;
+                
+                PRhombusH1.Opacity = depthHourBehind ? 1 : 0;
+                PRhombusH2.Opacity = depthHourBehind ? 1 : 0;
+                PRhombusM1.Opacity = depthMinuteBehind ? 1 : 0;
+                PRhombusM2.Opacity = depthMinuteBehind ? 1 : 0;
+                PRhombusCenterDot.Opacity = depthColonBehind ? 1 : 0;
+
                 PDatePanel.Opacity = 0; // Date always in front
 
                 // Position front-layer copies using TransformToVisual
@@ -719,6 +742,39 @@ namespace HyperOS.Pages
                 else
                     PositionFrontText(FrontColon, PColon, !depthColonBehind);
                 PositionFrontText(FrontMinute, PMinute, !depthMinuteBehind);
+                
+                if (isRhombus)
+                {
+                    PositionFrontText(FrontRhombusH1, PRhombusH1, !depthHourBehind);
+                    PositionFrontText(FrontRhombusH2, PRhombusH2, !depthHourBehind);
+                    PositionFrontText(FrontRhombusM1, PRhombusM1, !depthMinuteBehind);
+                    PositionFrontText(FrontRhombusM2, PRhombusM2, !depthMinuteBehind);
+                    
+                    if (!depthColonBehind)
+                    {
+                        try
+                        {
+                            var transform = PRhombusCenterDot.TransformToVisual(PreviewArea);
+                            var pos = transform.Transform(new Point(0, 0));
+                            FrontRhombusDot.Visibility = Visibility.Visible;
+                            Canvas.SetLeft(FrontRhombusDot, pos.X);
+                            Canvas.SetTop(FrontRhombusDot, pos.Y);
+                        }
+                        catch { FrontRhombusDot.Visibility = Visibility.Collapsed; }
+                    }
+                    else
+                    {
+                        FrontRhombusDot.Visibility = Visibility.Collapsed;
+                    }
+                }
+                else
+                {
+                    FrontRhombusH1.Visibility = Visibility.Collapsed;
+                    FrontRhombusH2.Visibility = Visibility.Collapsed;
+                    FrontRhombusM1.Visibility = Visibility.Collapsed;
+                    FrontRhombusM2.Visibility = Visibility.Collapsed;
+                    FrontRhombusDot.Visibility = Visibility.Collapsed;
+                }
             }
 
             // Date always in front
@@ -1693,7 +1749,8 @@ namespace HyperOS.Pages
         {
             if (isLoading) return;
 
-            if (clockLayout >= 2)
+            bool isAnalog = clockLayout >= 2 && clockLayout <= 4;
+            if (isAnalog)
             {
                 // Analog: single "Clock" toggle controls all
                 bool behind = EdDepthClock.IsChecked == true;
@@ -1720,7 +1777,7 @@ namespace HyperOS.Pages
         /// </summary>
         private void UpdateDepthRowVisibility()
         {
-            bool isAnalog = clockLayout >= 2;
+            bool isAnalog = clockLayout >= 2 && clockLayout <= 4;
             bool isVertical = clockLayout == 1;
 
             // Analog: show single "Clock" toggle; Digital: show per-part toggles
