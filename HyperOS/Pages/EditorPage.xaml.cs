@@ -585,6 +585,7 @@ namespace HyperOS.Pages
 
             if (isAnalog)
             {
+                PAnalogClock.Children.Clear();
                 // Scale analog clock based on size setting
                 double diameter = sz * 1.6;
                 PAnalogClock.Width = diameter;

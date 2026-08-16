@@ -843,6 +843,8 @@ namespace HyperOS.Pages
                 AnalogClockCanvas.Height = diameter;
                 AnalogClockCanvasBehind.Width = diameter;
                 AnalogClockCanvasBehind.Height = diameter;
+                AnalogClockCanvas.Children.Clear();
+                AnalogClockCanvasBehind.Children.Clear();
                 DrawAnalogClock(AnalogClockCanvas, diameter, now.Hour, now.Minute, clockLayout);
                 DrawAnalogClock(AnalogClockCanvasBehind, diameter, now.Hour, now.Minute, clockLayout);
             }
