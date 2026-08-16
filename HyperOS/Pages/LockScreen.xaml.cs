@@ -232,10 +232,9 @@ namespace HyperOS.Pages
                     else if (clockLayout == 5)
                     {
                         // Rhombus layout
+                        AddFadeSlide(sb, RhombusGrid, 0, 700);
                         if (useDepthEffect)
                             AddFadeSlide(sb, RhombusGridBehind, 0, 700);
-                        else
-                            AddFadeSlide(sb, RhombusGrid, 0, 700);
                     }
                     else
                     {
