@@ -1055,7 +1055,7 @@ namespace HyperOS.Pages
 
         private void ApplyDepthLayers()
         {
-            bool isAnalog = clockLayout >= 2;
+            bool isAnalog = clockLayout >= 2 && clockLayout <= 4;
 
             if (!useDepthEffect)
             {
@@ -1066,6 +1066,11 @@ namespace HyperOS.Pages
                 MinutePart.Opacity = 1;
                 AnalogClockCanvas.Opacity = 1;
                 AnalogClockCanvasBehind.Visibility = Visibility.Collapsed;
+                RhombusH1.Opacity = 1;
+                RhombusH2.Opacity = 1;
+                RhombusM1.Opacity = 1;
+                RhombusM2.Opacity = 1;
+                RhombusDot.Opacity = 1;
                 return;
             }
 
@@ -1091,17 +1096,34 @@ namespace HyperOS.Pages
                 AnalogClockCanvasBehind.Visibility = Visibility.Collapsed;
                 AnalogClockCanvas.Opacity = 1;
 
+                double hOp = depthHourBehind ? 0 : 1;
+                double hOpB = depthHourBehind ? 1 : 0;
+                double cOp = depthColonBehind ? 0 : 1;
+                double cOpB = depthColonBehind ? 1 : 0;
+                double mOp = depthMinuteBehind ? 0 : 1;
+                double mOpB = depthMinuteBehind ? 1 : 0;
+
                 // Hour
-                HourPart.Opacity = depthHourBehind ? 0 : 1;
-                HourPartBehind.Opacity = depthHourBehind ? 1 : 0;
+                HourPart.Opacity = hOp;
+                HourPartBehind.Opacity = hOpB;
+                RhombusH1.Opacity = hOp;
+                RhombusH2.Opacity = hOp;
+                RhombusH1Behind.Opacity = hOpB;
+                RhombusH2Behind.Opacity = hOpB;
 
                 // Colon
-                ColonPart.Opacity = depthColonBehind ? 0 : 1;
-                ColonPartBehind.Opacity = depthColonBehind ? 1 : 0;
+                ColonPart.Opacity = cOp;
+                ColonPartBehind.Opacity = cOpB;
+                RhombusDot.Opacity = cOp;
+                RhombusDotBehind.Opacity = cOpB;
 
                 // Minute
-                MinutePart.Opacity = depthMinuteBehind ? 0 : 1;
-                MinutePartBehind.Opacity = depthMinuteBehind ? 1 : 0;
+                MinutePart.Opacity = mOp;
+                MinutePartBehind.Opacity = mOpB;
+                RhombusM1.Opacity = mOp;
+                RhombusM2.Opacity = mOp;
+                RhombusM1Behind.Opacity = mOpB;
+                RhombusM2Behind.Opacity = mOpB;
             }
         }
 
