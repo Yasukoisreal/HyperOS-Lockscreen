@@ -735,13 +735,22 @@ namespace HyperOS.Pages
                 PDatePanel.Opacity = 0; // Date always in front
 
                 // Position front-layer copies using TransformToVisual
-                PositionFrontText(FrontHour, PHour, !depthHourBehind);
-                // Vertical: no colon — always hide FrontColon
-                if (isVertical)
+                if (isRhombus)
+                {
+                    FrontHour.Visibility = Visibility.Collapsed;
                     FrontColon.Visibility = Visibility.Collapsed;
+                    FrontMinute.Visibility = Visibility.Collapsed;
+                }
                 else
-                    PositionFrontText(FrontColon, PColon, !depthColonBehind);
-                PositionFrontText(FrontMinute, PMinute, !depthMinuteBehind);
+                {
+                    PositionFrontText(FrontHour, PHour, !depthHourBehind);
+                    // Vertical and Giant: no colon — always hide FrontColon
+                    if (isVertical || clockLayout == 6)
+                        FrontColon.Visibility = Visibility.Collapsed;
+                    else
+                        PositionFrontText(FrontColon, PColon, !depthColonBehind);
+                    PositionFrontText(FrontMinute, PMinute, !depthMinuteBehind);
+                }
                 
                 if (isRhombus)
                 {
