@@ -223,13 +223,21 @@ namespace HyperOS.Pages
                     // Build clock animation in code to respect depth layers.
                     var sb = new Storyboard();
 
-                    if (clockLayout >= 2)
+                    if (clockLayout >= 2 && clockLayout <= 4)
                     {
                         // Analog clock — animate the whole canvas
                         if (useDepthEffect)
                             AddFadeSlide(sb, AnalogClockCanvasBehind, 0, 700);
                         else
                             AddFadeSlide(sb, AnalogClockCanvas, 0, 700);
+                    }
+                    else if (clockLayout == 5)
+                    {
+                        // Rhombus layout
+                        if (useDepthEffect)
+                            AddFadeSlide(sb, RhombusGridBehind, 0, 700);
+                        else
+                            AddFadeSlide(sb, RhombusGrid, 0, 700);
                     }
                     else
                     {
@@ -242,8 +250,8 @@ namespace HyperOS.Pages
                             AddFadeSlide(sb, HourPart, delayMs, 600);
                         delayMs += 100;
 
-                        // Colon (skip for vertical)
-                        if (clockLayout != 1)
+                        // Colon (skip for vertical and giant)
+                        if (clockLayout != 1 && clockLayout != 6)
                         {
                             if (useDepthEffect && depthColonBehind)
                                 AddFadeSlide(sb, ColonPartBehind, delayMs, 600);
