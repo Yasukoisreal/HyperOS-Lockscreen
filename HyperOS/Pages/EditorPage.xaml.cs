@@ -1231,14 +1231,7 @@ namespace HyperOS.Pages
             Save("ClockBlend", 0);
             UpdateColorSelection();
             UpdateBlendSelection();
-            ApplyClockColor();
-            if (clockLayout >= 2)
-            {
-                int sz = SizeValues[Math.Max(0, Math.Min(clockSize, SizeValues.Length - 1))];
-                double diameter = sz * 1.6;
-                DrawAnalogClock(PAnalogClock, diameter, DateTime.Now.Hour, DateTime.Now.Minute, clockLayout);
-            }
-            Dispatcher.BeginInvoke(() => UpdateDepthFrontLayer());
+            ApplyPreview();
         }
 
         private void UpdateColorSelection()
@@ -1258,14 +1251,7 @@ namespace HyperOS.Pages
             Save("ClockBlend", clockBlend);
             UpdateBlendSelection();
             UpdateColorSelection();
-            ApplyClockColor();
-            if (clockLayout >= 2)
-            {
-                int sz = SizeValues[Math.Max(0, Math.Min(clockSize, SizeValues.Length - 1))];
-                double diameter = sz * 1.6;
-                DrawAnalogClock(PAnalogClock, diameter, DateTime.Now.Hour, DateTime.Now.Minute, clockLayout);
-            }
-            Dispatcher.BeginInvoke(() => UpdateDepthFrontLayer());
+            ApplyPreview();
         }
 
         private void UpdateBlendSelection()
