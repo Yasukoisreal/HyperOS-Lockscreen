@@ -979,7 +979,13 @@ namespace HyperOS.Pages
         private void ApplyClockColor()
         {
             Brush brush;
-            if (clockBlend > 0)
+            bool isAnalog = clockLayout >= 2 && clockLayout <= 4;
+            
+            if (isAnalog)
+            {
+                brush = new SolidColorBrush(Colors.White);
+            }
+            else if (clockBlend > 0)
             {
                 switch (clockBlend)
                 {
