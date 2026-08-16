@@ -583,6 +583,9 @@ namespace HyperOS.Pages
                 PRhombusM2.Margin = new Thickness(0, -rhombSz * 0.1, 0, 0);
             }
 
+            // Color
+            ApplyClockColor();
+
             if (isAnalog)
             {
                 PAnalogClock.Children.Clear();
@@ -592,9 +595,6 @@ namespace HyperOS.Pages
                 PAnalogClock.Height = diameter;
                 DrawAnalogClock(PAnalogClock, diameter, now.Hour, now.Minute, clockLayout);
             }
-
-            // Color
-            ApplyClockColor();
 
             // Date alignment
             ApplyDateAlign();
