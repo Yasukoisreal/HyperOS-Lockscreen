@@ -1761,7 +1761,7 @@ namespace HyperOS.Pages
             else
             {
                 depthHourBehind = EdDepthHour.IsChecked == true;
-                depthColonBehind = (clockLayout == 1) ? depthHourBehind : (EdDepthColon.IsChecked == true);
+                depthColonBehind = (clockLayout == 1 || clockLayout == 6) ? depthHourBehind : (EdDepthColon.IsChecked == true);
                 depthMinuteBehind = EdDepthMinute.IsChecked == true;
             }
 
@@ -1779,11 +1779,12 @@ namespace HyperOS.Pages
         {
             bool isAnalog = clockLayout >= 2 && clockLayout <= 4;
             bool isVertical = clockLayout == 1;
+            bool isGiant = clockLayout == 6;
 
             // Analog: show single "Clock" toggle; Digital: show per-part toggles
             DepthRowClock.Visibility = isAnalog ? Visibility.Visible : Visibility.Collapsed;
             DepthRowHour.Visibility = isAnalog ? Visibility.Collapsed : Visibility.Visible;
-            DepthRowColon.Visibility = (isAnalog || isVertical) ? Visibility.Collapsed : Visibility.Visible;
+            DepthRowColon.Visibility = (isAnalog || isVertical || isGiant) ? Visibility.Collapsed : Visibility.Visible;
             DepthRowMinute.Visibility = isAnalog ? Visibility.Collapsed : Visibility.Visible;
 
             // For analog, auto-set all behind when depth is on
