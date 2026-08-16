@@ -354,7 +354,7 @@
                         <Ellipse x:Name="RhombusDotBehind" Grid.Row="1" Grid.Column="1" Width="12" Height="12" Fill="#FFDC3232" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Grid>
                     <!-- Analog Clock Behind (Collapsed by default) -->
-                    <Canvas x:Name="AnalogClockCanvasBehind" Width="200" Height="200"
+                    <Canvas x:Name="AnalogClockCanvasBehind" Width="200" Height="200" CacheMode="BitmapCache"
                             HorizontalAlignment="Center" Visibility="Collapsed">
                         <Canvas.RenderTransform><CompositeTransform/></Canvas.RenderTransform>
                     </Canvas>
@@ -432,7 +432,7 @@
                         <Ellipse x:Name="RhombusDot" Grid.Row="1" Grid.Column="1" Width="12" Height="12" Fill="#FFDC3232" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Grid>
                     <!-- Analog Clock (Collapsed by default) -->
-                    <Canvas x:Name="AnalogClockCanvas" Width="200" Height="200"
+                    <Canvas x:Name="AnalogClockCanvas" Width="200" Height="200" CacheMode="BitmapCache"
                             HorizontalAlignment="Center" Visibility="Collapsed">
                         <Canvas.RenderTransform><CompositeTransform/></Canvas.RenderTransform>
                     </Canvas>
