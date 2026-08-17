@@ -689,12 +689,19 @@ namespace HyperOS.Pages
         {
             if (NavigationService.CanGoBack)
                 NavigationService.GoBack();
+            else
+                System.Windows.Application.Current.Terminate();
         }
 
         private void Apply_Tap(object sender, System.Windows.Input.GestureEventArgs e)
         {
             SyncPresetToGlobal(currentIndex);
             System.Windows.MessageBox.Show("Preset đã được áp dụng thành công cho màn hình khóa!", "Thành công", System.Windows.MessageBoxButton.OK);
+
+            if (NavigationService.CanGoBack)
+                NavigationService.GoBack();
+            else
+                System.Windows.Application.Current.Terminate();
         }
 
         #endregion
