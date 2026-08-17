@@ -373,7 +373,8 @@ namespace HyperOS.Pages
         private void OverlayInformationPanel_ManipulationStarted(
             object sender, ManipulationStartedEventArgs e)
         {
-            // Record start point
+            // Record start point and stop any ongoing snap back animation
+            try { ((Storyboard)Resources["SnapBackAnim"]).Stop(); } catch { }
         }
 
         private void OverlayInformationPanel_ManipulationDelta(
@@ -418,6 +419,9 @@ namespace HyperOS.Pages
                 try
                 {
                     Storyboard snapBack = (Storyboard)Resources["SnapBackAnim"];
+                    // MUST STOP the storyboard first to modify its keyframes, otherwise it throws InvalidOperationException if it's already completed.
+                    snapBack.Stop();
+
                     // Need to reset the from values so they start from the current positions
                     var t2 = (CompositeTransform)OverlayInformationPanel.RenderTransform;
                     var tb2 = (CompositeTransform)BehindForegroundGrid.RenderTransform;
