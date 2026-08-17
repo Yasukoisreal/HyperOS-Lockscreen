@@ -1191,18 +1191,13 @@ namespace HyperOS.Pages
                 BehindClockPanel.HorizontalAlignment = HorizontalAlignment.Left;
                 BehindClockPanel.Margin = new Thickness(clockFreeX + PAD, clockFreeY + PAD, 0, 0);
 
-                if (WeatherText.Visibility == Visibility.Visible)
-                    WeatherText.Margin = new Thickness(weatherFreeX + PAD, weatherFreeY, 0, 0);
-
-                if (CountdownText.Visibility == Visibility.Visible)
-                    CountdownText.Margin = new Thickness(countdownFreeX + PAD, countdownFreeY, 0, 0);
+                WeatherText.Margin = new Thickness(weatherFreeX + PAD, weatherFreeY, 0, 0);
+                CountdownText.Margin = new Thickness(countdownFreeX + PAD, countdownFreeY, 0, 0);
 
                 if (OwnerInfoText.Visibility == Visibility.Visible)
                 {
-                    double ownerY = countdownFreeY + 30;
-                    if (CountdownText.Visibility != Visibility.Visible)
-                        ownerY = weatherFreeY + 30;
-                    OwnerInfoText.Margin = new Thickness(clockFreeX, ownerY, 0, 0);
+                    double ownerY = showCountdown ? countdownFreeY + 30 : (showWeather ? weatherFreeY + 30 : clockFreeY + 155 + 30);
+                    OwnerInfoText.Margin = new Thickness(clockFreeX + PAD, ownerY, 0, 0);
                 }
             }
             else
@@ -1320,7 +1315,7 @@ namespace HyperOS.Pages
             }
 
             // Position weather below clock
-            if (WeatherText.Visibility == Visibility.Visible)
+            if (showWeather)
             {
                 WeatherText.VerticalAlignment = VerticalAlignment.Top;
                 WeatherText.Margin = new Thickness(
@@ -1328,7 +1323,7 @@ namespace HyperOS.Pages
                 clockBottom += 28;
             }
 
-            if (CountdownText.Visibility == Visibility.Visible)
+            if (showCountdown)
             {
                 CountdownText.VerticalAlignment = VerticalAlignment.Top;
                 CountdownText.Margin = new Thickness(
