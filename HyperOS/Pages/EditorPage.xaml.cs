@@ -1579,6 +1579,7 @@ namespace HyperOS.Pages
 
         private void EdColorOpacity_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
+            if (isLoading) return;
             if (isUpdatingColorUI) return;
             if (colorScope == "Clock")
             {
@@ -1595,6 +1596,7 @@ namespace HyperOS.Pages
 
         private void EdColorHue_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
+            if (isLoading) return;
             if (isUpdatingColorUI) return;
             if (colorScope == "Clock")
             {
