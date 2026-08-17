@@ -144,26 +144,75 @@
             </DoubleAnimationUsingKeyFrames>
         </Storyboard>
 
-        <!-- Date slide-in animation -->
+        <!-- Date & Widgets slide-in animation -->
         <Storyboard x:Key="DayAnim">
-            <DoubleAnimationUsingKeyFrames
-                Storyboard.TargetProperty="(UIElement.Opacity)"
-                Storyboard.TargetName="DateInfoPanel">
+            <!-- DateInfoPanel -->
+            <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.Opacity)" Storyboard.TargetName="DateInfoPanel">
                 <EasingDoubleKeyFrame KeyTime="0" Value="0"/>
                 <EasingDoubleKeyFrame KeyTime="0:0:0.500" Value="1">
-                    <EasingDoubleKeyFrame.EasingFunction>
-                        <CubicEase EasingMode="EaseOut"/>
-                    </EasingDoubleKeyFrame.EasingFunction>
+                    <EasingDoubleKeyFrame.EasingFunction><CubicEase EasingMode="EaseOut"/></EasingDoubleKeyFrame.EasingFunction>
                 </EasingDoubleKeyFrame>
             </DoubleAnimationUsingKeyFrames>
-            <DoubleAnimationUsingKeyFrames
-                Storyboard.TargetProperty="(UIElement.RenderTransform).(CompositeTransform.TranslateY)"
-                Storyboard.TargetName="DateInfoPanel">
+            <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.RenderTransform).(CompositeTransform.TranslateY)" Storyboard.TargetName="DateInfoPanel">
                 <EasingDoubleKeyFrame KeyTime="0" Value="20"/>
                 <EasingDoubleKeyFrame KeyTime="0:0:0.500" Value="0">
-                    <EasingDoubleKeyFrame.EasingFunction>
-                        <CubicEase EasingMode="EaseOut"/>
-                    </EasingDoubleKeyFrame.EasingFunction>
+                    <EasingDoubleKeyFrame.EasingFunction><CubicEase EasingMode="EaseOut"/></EasingDoubleKeyFrame.EasingFunction>
+                </EasingDoubleKeyFrame>
+            </DoubleAnimationUsingKeyFrames>
+            
+            <!-- WeatherText -->
+            <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.Opacity)" Storyboard.TargetName="WeatherText">
+                <EasingDoubleKeyFrame KeyTime="0" Value="0"/>
+                <EasingDoubleKeyFrame KeyTime="0:0:0.500" Value="1">
+                    <EasingDoubleKeyFrame.EasingFunction><CubicEase EasingMode="EaseOut"/></EasingDoubleKeyFrame.EasingFunction>
+                </EasingDoubleKeyFrame>
+            </DoubleAnimationUsingKeyFrames>
+            <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.RenderTransform).(CompositeTransform.TranslateY)" Storyboard.TargetName="WeatherText">
+                <EasingDoubleKeyFrame KeyTime="0" Value="20"/>
+                <EasingDoubleKeyFrame KeyTime="0:0:0.500" Value="0">
+                    <EasingDoubleKeyFrame.EasingFunction><CubicEase EasingMode="EaseOut"/></EasingDoubleKeyFrame.EasingFunction>
+                </EasingDoubleKeyFrame>
+            </DoubleAnimationUsingKeyFrames>
+
+            <!-- CountdownText -->
+            <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.Opacity)" Storyboard.TargetName="CountdownText">
+                <EasingDoubleKeyFrame KeyTime="0" Value="0"/>
+                <EasingDoubleKeyFrame KeyTime="0:0:0.500" Value="1">
+                    <EasingDoubleKeyFrame.EasingFunction><CubicEase EasingMode="EaseOut"/></EasingDoubleKeyFrame.EasingFunction>
+                </EasingDoubleKeyFrame>
+            </DoubleAnimationUsingKeyFrames>
+            <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.RenderTransform).(CompositeTransform.TranslateY)" Storyboard.TargetName="CountdownText">
+                <EasingDoubleKeyFrame KeyTime="0" Value="20"/>
+                <EasingDoubleKeyFrame KeyTime="0:0:0.500" Value="0">
+                    <EasingDoubleKeyFrame.EasingFunction><CubicEase EasingMode="EaseOut"/></EasingDoubleKeyFrame.EasingFunction>
+                </EasingDoubleKeyFrame>
+            </DoubleAnimationUsingKeyFrames>
+
+            <!-- OwnerInfoText -->
+            <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.Opacity)" Storyboard.TargetName="OwnerInfoText">
+                <EasingDoubleKeyFrame KeyTime="0" Value="0"/>
+                <EasingDoubleKeyFrame KeyTime="0:0:0.500" Value="1">
+                    <EasingDoubleKeyFrame.EasingFunction><CubicEase EasingMode="EaseOut"/></EasingDoubleKeyFrame.EasingFunction>
+                </EasingDoubleKeyFrame>
+            </DoubleAnimationUsingKeyFrames>
+            <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.RenderTransform).(CompositeTransform.TranslateY)" Storyboard.TargetName="OwnerInfoText">
+                <EasingDoubleKeyFrame KeyTime="0" Value="20"/>
+                <EasingDoubleKeyFrame KeyTime="0:0:0.500" Value="0">
+                    <EasingDoubleKeyFrame.EasingFunction><CubicEase EasingMode="EaseOut"/></EasingDoubleKeyFrame.EasingFunction>
+                </EasingDoubleKeyFrame>
+            </DoubleAnimationUsingKeyFrames>
+
+            <!-- MainSignatureText -->
+            <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.Opacity)" Storyboard.TargetName="MainSignatureText">
+                <EasingDoubleKeyFrame KeyTime="0" Value="0"/>
+                <EasingDoubleKeyFrame KeyTime="0:0:0.500" Value="1">
+                    <EasingDoubleKeyFrame.EasingFunction><CubicEase EasingMode="EaseOut"/></EasingDoubleKeyFrame.EasingFunction>
+                </EasingDoubleKeyFrame>
+            </DoubleAnimationUsingKeyFrames>
+            <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.RenderTransform).(CompositeTransform.TranslateY)" Storyboard.TargetName="MainSignatureText">
+                <EasingDoubleKeyFrame KeyTime="0" Value="20"/>
+                <EasingDoubleKeyFrame KeyTime="0:0:0.500" Value="0">
+                    <EasingDoubleKeyFrame.EasingFunction><CubicEase EasingMode="EaseOut"/></EasingDoubleKeyFrame.EasingFunction>
                 </EasingDoubleKeyFrame>
             </DoubleAnimationUsingKeyFrames>
         </Storyboard>
@@ -449,14 +498,18 @@
                     FontSize="18" Foreground="#BBFFFFFF"
                     FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"
                     HorizontalAlignment="Left" VerticalAlignment="Top"
-                    Visibility="Collapsed"/>
+                    Visibility="Collapsed">
+                    <TextBlock.RenderTransform><CompositeTransform/></TextBlock.RenderTransform>
+                </TextBlock>
 
                 <!-- Countdown widget (independent position) -->
                 <TextBlock x:Name="CountdownText" Text=""
                     FontSize="16" Foreground="#99FFFFFF"
                     FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"
                     HorizontalAlignment="Left" VerticalAlignment="Top"
-                    Visibility="Collapsed"/>
+                    Visibility="Collapsed">
+                    <TextBlock.RenderTransform><CompositeTransform/></TextBlock.RenderTransform>
+                </TextBlock>
 
                 <!-- Owner info text (independent position) -->
                 <TextBlock x:Name="OwnerInfoText" Text=""
@@ -464,7 +517,9 @@
                     FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"
                     HorizontalAlignment="Left" VerticalAlignment="Top"
                     TextWrapping="Wrap" MaxWidth="350"
-                    Visibility="Collapsed"/>
+                    Visibility="Collapsed">
+                    <TextBlock.RenderTransform><CompositeTransform/></TextBlock.RenderTransform>
+                </TextBlock>
 
                 <!-- Battery & Charging info — top right -->
                 <StackPanel Orientation="Horizontal"

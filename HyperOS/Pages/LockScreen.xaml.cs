@@ -1191,13 +1191,13 @@ namespace HyperOS.Pages
                 BehindClockPanel.HorizontalAlignment = HorizontalAlignment.Left;
                 BehindClockPanel.Margin = new Thickness(clockFreeX + PAD, clockFreeY + PAD, 0, 0);
 
-                WeatherText.Margin = new Thickness(weatherFreeX + PAD, weatherFreeY, 0, 0);
-                CountdownText.Margin = new Thickness(countdownFreeX + PAD, countdownFreeY, 0, 0);
+                WeatherText.Margin = new Thickness(weatherFreeX + PAD, weatherFreeY + PAD, 0, 0);
+                CountdownText.Margin = new Thickness(countdownFreeX + PAD, countdownFreeY + PAD, 0, 0);
 
                 if (OwnerInfoText.Visibility == Visibility.Visible)
                 {
                     double ownerY = showCountdown ? countdownFreeY + 30 : (showWeather ? weatherFreeY + 30 : clockFreeY + 155 + 30);
-                    OwnerInfoText.Margin = new Thickness(clockFreeX + PAD, ownerY, 0, 0);
+                    OwnerInfoText.Margin = new Thickness(clockFreeX + PAD, ownerY + PAD, 0, 0);
                 }
             }
             else
@@ -1286,7 +1286,7 @@ namespace HyperOS.Pages
             }
             MainSignatureText.Foreground = brush;
 
-            MainSignatureText.Margin = new Thickness(signatureX, signatureY, 0, 0);
+            MainSignatureText.Margin = new Thickness(signatureX + 5.5, signatureY + 5.5, 0, 0);
         }
 
         private void ClockPanel_SizeChanged(object sender, SizeChangedEventArgs e)
