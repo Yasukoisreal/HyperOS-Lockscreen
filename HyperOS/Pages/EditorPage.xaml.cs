@@ -1372,8 +1372,8 @@ namespace HyperOS.Pages
             if (DisplayProps != null) DisplayProps.Visibility = tab == "Display" ? Visibility.Visible : Visibility.Collapsed;
             
             if (ColorProps != null) ColorProps.Visibility = tab == "Color" ? Visibility.Visible : Visibility.Collapsed;
-            // if (FilterProps != null) FilterProps.Visibility = tab == "Filter" ? Visibility.Visible : Visibility.Collapsed;
-            // if (DepthProps != null) DepthProps.Visibility = tab == "Depth" ? Visibility.Visible : Visibility.Collapsed;
+            if (FilterProps != null) FilterProps.Visibility = tab == "Filter" ? Visibility.Visible : Visibility.Collapsed;
+            if (DepthProps != null) DepthProps.Visibility = tab == "Depth" ? Visibility.Visible : Visibility.Collapsed;
             
             // Select corresponding handle on preview
             switch (tab)
@@ -1396,12 +1396,14 @@ namespace HyperOS.Pages
 
         private void Toolbar_Filter_Tap(object sender, System.Windows.Input.GestureEventArgs e)
         {
-            // We will implement filter tab later
+            PropPanel.Visibility = Visibility.Visible;
+            SelectTab("Filter");
         }
 
         private void Toolbar_Depth_Tap(object sender, System.Windows.Input.GestureEventArgs e)
         {
-            // We will toggle depth later
+            PropPanel.Visibility = Visibility.Visible;
+            SelectTab("Depth");
         }
 
         private void Toolbar_Color_Tap(object sender, System.Windows.Input.GestureEventArgs e)

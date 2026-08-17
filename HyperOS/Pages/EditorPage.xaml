@@ -513,11 +513,15 @@
                                 Style="{StaticResource EditorActionBtn}" Margin="0,8,0,0"/>
                         </StackPanel>
 
-                        <!-- ══ DISPLAY PROPERTIES ══ -->
-                        <StackPanel x:Name="DisplayProps" Visibility="Collapsed">
-                            <Button Content="▣ Change Wallpaper" Click="EdWallpaper_Click"
-                                Style="{StaticResource EditorActionBtn}" Margin="0,8,0,0"/>
+                        <!-- ══ FILTER PROPERTIES ══ -->
+                        <StackPanel x:Name="FilterProps" Visibility="Collapsed">
+                            <TextBlock Text="FILTERS (COMING SOON)" Style="{StaticResource PropLabel}"/>
+                            <TextBlock Text="Filters will be available in Phase 4." FontSize="14" Foreground="#88FFFFFF"
+                                FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"/>
+                        </StackPanel>
 
+                        <!-- ══ DEPTH PROPERTIES ══ -->
+                        <StackPanel x:Name="DepthProps" Visibility="Collapsed">
                             <TextBlock Text="DEPTH EFFECT" Style="{StaticResource PropLabel}"/>
                             <Grid>
                                 <Grid.ColumnDefinitions>
@@ -577,6 +581,13 @@
                                         Checked="EdDepthLayer_Changed" Unchecked="EdDepthLayer_Changed"/>
                                 </Grid>
                             </StackPanel>
+                        </StackPanel>
+
+                        <!-- ══ DISPLAY PROPERTIES ══ -->
+                        <StackPanel x:Name="DisplayProps" Visibility="Collapsed">
+                            <Button Content="▣ Change Wallpaper" Click="EdWallpaper_Click"
+                                Style="{StaticResource EditorActionBtn}" Margin="0,8,0,0"/>
+                        </StackPanel>
 
                             <!-- ══ COLOR PROPERTIES ══ -->
                             <StackPanel x:Name="ColorProps" Visibility="Collapsed">
@@ -649,8 +660,6 @@
                                 <TextBlock Text="HUE (Custom Color)" Style="{StaticResource PropLabel}"/>
                                 <Slider x:Name="EdColorHue" Minimum="-1" Maximum="360" SmallChange="1" LargeChange="10" Value="-1" ValueChanged="EdColorHue_ValueChanged"/>
                             </StackPanel>
-                        </StackPanel>
-
                     </StackPanel>
                 </ScrollViewer>
             </Border>
@@ -661,7 +670,7 @@
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
                 <StackPanel Margin="16,0" Tap="Toolbar_Wallpaper_Tap">
                     <Border Width="48" Height="48" CornerRadius="24" Background="#33FFFFFF">
-                        <TextBlock Text="🖼" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="20"/>
+                        <TextBlock Text="&#xE158;" FontFamily="Segoe UI Symbol" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="20"/>
                     </Border>
                 </StackPanel>
                 <StackPanel Margin="16,0" Tap="Toolbar_Filter_Tap">
