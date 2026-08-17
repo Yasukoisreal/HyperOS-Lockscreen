@@ -414,12 +414,51 @@ namespace HyperOS.Pages
             }
             else
             {
-                // Snap back
-                t.TranslateY = 0;
-                OverlayInformationPanel.Opacity = 1;
-                var tb2 = (CompositeTransform)BehindForegroundGrid.RenderTransform;
-                tb2.TranslateY = 0;
-                BehindForegroundGrid.Opacity = 1;
+                // Snap back with animation
+                try
+                {
+                    Storyboard snapBack = (Storyboard)Resources["SnapBackAnim"];
+                    // Need to reset the from values so they start from the current positions
+                    var t2 = (CompositeTransform)OverlayInformationPanel.RenderTransform;
+                    var tb2 = (CompositeTransform)BehindForegroundGrid.RenderTransform;
+
+                    foreach (var timeline in snapBack.Children)
+                    {
+                        var doubleAnim = timeline as DoubleAnimationUsingKeyFrames;
+                        if (doubleAnim != null)
+                        {
+                            string targetName = Storyboard.GetTargetName(doubleAnim);
+                            string targetProp = Storyboard.GetTargetProperty(doubleAnim).Path;
+
+                            double targetValue = (targetProp.Contains("TranslateY")) ? 0.0 : 1.0;
+                            double currentValue = 0;
+
+                            if (targetName == "OverlayInformationPanel")
+                                currentValue = targetProp.Contains("TranslateY") ? t2.TranslateY : OverlayInformationPanel.Opacity;
+                            else if (targetName == "BehindForegroundGrid")
+                                currentValue = targetProp.Contains("TranslateY") ? tb2.TranslateY : BehindForegroundGrid.Opacity;
+
+                            doubleAnim.KeyFrames.Clear();
+                            doubleAnim.KeyFrames.Add(new EasingDoubleKeyFrame { KeyTime = TimeSpan.Zero, Value = currentValue });
+                            doubleAnim.KeyFrames.Add(new EasingDoubleKeyFrame 
+                            { 
+                                KeyTime = TimeSpan.FromSeconds(0.3), 
+                                Value = targetValue, 
+                                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } 
+                            });
+                        }
+                    }
+                    snapBack.Begin();
+                }
+                catch
+                {
+                    // Fallback if animation fails
+                    var tb2 = (CompositeTransform)BehindForegroundGrid.RenderTransform;
+                    t.TranslateY = 0;
+                    OverlayInformationPanel.Opacity = 1;
+                    tb2.TranslateY = 0;
+                    BehindForegroundGrid.Opacity = 1;
+                }
             }
         }
 
