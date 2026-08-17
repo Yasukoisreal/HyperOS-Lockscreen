@@ -380,8 +380,10 @@
                             </StackPanel>
                         </StackPanel>
 
-                        <!-- ══ WEATHER PROPERTIES ══ -->
-                        <StackPanel x:Name="WeatherProps" Visibility="Collapsed">
+                        <!-- ══ WIDGETS PROPERTIES (Toggles) ══ -->
+                        <StackPanel x:Name="WidgetsProps" Visibility="Collapsed">
+                            <TextBlock Text="ADD WIDGETS" Style="{StaticResource PropLabel}"/>
+                            
                             <Grid Margin="0,8,0,0">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
@@ -393,6 +395,37 @@
                                 <toolkit:ToggleSwitch x:Name="EdWeatherToggle" Grid.Column="1"
                                     Checked="EdWeatherToggle_Changed" Unchecked="EdWeatherToggle_Changed"/>
                             </Grid>
+
+                            <Grid Margin="0,8,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Show Countdown" FontSize="16" Foreground="White"
+                                    FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"
+                                    VerticalAlignment="Center"/>
+                                <toolkit:ToggleSwitch x:Name="EdCountdownToggle" Grid.Column="1"
+                                    Checked="EdCountdownToggle_Changed" Unchecked="EdCountdownToggle_Changed"/>
+                            </Grid>
+
+                            <Grid Margin="0,8,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Show Signature" FontSize="16" Foreground="White"
+                                    FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"
+                                    VerticalAlignment="Center"/>
+                                <toolkit:ToggleSwitch x:Name="EdSignatureToggle" Grid.Column="1"
+                                    Checked="EdSignatureToggle_Changed" Unchecked="EdSignatureToggle_Changed"/>
+                            </Grid>
+                            <TextBlock Text="Tap on the element in the preview to edit its settings." FontSize="13" Foreground="#88FFFFFF"
+                                FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans" TextWrapping="Wrap" Margin="0,12,0,0"/>
+                        </StackPanel>
+
+                        <!-- ══ WEATHER PROPERTIES ══ -->
+                        <StackPanel x:Name="WeatherProps" Visibility="Collapsed">
+
                             <TextBlock Text="LOCATION" Style="{StaticResource PropLabel}"/>
                             <TextBox x:Name="EdWeatherCity" Background="#14FFFFFF" Foreground="White"
                                 BorderThickness="0" FontSize="14"
@@ -416,17 +449,7 @@
 
                         <!-- ══ COUNTDOWN PROPERTIES ══ -->
                         <StackPanel x:Name="CountdownProps" Visibility="Collapsed">
-                            <Grid Margin="0,8,0,0">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Text="Show Countdown" FontSize="16" Foreground="White"
-                                    FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"
-                                    VerticalAlignment="Center"/>
-                                <toolkit:ToggleSwitch x:Name="EdCountdownToggle" Grid.Column="1"
-                                    Checked="EdCountdownToggle_Changed" Unchecked="EdCountdownToggle_Changed"/>
-                            </Grid>
+
                             <TextBlock Text="Event name" Style="{StaticResource PropLabel}"/>
                             <TextBox x:Name="EdCountdownName" Background="#14FFFFFF" Foreground="White"
                                 BorderThickness="0" FontSize="14" MaxLength="30"/>
@@ -439,17 +462,7 @@
 
                         <!-- ══ SIGNATURE PROPERTIES ══ -->
                         <StackPanel x:Name="SignatureProps" Visibility="Collapsed">
-                            <Grid Margin="0,8,0,0">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Text="Show Signature" FontSize="16" Foreground="White"
-                                    FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"
-                                    VerticalAlignment="Center"/>
-                                <toolkit:ToggleSwitch x:Name="EdSignatureToggle" Grid.Column="1"
-                                    Checked="EdSignatureToggle_Changed" Unchecked="EdSignatureToggle_Changed"/>
-                            </Grid>
+
 
                             <TextBlock Text="LAYOUT" Style="{StaticResource PropLabel}"/>
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
@@ -668,22 +681,27 @@
         <!-- ═══════════════════════════════════════════════════ -->
         <Grid x:Name="BottomToolbar" VerticalAlignment="Bottom" Height="72" Background="#DD080814">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                <StackPanel Margin="16,0" Tap="Toolbar_Wallpaper_Tap">
+                <StackPanel Margin="10,0" Tap="Toolbar_Widgets_Tap">
+                    <Border Width="48" Height="48" CornerRadius="24" Background="#33FFFFFF">
+                        <TextBlock Text="&#xE109;" FontFamily="Segoe UI Symbol" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="20"/>
+                    </Border>
+                </StackPanel>
+                <StackPanel Margin="10,0" Tap="Toolbar_Wallpaper_Tap">
                     <Border Width="48" Height="48" CornerRadius="24" Background="#33FFFFFF">
                         <TextBlock Text="&#xE158;" FontFamily="Segoe UI Symbol" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="20"/>
                     </Border>
                 </StackPanel>
-                <StackPanel Margin="16,0" Tap="Toolbar_Filter_Tap">
+                <StackPanel Margin="10,0" Tap="Toolbar_Filter_Tap">
                     <Border Width="48" Height="48" CornerRadius="24" Background="#33FFFFFF">
                         <TextBlock Text="✨" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="20"/>
                     </Border>
                 </StackPanel>
-                <StackPanel Margin="16,0" Tap="Toolbar_Depth_Tap">
+                <StackPanel Margin="10,0" Tap="Toolbar_Depth_Tap">
                     <Border Width="48" Height="48" CornerRadius="24" Background="#33FFFFFF">
                         <TextBlock Text="🎭" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="20"/>
                     </Border>
                 </StackPanel>
-                <StackPanel Margin="16,0" Tap="Toolbar_Color_Tap">
+                <StackPanel Margin="10,0" Tap="Toolbar_Color_Tap">
                     <Border Width="48" Height="48" CornerRadius="24" Background="#33FFFFFF">
                         <TextBlock Text="🎨" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="20"/>
                     </Border>

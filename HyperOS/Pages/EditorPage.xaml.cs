@@ -1370,6 +1370,7 @@ namespace HyperOS.Pages
             if (CountdownProps != null) CountdownProps.Visibility = tab == "Countdown" ? Visibility.Visible : Visibility.Collapsed;
             if (SignatureProps != null) SignatureProps.Visibility = tab == "Signature" ? Visibility.Visible : Visibility.Collapsed;
             if (DisplayProps != null) DisplayProps.Visibility = tab == "Display" ? Visibility.Visible : Visibility.Collapsed;
+            if (WidgetsProps != null) WidgetsProps.Visibility = tab == "Widgets" ? Visibility.Visible : Visibility.Collapsed;
             
             if (ColorProps != null) ColorProps.Visibility = tab == "Color" ? Visibility.Visible : Visibility.Collapsed;
             if (FilterProps != null) FilterProps.Visibility = tab == "Filter" ? Visibility.Visible : Visibility.Collapsed;
@@ -1384,6 +1385,12 @@ namespace HyperOS.Pages
                 case "Signature": SelectHandle(SignatureHandle); break;
                 default: SelectHandle(null); break;
             }
+        }
+
+        private void Toolbar_Widgets_Tap(object sender, System.Windows.Input.GestureEventArgs e)
+        {
+            PropPanel.Visibility = Visibility.Visible;
+            SelectTab("Widgets");
         }
 
         private void Toolbar_Wallpaper_Tap(object sender, System.Windows.Input.GestureEventArgs e)
