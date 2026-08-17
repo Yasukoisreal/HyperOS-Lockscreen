@@ -697,11 +697,6 @@ namespace HyperOS.Pages
         {
             SyncPresetToGlobal(currentIndex);
             System.Windows.MessageBox.Show("Preset đã được áp dụng thành công cho màn hình khóa!", "Thành công", System.Windows.MessageBoxButton.OK);
-
-            if (NavigationService.CanGoBack)
-                NavigationService.GoBack();
-            else
-                System.Windows.Application.Current.Terminate();
         }
 
         #endregion
