@@ -644,7 +644,7 @@
                                 </ScrollViewer>
                                 
                                 <TextBlock Text="OPACITY" Style="{StaticResource PropLabel}" Margin="0,12,0,0"/>
-                                <Slider x:Name="EdColorOpacity" Minimum="0.1" Maximum="1.0" SmallChange="0.05" LargeChange="0.1" Value="1.0" ValueChanged="EdColorOpacity_ValueChanged"/>
+                                <Slider x:Name="EdColorOpacity" Maximum="1.0" Value="1.0" Minimum="0.1" SmallChange="0.05" LargeChange="0.1" ValueChanged="EdColorOpacity_ValueChanged"/>
                                 
                                 <TextBlock Text="HUE (Custom Color)" Style="{StaticResource PropLabel}"/>
                                 <Slider x:Name="EdColorHue" Minimum="-1" Maximum="360" SmallChange="1" LargeChange="10" Value="-1" ValueChanged="EdColorHue_ValueChanged"/>
