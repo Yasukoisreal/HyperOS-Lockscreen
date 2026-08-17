@@ -227,20 +227,19 @@ namespace HyperOS.Helpers
         /// <param name="colonBrush">Brush for colon</param>
         /// <param name="minuteBrush">Brush for minute</param>
         /// <param name="dateBrush">Brush for date text</param>
-        public static StackPanel BuildCardPreview(
-            int clockLayout, int clockStyle, int clockSize,
-            double clockX, double clockY, int dateAlign,
-            double cardW, double cardH,
-            Brush hourBrush, Brush colonBrush, Brush minuteBrush, Brush dateBrush)
+        public static Grid BuildCardPreview(int clockLayout, int clockStyle, int sizeIdx,
+            double clockX, double clockY, int dateAlign, double cardW, double cardH,
+            Brush hourBrush, Brush colonBrush, Brush minuteBrush, Brush dateBrush, int presetIndex = -1)
         {
             int fi = Math.Max(0, Math.Min(clockStyle, Fonts.Length - 1));
-            int si = Math.Max(0, Math.Min(clockSize, SizeValues.Length - 1));
+            int si = Math.Max(0, Math.Min(sizeIdx, SizeValues.Length - 1));
             int sz = SizeValues[si];
 
             // Scale font for card
             double scale = cardW / 480.0;
             sz = Math.Max(16, (int)(sz * scale));
 
+            var containerGrid = new Grid { Width = cardW, Height = cardH };
             var stack = new StackPanel();
             if (clockX >= 0 && clockY >= 0)
             {
@@ -257,6 +256,76 @@ namespace HyperOS.Helpers
                 stack.Margin = new Thickness(0, -10, 0, 0);
             }
             stack.IsHitTestVisible = false;
+
+            // Draw Signature (Behind layer only, which means when we're drawing the date/hour that are behind)
+            // To simplify, we draw it if dateBrush is not transparent
+            var scb = dateBrush as SolidColorBrush;
+            if (scb != null && scb.Color.A > 0)
+            {
+                var s = System.IO.IsolatedStorage.IsolatedStorageSettings.ApplicationSettings;
+                string pfx = presetIndex >= 0 ? ("Set" + presetIndex + "_") : "";
+                
+                bool showSig = s.Contains(pfx + "ShowSignature") && (bool)s[pfx + "ShowSignature"];
+                if (showSig)
+                {
+                    string sigText = s.Contains(pfx + "SignatureText") ? (string)s[pfx + "SignatureText"] : "";
+                    if (!string.IsNullOrWhiteSpace(sigText))
+                    {
+                        int fontIdx = s.Contains(pfx + "SignatureFont") ? (int)s[pfx + "SignatureFont"] : 0;
+                        double sigSpacing = s.Contains(pfx + "SignatureSpacing") ? (double)s[pfx + "SignatureSpacing"] : 0;
+                        int sigAlign = s.Contains(pfx + "SignatureAlign") ? (int)s[pfx + "SignatureAlign"] : 1;
+                        int sigLayout = s.Contains(pfx + "SignatureLayout") ? (int)s[pfx + "SignatureLayout"] : 0;
+                        double sigX = s.Contains(pfx + "SignatureX") ? (double)s[pfx + "SignatureX"] : -1;
+                        double sigY = s.Contains(pfx + "SignatureY") ? (double)s[pfx + "SignatureY"] : -1;
+                        int sigColorIdx = s.Contains(pfx + "SignatureColor") ? (int)s[pfx + "SignatureColor"] : 0;
+                        int sigBlend = s.Contains(pfx + "SignatureBlend") ? (int)s[pfx + "SignatureBlend"] : 0;
+
+                        var sigFont = GetFont(fontIdx);
+                        MC sigColor = ResolveClockColor(sigColorIdx, sigBlend);
+                        var sigBrush = new SolidColorBrush(sigColor);
+
+                        var sigBlock = new TextBlock
+                        {
+                            Text = sigLayout == 1 ? string.Join("\n", sigText.ToCharArray()) : sigText,
+                            FontFamily = sigFont,
+                            FontSize = Math.Max(10, 48 * scale),
+                            Foreground = sigBrush,
+                            CharacterSpacing = (int)sigSpacing
+                        };
+                        if (sigLayout == 1)
+                        {
+                            sigBlock.LineStackingStrategy = LineStackingStrategy.BlockLineHeight;
+                            sigBlock.LineHeight = (48 + (sigSpacing / 20.0)) * scale;
+                        }
+                        else
+                        {
+                            sigBlock.LineHeight = 0;
+                        }
+
+                        if (sigX >= 0 && sigY >= 0)
+                        {
+                            sigBlock.HorizontalAlignment = HorizontalAlignment.Left;
+                            sigBlock.VerticalAlignment = VerticalAlignment.Top;
+                            sigBlock.Margin = new Thickness(sigX * scale, sigY * (cardH / 800.0), 0, 0);
+                        }
+                        else
+                        {
+                            sigBlock.HorizontalAlignment = HorizontalAlignment.Center;
+                            sigBlock.VerticalAlignment = VerticalAlignment.Top;
+                            sigBlock.Margin = new Thickness(0, 720 * (cardH / 800.0), 0, 0);
+                        }
+                        
+                        switch (sigAlign)
+                        {
+                            case 0: sigBlock.TextAlignment = TextAlignment.Left; break;
+                            case 2: sigBlock.TextAlignment = TextAlignment.Right; break;
+                            default: sigBlock.TextAlignment = TextAlignment.Center; break;
+                        }
+
+                        containerGrid.Children.Add(sigBlock);
+                    }
+                }
+            }
 
             // Date alignment from preset
             HorizontalAlignment dateHAlign;
@@ -285,7 +354,7 @@ namespace HyperOS.Helpers
                 {
                     Width = diameter,
                     Height = diameter,
-                    HorizontalAlignment = HorizontalAlignment.Center
+                    HorizontalAlignment = dateHAlign
                 };
                 DrawAnalogClock(analogCanvas, diameter, DateTime.Now.Hour, DateTime.Now.Minute, clockLayout, hourBrush);
                 stack.Children.Add(analogCanvas);
@@ -295,7 +364,7 @@ namespace HyperOS.Helpers
                 // Rhombus digital
                 var timeGrid = new Grid
                 {
-                    HorizontalAlignment = HorizontalAlignment.Center,
+                    HorizontalAlignment = dateHAlign,
                     Margin = new Thickness(0, -sz * 0.15, 0, 0)
                 };
                 timeGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
@@ -338,7 +407,7 @@ namespace HyperOS.Helpers
                 var timeP = new StackPanel
                 {
                     Orientation = Orientation.Horizontal,
-                    HorizontalAlignment = HorizontalAlignment.Center,
+                    HorizontalAlignment = dateHAlign,
                     Margin = new Thickness(0, -sz * 0.25, 0, 0)
                 };
                 timeP.Children.Add(new TextBlock { Text = DateTime.Now.ToString("HH"), FontFamily = Fonts[fi], FontSize = sz * 1.6, Foreground = hourBrush });
@@ -351,7 +420,7 @@ namespace HyperOS.Helpers
                 var timeP = new StackPanel
                 {
                     Orientation = Orientation.Vertical,
-                    HorizontalAlignment = HorizontalAlignment.Center,
+                    HorizontalAlignment = dateHAlign,
                     Margin = new Thickness(0, -sz * 0.22, 0, 0)
                 };
                 timeP.Children.Add(new TextBlock
@@ -379,7 +448,7 @@ namespace HyperOS.Helpers
                 var timeP = new StackPanel
                 {
                     Orientation = Orientation.Horizontal,
-                    HorizontalAlignment = HorizontalAlignment.Center,
+                    HorizontalAlignment = dateHAlign,
                     Margin = new Thickness(0, -sz * 0.16, 0, 0)
                 };
                 timeP.Children.Add(new TextBlock { Text = DateTime.Now.ToString("HH"), FontFamily = Fonts[fi], FontSize = sz, Foreground = hourBrush });
@@ -387,8 +456,8 @@ namespace HyperOS.Helpers
                 timeP.Children.Add(new TextBlock { Text = DateTime.Now.ToString("mm"), FontFamily = Fonts[fi], FontSize = sz, Foreground = minuteBrush });
                 stack.Children.Add(timeP);
             }
-
-            return stack;
+            containerGrid.Children.Add(stack);
+            return containerGrid;
         }
 
         #endregion

@@ -58,7 +58,8 @@
         <Grid x:Name="PreviewArea" Background="Black">
 
             <!-- Background image -->
-            <Border Tap="Background_Tap" DoubleTap="PreviewArea_DoubleTap">
+            <!-- Background image -->
+            <Border x:Name="PreviewBgBorder" Tap="Background_Tap" DoubleTap="PreviewArea_DoubleTap">
                 <Border.Background>
                     <ImageBrush x:Name="PreviewBgBrush" Stretch="UniformToFill"/>
                 </Border.Background>
@@ -160,7 +161,21 @@
                     FontSize="16" Foreground="#99FFFFFF"/>
             </Border>
 
-            <!-- Foreground overlay (depth effect preview) -->
+            <!-- Signature (Magazine Style) -->
+            <Border x:Name="SignatureHandle" Tag="Signature"
+                    HorizontalAlignment="Left" VerticalAlignment="Top"
+                    BorderThickness="1.5" BorderBrush="Transparent"
+                    Padding="4" Background="Transparent" Visibility="Collapsed"
+                    ManipulationDelta="Element_ManipulationDelta"
+                    ManipulationCompleted="Element_ManipulationCompleted"
+                    Tap="Element_Tap">
+                <Border.RenderTransform><CompositeTransform/></Border.RenderTransform>
+                <TextBlock x:Name="PSignature" Text="LIFE"
+                    FontFamily="/Assets/Fonts/PlayfairDisplay-Regular.ttf#Playfair Display"
+                    FontSize="48" Foreground="White" CharacterSpacing="500" />
+            </Border>
+
+            <!-- Depth subject overlay -->
             <Border x:Name="PreviewFg" IsHitTestVisible="False" Visibility="Collapsed">
                 <Border.Background>
                     <ImageBrush x:Name="PreviewFgBrush" Stretch="UniformToFill"/>
@@ -298,6 +313,10 @@
                     <Border x:Name="TabCountdown" Style="{StaticResource TabPill}"
                             Tap="Tab_Tap" Tag="Countdown">
                         <TextBlock x:Name="TabCountdownText" Text="⏱ Countdown" Style="{StaticResource TabText}"/>
+                    </Border>
+                    <Border x:Name="TabSignature" Style="{StaticResource TabPill}"
+                            Tap="Tab_Tap" Tag="Signature">
+                        <TextBlock x:Name="TabSignatureText" Text="✍ Signature" Style="{StaticResource TabText}"/>
                     </Border>
                     <Border x:Name="TabDisplay" Style="{StaticResource TabPill}"
                             Tap="Tab_Tap" Tag="Display">
@@ -532,6 +551,136 @@
                                 BorderThickness="0" InputScope="Number" MaxLength="10" FontSize="14"/>
                             <Button Content="Save Countdown" Click="EdSaveCountdown_Click"
                                 Style="{StaticResource EditorActionBtn}"/>
+                        </StackPanel>
+
+                        <!-- ══ SIGNATURE PROPERTIES ══ -->
+                        <StackPanel x:Name="SignatureProps" Visibility="Collapsed">
+                            <Grid Margin="0,8,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Show Signature" FontSize="16" Foreground="White"
+                                    FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"
+                                    VerticalAlignment="Center"/>
+                                <toolkit:ToggleSwitch x:Name="EdSignatureToggle" Grid.Column="1"
+                                    Checked="EdSignatureToggle_Changed" Unchecked="EdSignatureToggle_Changed"/>
+                            </Grid>
+
+                            <TextBlock Text="LAYOUT" Style="{StaticResource PropLabel}"/>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                                <Border x:Name="SigLayoutHoriz" Tap="SigLayout_Tap" Tag="0" Style="{StaticResource PropOptionPill}">
+                                    <TextBlock Text="Horizontal" Style="{StaticResource PropOptionText}"/>
+                                </Border>
+                                <Border x:Name="SigLayoutVert" Tap="SigLayout_Tap" Tag="1" Style="{StaticResource PropOptionPill}">
+                                    <TextBlock Text="Vertical" Style="{StaticResource PropOptionText}"/>
+                                </Border>
+                            </StackPanel>
+
+                            <TextBlock Text="SIGNATURE TEXT" Style="{StaticResource PropLabel}"/>
+                            <TextBox x:Name="EdSignatureText" Background="#14FFFFFF" Foreground="White"
+                                BorderThickness="0" FontSize="14" MaxLength="20"
+                                FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"/>
+                            
+                            <TextBlock Text="FONT" Style="{StaticResource PropLabel}"/>
+                            <StackPanel Orientation="Horizontal">
+                                <Border Tap="SigFontPrev_Tap" Style="{StaticResource PropOptionPill}">
+                                    <TextBlock Text="◀" Style="{StaticResource PropOptionText}"/>
+                                </Border>
+                                <Border Background="#22FFFFFF" CornerRadius="10" Padding="16,6" Margin="0,0,5,0">
+                                    <TextBlock x:Name="SigFontLabel" Text="Playfair Display"
+                                        FontSize="13" Foreground="White"
+                                        FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"/>
+                                </Border>
+                                <Border Tap="SigFontNext_Tap" Style="{StaticResource PropOptionPill}">
+                                    <TextBlock Text="▶" Style="{StaticResource PropOptionText}"/>
+                                </Border>
+                            </StackPanel>
+
+                            <TextBlock Text="LETTER SPACING" Style="{StaticResource PropLabel}"/>
+                            <Slider x:Name="EdSigSpacing" Minimum="0" Maximum="2000" SmallChange="50" LargeChange="200"
+                                    Value="500" ValueChanged="EdSigSpacing_ValueChanged"/>
+
+                            <TextBlock Text="ALIGNMENT" Style="{StaticResource PropLabel}"/>
+                            <ScrollViewer HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled">
+                                <StackPanel Orientation="Horizontal">
+                                    <Border x:Name="SigAlignTL" Tap="SigAlign_Tap" Tag="0" Style="{StaticResource PropOptionPill}">
+                                        <TextBlock Text="Top-L" Style="{StaticResource PropOptionText}"/>
+                                    </Border>
+                                    <Border x:Name="SigAlignTC" Tap="SigAlign_Tap" Tag="1" Style="{StaticResource PropOptionPill}">
+                                        <TextBlock Text="Top-C" Style="{StaticResource PropOptionText}"/>
+                                    </Border>
+                                    <Border x:Name="SigAlignTR" Tap="SigAlign_Tap" Tag="2" Style="{StaticResource PropOptionPill}">
+                                        <TextBlock Text="Top-R" Style="{StaticResource PropOptionText}"/>
+                                    </Border>
+                                    <Border x:Name="SigAlignBL" Tap="SigAlign_Tap" Tag="3" Style="{StaticResource PropOptionPill}">
+                                        <TextBlock Text="Bot-L" Style="{StaticResource PropOptionText}"/>
+                                    </Border>
+                                    <Border x:Name="SigAlignBC" Tap="SigAlign_Tap" Tag="4" Style="{StaticResource PropOptionPill}">
+                                        <TextBlock Text="Bot-C" Style="{StaticResource PropOptionText}"/>
+                                    </Border>
+                                    <Border x:Name="SigAlignBR" Tap="SigAlign_Tap" Tag="5" Style="{StaticResource PropOptionPill}">
+                                        <TextBlock Text="Bot-R" Style="{StaticResource PropOptionText}"/>
+                                    </Border>
+                                </StackPanel>
+                            </ScrollViewer>
+
+                            <!-- Color -->
+                            <TextBlock Text="COLOR" Style="{StaticResource PropLabel}"/>
+                            <ScrollViewer HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled">
+                            <StackPanel Orientation="Horizontal">
+                                <Ellipse x:Name="SigColorW" Width="32" Height="32" Fill="White" Stroke="Transparent" StrokeThickness="2" Tap="SigColor_Tap" Tag="0" Margin="0,0,8,0"/>
+                                <Ellipse x:Name="SigColorG" Width="32" Height="32" Fill="#FFD700" Stroke="Transparent" StrokeThickness="2" Tap="SigColor_Tap" Tag="1" Margin="0,0,8,0"/>
+                                <Ellipse x:Name="SigColorB" Width="32" Height="32" Fill="#87CEEB" Stroke="Transparent" StrokeThickness="2" Tap="SigColor_Tap" Tag="2" Margin="0,0,8,0"/>
+                                <Ellipse x:Name="SigColorP" Width="32" Height="32" Fill="#FFB6C1" Stroke="Transparent" StrokeThickness="2" Tap="SigColor_Tap" Tag="3" Margin="0,0,8,0"/>
+                                <Ellipse x:Name="SigColorR" Width="32" Height="32" Fill="#FF4444" Stroke="Transparent" StrokeThickness="2" Tap="SigColor_Tap" Tag="4" Margin="0,0,8,0"/>
+                                <Ellipse x:Name="SigColorMint" Width="32" Height="32" Fill="#5BFFB0" Stroke="Transparent" StrokeThickness="2" Tap="SigColor_Tap" Tag="5" Margin="0,0,8,0"/>
+                                <Ellipse x:Name="SigColorLav" Width="32" Height="32" Fill="#C4A7FF" Stroke="Transparent" StrokeThickness="2" Tap="SigColor_Tap" Tag="6" Margin="0,0,8,0"/>
+                                <Ellipse x:Name="SigColorOr" Width="32" Height="32" Fill="#FF8C42" Stroke="Transparent" StrokeThickness="2" Tap="SigColor_Tap" Tag="7" Margin="0,0,8,0"/>
+                                <Ellipse x:Name="SigColorCy" Width="32" Height="32" Fill="#00E5FF" Stroke="Transparent" StrokeThickness="2" Tap="SigColor_Tap" Tag="8" Margin="0,0,8,0"/>
+                                <Ellipse x:Name="SigColorSi" Width="32" Height="32" Fill="#A0A0B0" Stroke="Transparent" StrokeThickness="2" Tap="SigColor_Tap" Tag="9" Margin="0,0,0,0"/>
+                            </StackPanel>
+                            </ScrollViewer>
+                            
+                            <!-- Gradient -->
+                            <TextBlock Text="GRADIENT" Style="{StaticResource PropLabel}"/>
+                            <ScrollViewer HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled">
+                            <StackPanel Orientation="Horizontal">
+                                <Border x:Name="SigBlendNone" Tap="SigBlend_Tap" Tag="0" Style="{StaticResource PropOptionPill}">
+                                    <TextBlock Text="None" Style="{StaticResource PropOptionText}"/>
+                                </Border>
+                                <Border x:Name="SigBlendSunset" Tap="SigBlend_Tap" Tag="1" Style="{StaticResource PropOptionPill}">
+                                    <TextBlock Text="Sunset" Style="{StaticResource PropOptionText}"/>
+                                </Border>
+                                <Border x:Name="SigBlendOcean" Tap="SigBlend_Tap" Tag="2" Style="{StaticResource PropOptionPill}">
+                                    <TextBlock Text="Ocean" Style="{StaticResource PropOptionText}"/>
+                                </Border>
+                                <Border x:Name="SigBlendAurora" Tap="SigBlend_Tap" Tag="3" Style="{StaticResource PropOptionPill}">
+                                    <TextBlock Text="Aurora" Style="{StaticResource PropOptionText}"/>
+                                </Border>
+                                <Border x:Name="SigBlendNeon" Tap="SigBlend_Tap" Tag="4" Style="{StaticResource PropOptionPill}">
+                                    <TextBlock Text="Neon" Style="{StaticResource PropOptionText}"/>
+                                </Border>
+                                <Border x:Name="SigBlendRose" Tap="SigBlend_Tap" Tag="5" Style="{StaticResource PropOptionPill}">
+                                    <TextBlock Text="Rose" Style="{StaticResource PropOptionText}"/>
+                                </Border>
+                                <Border x:Name="SigBlendFire" Tap="SigBlend_Tap" Tag="6" Style="{StaticResource PropOptionPill}">
+                                    <TextBlock Text="Fire" Style="{StaticResource PropOptionText}"/>
+                                </Border>
+                                <Border x:Name="SigBlendIce" Tap="SigBlend_Tap" Tag="7" Style="{StaticResource PropOptionPill}">
+                                    <TextBlock Text="Ice" Style="{StaticResource PropOptionText}"/>
+                                </Border>
+                                <Border x:Name="SigBlendLime" Tap="SigBlend_Tap" Tag="8" Style="{StaticResource PropOptionPill}">
+                                    <TextBlock Text="Lime" Style="{StaticResource PropOptionText}"/>
+                                </Border>
+                                <Border x:Name="SigBlendTwilight" Tap="SigBlend_Tap" Tag="9" Style="{StaticResource PropOptionPill}">
+                                    <TextBlock Text="Twilight" Style="{StaticResource PropOptionText}"/>
+                                </Border>
+                            </StackPanel>
+                            </ScrollViewer>
+                            
+                            <Button Content="Save Signature" Click="EdSaveSignature_Click"
+                                Style="{StaticResource EditorActionBtn}" Margin="0,8,0,0"/>
                         </StackPanel>
 
                         <!-- ══ DISPLAY PROPERTIES ══ -->

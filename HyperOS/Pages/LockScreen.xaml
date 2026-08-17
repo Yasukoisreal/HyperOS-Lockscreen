@@ -361,6 +361,12 @@
                 </StackPanel>
             </Grid>
 
+            <!-- ═══ SIGNATURE LAYER ═══ -->
+            <TextBlock x:Name="MainSignatureText" Visibility="Collapsed"
+                       HorizontalAlignment="Left" VerticalAlignment="Top">
+                <TextBlock.RenderTransform><CompositeTransform/></TextBlock.RenderTransform>
+            </TextBlock>
+
             <!-- ═══ DEPTH EFFECT — foreground overlay (subject PNG) ═══ -->
             <Border x:Name="ForegroundOverlay" IsHitTestVisible="False" Visibility="Collapsed">
                 <Border.Background>

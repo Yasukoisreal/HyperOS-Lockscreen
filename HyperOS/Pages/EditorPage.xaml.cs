@@ -41,6 +41,18 @@ namespace HyperOS.Pages
         private bool showWeather;
         private bool showCountdown;
 
+        // Signature
+        private bool showSignature = false;
+        private string sigText = "";
+        private int sigFontIndex = 0;
+        private double sigSpacing = 0;
+        private int sigAlign = 1;
+        private int sigLayout = 0; // 0=Horizontal, 1=Vertical
+        private int sigColor = 0;
+        private int sigBlend = 0;
+        private double signatureX = 24;
+        private double signatureY = 120;
+
         // Depth
         private bool useDepthEffect;
         private bool depthHourBehind = true;
@@ -390,6 +402,28 @@ namespace HyperOS.Pages
             EdDepthHour.IsChecked = depthHourBehind;
             EdDepthColon.IsChecked = depthColonBehind;
             EdDepthMinute.IsChecked = depthMinuteBehind;
+
+            showSignature = Get(s, "ShowSignature", false);
+            sigText = Get(s, "SignatureText", "LIFE");
+            sigFontIndex = Get(s, "SignatureFont", 4); // Default to Playfair
+            sigSpacing = Get(s, "SignatureSpacing", 500.0);
+            sigAlign = Get(s, "SignatureAlign", 1); // Default to Top-Center
+            sigLayout = Get(s, "SignatureLayout", 0);
+            sigColor = Get(s, "SignatureColor", 0);
+            sigBlend = Get(s, "SignatureBlend", 0);
+
+            signatureX = Get(s, "SignatureX", defClockX);
+            signatureY = Get(s, "SignatureY", defClockY + 220);
+
+            EdSignatureToggle.IsChecked = showSignature;
+            EdSignatureText.Text = sigText;
+            SigFontLabel.Text = FontNames[Math.Min(sigFontIndex, FontNames.Length - 1)];
+            EdSigSpacing.Value = sigSpacing;
+            UpdateSigAlignSelection();
+            UpdateSigLayoutSelection();
+            UpdateSigColorSelection();
+            UpdateSigBlendSelection();
+
             EdDepthClock.IsChecked = depthHourBehind; // For analog: entire clock behind
             EdDepthLayers.Visibility = useDepthEffect ? Visibility.Visible : Visibility.Collapsed;
             UpdateDepthRowVisibility();
@@ -609,6 +643,26 @@ namespace HyperOS.Pages
             ClockHandle.Margin = new Thickness(clockX, clockY, 0, 0);
             WeatherHandle.Margin = new Thickness(weatherX, weatherY, 0, 0);
             CountdownHandle.Margin = new Thickness(countdownX, countdownY, 0, 0);
+
+            // Signature Preview
+            SignatureHandle.Visibility = showSignature ? Visibility.Visible : Visibility.Collapsed;
+            if (showSignature)
+            {
+                PSignature.Text = sigLayout == 1 ? string.Join("\n", sigText.ToCharArray()) : sigText;
+                PSignature.FontFamily = Fonts[Math.Max(0, Math.Min(sigFontIndex, Fonts.Length - 1))];
+                PSignature.CharacterSpacing = (int)sigSpacing;
+                if (sigLayout == 1)
+                {
+                    PSignature.LineStackingStrategy = LineStackingStrategy.BlockLineHeight;
+                    PSignature.LineHeight = 48 + (sigSpacing / 20.0);
+                }
+                else
+                {
+                    PSignature.LineHeight = 0;
+                }
+                SignatureHandle.Margin = new Thickness(signatureX, signatureY, 0, 0);
+                ApplySignatureColor();
+            }
 
             // Weather
             if (showWeather)
@@ -895,6 +949,44 @@ namespace HyperOS.Pages
             return lgb;
         }
 
+        private void ApplySignatureColor()
+        {
+            Brush brush;
+            if (sigBlend > 0)
+            {
+                switch (sigBlend)
+                {
+                    case 1: brush = MakeGrad(Color.FromArgb(255, 255, 140, 50), Color.FromArgb(255, 255, 80, 150)); break;  // Sunset
+                    case 2: brush = MakeGrad(Color.FromArgb(255, 0, 210, 255), Color.FromArgb(255, 58, 80, 200)); break;   // Ocean
+                    case 3: brush = MakeGrad(Color.FromArgb(255, 80, 255, 120), Color.FromArgb(255, 180, 80, 255)); break;  // Aurora
+                    case 4: brush = MakeGrad(Color.FromArgb(255, 255, 0, 200), Color.FromArgb(255, 0, 255, 255)); break;   // Neon
+                    case 5: brush = MakeGrad(Color.FromArgb(255, 255, 105, 180), Color.FromArgb(255, 148, 0, 211)); break;   // Rose
+                    case 6: brush = MakeGrad(Color.FromArgb(255, 255, 50, 0), Color.FromArgb(255, 255, 165, 0)); break;   // Fire
+                    case 7: brush = MakeGrad(Color.FromArgb(255, 255, 255, 255), Color.FromArgb(255, 173, 216, 230)); break; // Ice
+                    case 8: brush = MakeGrad(Color.FromArgb(255, 50, 205, 50), Color.FromArgb(255, 255, 255, 0)); break;   // Lime
+                    case 9: brush = MakeGrad(Color.FromArgb(255, 75, 0, 130), Color.FromArgb(255, 25, 25, 112)); break;   // Twilight
+                    default: brush = new SolidColorBrush(Colors.White); break;
+                }
+            }
+            else
+            {
+                switch (sigColor)
+                {
+                    case 1: brush = new SolidColorBrush(Color.FromArgb(255, 255, 215, 0)); break;   // Gold
+                    case 2: brush = new SolidColorBrush(Color.FromArgb(255, 135, 206, 235)); break; // Sky Blue
+                    case 3: brush = new SolidColorBrush(Color.FromArgb(255, 255, 182, 193)); break; // Pink
+                    case 4: brush = new SolidColorBrush(Color.FromArgb(255, 255, 68, 68)); break;   // Red
+                    case 5: brush = new SolidColorBrush(Color.FromArgb(255, 91, 255, 176)); break;  // Mint
+                    case 6: brush = new SolidColorBrush(Color.FromArgb(255, 196, 167, 255)); break; // Lavender
+                    case 7: brush = new SolidColorBrush(Color.FromArgb(255, 255, 140, 66)); break;  // Orange
+                    case 8: brush = new SolidColorBrush(Color.FromArgb(255, 0, 229, 255)); break;   // Cyan
+                    case 9: brush = new SolidColorBrush(Color.FromArgb(255, 160, 160, 176)); break; // Silver
+                    default: brush = new SolidColorBrush(Colors.White); break;
+                }
+            }
+            PSignature.Foreground = brush;
+        }
+
         #endregion
 
         #region Drag & Drop
@@ -958,6 +1050,7 @@ namespace HyperOS.Pages
                 case "Clock":    clockX = newX; clockY = newY; break;
                 case "Weather":  weatherX = newX; weatherY = newY; break;
                 case "Countdown": countdownX = newX; countdownY = newY; break;
+                case "Signature": signatureX = newX; signatureY = newY; break;
             }
             hasUnsavedChanges = true;
 
@@ -985,7 +1078,7 @@ namespace HyperOS.Pages
             if (Math.Abs(x - rightEdge) < MAGNET) x = rightEdge;
 
             // ── Align with other visible elements ──
-            Border[] handles = { ClockHandle, WeatherHandle, CountdownHandle };
+            Border[] handles = { ClockHandle, WeatherHandle, CountdownHandle, SignatureHandle };
             foreach (var other in handles)
             {
                 if (other == handle || other.Visibility != Visibility.Visible) continue;
@@ -1024,7 +1117,7 @@ namespace HyperOS.Pages
             if (Math.Abs(x - rightX) < MAGNET) { showV = true; gx = SCREEN_W - 24; }
 
             // Element alignment guides
-            Border[] handles = { ClockHandle, WeatherHandle, CountdownHandle };
+            Border[] handles = { ClockHandle, WeatherHandle, CountdownHandle, SignatureHandle };
             foreach (var other in handles)
             {
                 if (other == handle || other.Visibility != Visibility.Visible) continue;
@@ -1084,6 +1177,18 @@ namespace HyperOS.Pages
             Save("WeatherY", weatherY);
             Save("CountdownX", countdownX);
             Save("CountdownY", countdownY);
+            Save("SignatureX", signatureX);
+            Save("SignatureY", signatureY);
+
+            // Save signature settings in case user didn't click "Save Signature"
+            Save("ShowSignature", EdSignatureToggle.IsChecked == true);
+            Save("SignatureText", EdSignatureText.Text);
+            Save("SignatureFont", sigFontIndex);
+            Save("SignatureSpacing", sigSpacing);
+            Save("SignatureAlign", sigAlign);
+            Save("SignatureLayout", sigLayout);
+            Save("SignatureColor", sigColor);
+            Save("SignatureBlend", sigBlend);
 
             // Also save to preset slot if editing one
             if (editingPreset >= 0)
@@ -1212,12 +1317,14 @@ namespace HyperOS.Pages
             SetTabActive(TabClock, TabClockText, tab == "Clock");
             SetTabActive(TabWeather, TabWeatherText, tab == "Weather");
             SetTabActive(TabCountdown, TabCountdownText, tab == "Countdown");
+            SetTabActive(TabSignature, TabSignatureText, tab == "Signature");
             SetTabActive(TabDisplay, TabDisplayText, tab == "Display");
 
             // Show corresponding properties
             ClockProps.Visibility = tab == "Clock" ? Visibility.Visible : Visibility.Collapsed;
             WeatherProps.Visibility = tab == "Weather" ? Visibility.Visible : Visibility.Collapsed;
             CountdownProps.Visibility = tab == "Countdown" ? Visibility.Visible : Visibility.Collapsed;
+            SignatureProps.Visibility = tab == "Signature" ? Visibility.Visible : Visibility.Collapsed;
             DisplayProps.Visibility = tab == "Display" ? Visibility.Visible : Visibility.Collapsed;
 
             // Select corresponding handle on preview
@@ -1226,6 +1333,7 @@ namespace HyperOS.Pages
                 case "Clock": SelectHandle(ClockHandle); break;
                 case "Weather": SelectHandle(WeatherHandle); break;
                 case "Countdown": SelectHandle(CountdownHandle); break;
+                case "Signature": SelectHandle(SignatureHandle); break;
                 default: SelectHandle(null); break;
             }
         }
@@ -1365,12 +1473,16 @@ namespace HyperOS.Pages
 
         private void ApplyDateAlign()
         {
+            HorizontalAlignment ha = HorizontalAlignment.Center;
             switch (dateAlign)
             {
-                case 0: PDatePanel.HorizontalAlignment = HorizontalAlignment.Left; break;
-                case 2: PDatePanel.HorizontalAlignment = HorizontalAlignment.Right; break;
-                default: PDatePanel.HorizontalAlignment = HorizontalAlignment.Center; break;
+                case 0: ha = HorizontalAlignment.Left; break;
+                case 2: ha = HorizontalAlignment.Right; break;
             }
+            PDatePanel.HorizontalAlignment = ha;
+            PTimePanel.HorizontalAlignment = ha;
+            PAnalogClock.HorizontalAlignment = ha;
+            PRhombusGrid.HorizontalAlignment = ha;
         }
 
         /// <summary>
@@ -1384,6 +1496,190 @@ namespace HyperOS.Pages
             if (centerX < zoneThird) return 0;      // Left
             if (centerX > zoneThird * 2) return 2;   // Right
             return 1;                                 // Center
+        }
+
+        #endregion
+
+        #region Signature Handlers
+
+        private void EdSignatureToggle_Changed(object sender, RoutedEventArgs e)
+        {
+            if (isLoading) return;
+            showSignature = EdSignatureToggle.IsChecked == true;
+            Save("ShowSignature", showSignature);
+            SignatureHandle.Visibility = showSignature ? Visibility.Visible : Visibility.Collapsed;
+            if (showSignature) ApplyPreview();
+        }
+
+        private void EdSaveSignature_Click(object sender, RoutedEventArgs e)
+        {
+            sigText = EdSignatureText.Text.Trim();
+            Save("SignatureText", sigText);
+            ApplyPreview();
+        }
+
+        private void SigFontPrev_Tap(object sender, System.Windows.Input.GestureEventArgs e)
+        {
+            sigFontIndex = (sigFontIndex - 1 + FontNames.Length) % FontNames.Length;
+            Save("SignatureFont", sigFontIndex);
+            SigFontLabel.Text = FontNames[sigFontIndex];
+            ApplyPreview();
+        }
+
+        private void SigFontNext_Tap(object sender, System.Windows.Input.GestureEventArgs e)
+        {
+            sigFontIndex = (sigFontIndex + 1) % FontNames.Length;
+            Save("SignatureFont", sigFontIndex);
+            SigFontLabel.Text = FontNames[sigFontIndex];
+            ApplyPreview();
+        }
+
+        private void EdSigSpacing_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            if (isLoading) return;
+            sigSpacing = e.NewValue;
+            Save("SignatureSpacing", sigSpacing);
+            ApplyPreview();
+        }
+
+        private void SigAlign_Tap(object sender, System.Windows.Input.GestureEventArgs e)
+        {
+            var border = (Border)sender;
+            sigAlign = int.Parse((string)border.Tag);
+            Save("SignatureAlign", sigAlign);
+            UpdateSigAlignSelection();
+            
+            // Auto position immediately
+            Dispatcher.BeginInvoke(() =>
+            {
+                double w = SignatureHandle.ActualWidth;
+                double h = SignatureHandle.ActualHeight;
+                if (w == 0 || h == 0) return;
+
+                double px = 24, py = 120; // safe zones
+                
+                switch (sigAlign)
+                {
+                    case 0: signatureX = px; signatureY = py; break;
+                    case 1: signatureX = (SCREEN_W - w) / 2.0; signatureY = py; break;
+                    case 2: signatureX = SCREEN_W - w - px; signatureY = py; break;
+                    case 3: signatureX = px; signatureY = SCREEN_H - h - py; break;
+                    case 4: signatureX = (SCREEN_W - w) / 2.0; signatureY = SCREEN_H - h - py; break;
+                    case 5: signatureX = SCREEN_W - w - px; signatureY = SCREEN_H - h - py; break;
+                }
+                SignatureHandle.Margin = new Thickness(signatureX, signatureY, 0, 0);
+                Save("SignatureX", signatureX);
+                Save("SignatureY", signatureY);
+            });
+        }
+
+        private void SigLayout_Tap(object sender, System.Windows.Input.GestureEventArgs e)
+        {
+            var border = (Border)sender;
+            sigLayout = int.Parse((string)border.Tag);
+            Save("SignatureLayout", sigLayout);
+            UpdateSigLayoutSelection();
+            ApplyPreview();
+            
+            Dispatcher.BeginInvoke(() => {
+                double w = SignatureHandle.ActualWidth;
+                double h = SignatureHandle.ActualHeight;
+                if (w > 0 && h > 0)
+                {
+                    double px = 24, py = 120;
+                    switch (sigAlign)
+                    {
+                        case 0: signatureX = px; signatureY = py; break;
+                        case 1: signatureX = (SCREEN_W - w) / 2.0; signatureY = py; break;
+                        case 2: signatureX = SCREEN_W - w - px; signatureY = py; break;
+                        case 3: signatureX = px; signatureY = SCREEN_H - h - py; break;
+                        case 4: signatureX = (SCREEN_W - w) / 2.0; signatureY = SCREEN_H - h - py; break;
+                        case 5: signatureX = SCREEN_W - w - px; signatureY = SCREEN_H - h - py; break;
+                    }
+                    SignatureHandle.Margin = new Thickness(signatureX, signatureY, 0, 0);
+                    Save("SignatureX", signatureX);
+                    Save("SignatureY", signatureY);
+                }
+            });
+        }
+
+        private void UpdateSigAlignSelection()
+        {
+            if (SigAlignTL == null) return;
+            Border[] pills = { SigAlignTL, SigAlignTC, SigAlignTR, SigAlignBL, SigAlignBC, SigAlignBR };
+            for (int i = 0; i < pills.Length; i++)
+            {
+                pills[i].Background = (i == sigAlign) ? AccentBrush : InactiveTabBg;
+                ((TextBlock)pills[i].Child).Foreground = (i == sigAlign) ?
+                    new SolidColorBrush(Colors.White) :
+                    new SolidColorBrush(Color.FromArgb(0xCC, 0xFF, 0xFF, 0xFF));
+            }
+        }
+
+        private void UpdateSigLayoutSelection()
+        {
+            if (SigLayoutHoriz == null) return;
+            Border[] pills = { SigLayoutHoriz, SigLayoutVert };
+            for (int i = 0; i < pills.Length; i++)
+            {
+                pills[i].Background = (i == sigLayout) ? AccentBrush : InactiveTabBg;
+                ((TextBlock)pills[i].Child).Foreground = (i == sigLayout) ?
+                    new SolidColorBrush(Colors.White) :
+                    new SolidColorBrush(Color.FromArgb(0xCC, 0xFF, 0xFF, 0xFF));
+            }
+        }
+
+        private void SigColor_Tap(object sender, System.Windows.Input.GestureEventArgs e)
+        {
+            var el = (Ellipse)sender;
+            sigColor = int.Parse((string)el.Tag);
+            sigBlend = 0;
+            Save("SignatureColor", sigColor);
+            Save("SignatureBlend", 0);
+            UpdateSigColorSelection();
+            UpdateSigBlendSelection();
+            ApplyPreview();
+        }
+
+        private void SigBlend_Tap(object sender, System.Windows.Input.GestureEventArgs e)
+        {
+            var border = (Border)sender;
+            sigBlend = int.Parse((string)border.Tag);
+            Save("SignatureBlend", sigBlend);
+            UpdateSigBlendSelection();
+            UpdateSigColorSelection();
+            ApplyPreview();
+        }
+
+
+
+        private void UpdateSigColorSelection()
+        {
+            if (SignatureProps == null) return;
+            Ellipse[] circles = { SigColorW, SigColorG, SigColorB, SigColorP, SigColorR, SigColorMint, SigColorLav, SigColorOr, SigColorCy, SigColorSi };
+            for (int i = 0; i < circles.Length; i++)
+            {
+                if (circles[i] != null)
+                {
+                    circles[i].Stroke = (i == sigColor && sigBlend == 0) ? SelectBrush : TransparentBrush;
+                }
+            }
+        }
+
+        private void UpdateSigBlendSelection()
+        {
+            if (SignatureProps == null) return;
+            Border[] pills = { SigBlendNone, SigBlendSunset, SigBlendOcean, SigBlendAurora, SigBlendNeon, SigBlendRose, SigBlendFire, SigBlendIce, SigBlendLime, SigBlendTwilight };
+            for (int i = 0; i < pills.Length; i++)
+            {
+                if (pills[i] != null)
+                {
+                    pills[i].Background = (i == sigBlend) ? AccentBrush : InactiveTabBg;
+                    ((TextBlock)pills[i].Child).Foreground = (i == sigBlend) ?
+                        new SolidColorBrush(Colors.White) :
+                        new SolidColorBrush(Color.FromArgb(0xCC, 0xFF, 0xFF, 0xFF));
+                }
+            }
         }
 
         #endregion
@@ -1815,7 +2111,9 @@ namespace HyperOS.Pages
             "ShowWeather", "ShowCountdown", "UseDepthEffect",
             "DepthHourBehind", "DepthColonBehind", "DepthMinuteBehind",
             "ClockX", "ClockY", "WeatherX", "WeatherY", "CountdownX", "CountdownY",
-            "bIsAnimOn", "DateAlign", "CountdownName", "CountdownTarget", "OwnerInfo" };
+            "bIsAnimOn", "DateAlign", "CountdownName", "CountdownTarget", "OwnerInfo",
+            "ShowSignature", "SignatureX", "SignatureY", "SignatureText", "SignatureFont",
+            "SignatureSpacing", "SignatureAlign", "SignatureColor", "SignatureBlend", "SignatureLayout" };
 
         private void TakeSettingsSnapshot()
         {
@@ -1891,5 +2189,6 @@ namespace HyperOS.Pages
         }
 
         #endregion
+
     }
 }

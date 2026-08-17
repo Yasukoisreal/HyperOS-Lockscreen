@@ -38,7 +38,18 @@ namespace HyperOS.Pages
             public int ClockLayout { get; set; } // 0=Horiz, 1=Vert, 2=Minimal, 3=Classic, 4=Swiss, 5=Rhombus, 6=Giant
             public string BackgroundImage { get; set; } // e.g. "Assets/Pictures/classic02.jpg"
 
-            public Preset() { ClockX = -1; ClockY = -1; DepthHourBehind = true; DepthColonBehind = true; DepthMinuteBehind = true; }
+            // Signature
+            public bool ShowSignature { get; set; }
+            public string SignatureText { get; set; }
+            public int SignatureFont { get; set; }
+            public double SignatureSpacing { get; set; }
+            public int SignatureAlign { get; set; }
+            public int SignatureColor { get; set; }
+            public int SignatureBlend { get; set; }
+            public double SignatureX { get; set; }
+            public double SignatureY { get; set; }
+
+            public Preset() { ClockX = -1; ClockY = -1; DepthHourBehind = true; DepthColonBehind = true; DepthMinuteBehind = true; SignatureX = -1; SignatureY = -1; }
         }
 
         private static readonly List<Preset> Presets = new List<Preset>
@@ -200,13 +211,22 @@ namespace HyperOS.Pages
                 p.DepthColonBehind = orig.DepthColonBehind;
                 p.DepthMinuteBehind = orig.DepthMinuteBehind;
                 p.PreviewClockColor = orig.PreviewClockColor;
+                p.ShowSignature = orig.ShowSignature;
+                p.SignatureText = orig.SignatureText;
+                p.SignatureFont = orig.SignatureFont;
+                p.SignatureSpacing = orig.SignatureSpacing;
+                p.SignatureAlign = orig.SignatureAlign;
+                p.SignatureColor = orig.SignatureColor;
+                p.SignatureBlend = orig.SignatureBlend;
+                p.SignatureX = orig.SignatureX;
+                p.SignatureY = orig.SignatureY;
             }
 
             // Now apply saved overrides
             for (int i = 0; i < Presets.Count; i++)
             {
                 string prefix = "Set" + i + "_";
-                if (s.Contains(prefix + "ClockStyle"))
+                if (s.Contains(prefix + "ClockStyle") || s.Contains(prefix + "ShowSignature"))
                 {
                     var p = Presets[i];
                     p.ClockStyle = GetSetting(s, prefix + "ClockStyle", p.ClockStyle);
@@ -222,6 +242,16 @@ namespace HyperOS.Pages
                     p.DepthMinuteBehind = GetSetting(s, prefix + "DepthMinuteBehind", true);
                     p.ClockLayout = GetSetting(s, prefix + "ClockLayout", p.ClockLayout);
                     p.PreviewClockColor = ClockRenderer.ResolveClockColor(p.ClockColor, p.ClockBlend);
+                    
+                    p.ShowSignature = GetSetting(s, prefix + "ShowSignature", p.ShowSignature);
+                    p.SignatureText = GetSetting(s, prefix + "SignatureText", p.SignatureText);
+                    p.SignatureFont = GetSetting(s, prefix + "SignatureFont", p.SignatureFont);
+                    p.SignatureSpacing = GetSetting(s, prefix + "SignatureSpacing", p.SignatureSpacing);
+                    p.SignatureAlign = GetSetting(s, prefix + "SignatureAlign", p.SignatureAlign);
+                    p.SignatureColor = GetSetting(s, prefix + "SignatureColor", p.SignatureColor);
+                    p.SignatureBlend = GetSetting(s, prefix + "SignatureBlend", p.SignatureBlend);
+                    p.SignatureX = GetSetting(s, prefix + "SignatureX", p.SignatureX);
+                    p.SignatureY = GetSetting(s, prefix + "SignatureY", p.SignatureY);
                 }
             }
         }
@@ -348,7 +378,7 @@ namespace HyperOS.Pages
                 hasDepth ? (preset.DepthHourBehind ? brush : transBrush) : brush,
                 hasDepth ? (preset.DepthColonBehind ? brush : transBrush) : brush,
                 hasDepth ? (preset.DepthMinuteBehind ? brush : transBrush) : brush,
-                hasDepth ? transBrush : new SolidColorBrush(Color.FromArgb(180, 255, 255, 255)));
+                hasDepth ? transBrush : new SolidColorBrush(Color.FromArgb(180, 255, 255, 255)), index);
             inner.Children.Add(behindStack);
 
             // --- FOREGROUND OVERLAY ---
@@ -367,7 +397,7 @@ namespace HyperOS.Pages
                     preset.DepthHourBehind ? transBrush : brush,
                     preset.DepthColonBehind ? transBrush : brush,
                     preset.DepthMinuteBehind ? transBrush : brush,
-                    new SolidColorBrush(Color.FromArgb(180, 255, 255, 255)));
+                    new SolidColorBrush(Color.FromArgb(180, 255, 255, 255)), index);
                 inner.Children.Add(frontStack);
             }
 
@@ -567,12 +597,13 @@ namespace HyperOS.Pages
             // Sync ALL Set{n}_ keys to global keys so EditorPage reads correctly (BUG 4 fix)
             string[] keys = { "ClockStyle", "ClockSize", "ClockColor", "ClockBlend", "DateAlign", "ClockLayout",
                 "ClockX", "ClockY", "UseDepthEffect", "DepthHourBehind", "DepthColonBehind", "DepthMinuteBehind",
-                "ShowWeather", "ShowCountdown", "WeatherX", "WeatherY", "CountdownX", "CountdownY" };
+                "ShowWeather", "ShowCountdown", "WeatherX", "WeatherY", "CountdownX", "CountdownY",
+                "ShowSignature", "SignatureText", "SignatureFont", "SignatureSpacing", "SignatureAlign", "SignatureColor", "SignatureBlend", "SignatureX", "SignatureY" };
             foreach (var key in keys)
             {
                 if (s.Contains(px + key))
                     s[key] = s[px + key];
-                else if (key == "ClockX" || key == "ClockY")
+                else if (key == "ClockX" || key == "ClockY" || key == "SignatureX" || key == "SignatureY")
                 {
                     // Remove global position keys if preset doesn't have them (center default)
                     if (s.Contains(key)) s.Remove(key);

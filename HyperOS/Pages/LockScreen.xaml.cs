@@ -85,6 +85,18 @@ namespace HyperOS.Pages
         private double weatherFreeX, weatherFreeY;
         private double countdownFreeX, countdownFreeY;
 
+        // Signature
+        private bool showSignature = false;
+        private string sigText = "";
+        private int sigFontIndex = 0;
+        private double sigSpacing = 0;
+        private int sigAlign = 1;
+        private int sigLayout = 0; // 0=Horizontal, 1=Vertical
+        private int sigColorIdx = 0;
+        private int sigBlend = 0;
+        private double signatureX = 0;
+        private double signatureY = 0;
+
         // Font families now shared from ClockRenderer.Fonts
 
         public LockScreen()
@@ -103,6 +115,7 @@ namespace HyperOS.Pages
             ApplyClockHAlign();
             ApplyClockColor();
             ApplyFreePositions();
+            ApplySignatureStyle();
             UpdateTime();
 
             // Cache battery reference once
@@ -751,6 +764,28 @@ namespace HyperOS.Pages
                 countdownFreeX = s.Contains("CountdownX") ? (double)s["CountdownX"] : clockFreeX;
                 countdownFreeY = s.Contains("CountdownY") ? (double)s["CountdownY"] : clockFreeY + 185;
             }
+
+            // Signature
+            if (s.Contains("ShowSignature"))
+                showSignature = (bool)s["ShowSignature"];
+            if (s.Contains("SignatureText"))
+                sigText = (string)s["SignatureText"];
+            if (s.Contains("SignatureFont"))
+                sigFontIndex = (int)s["SignatureFont"];
+            if (s.Contains("SignatureSpacing"))
+                sigSpacing = (double)s["SignatureSpacing"];
+            if (s.Contains("SignatureAlign"))
+                sigAlign = (int)s["SignatureAlign"];
+            if (s.Contains("SignatureLayout"))
+                sigLayout = (int)s["SignatureLayout"];
+            if (s.Contains("SignatureColor"))
+                sigColorIdx = (int)s["SignatureColor"];
+            if (s.Contains("SignatureBlend"))
+                sigBlend = (int)s["SignatureBlend"];
+            if (s.Contains("SignatureX"))
+                signatureX = (double)s["SignatureX"];
+            if (s.Contains("SignatureY"))
+                signatureY = (double)s["SignatureY"];
         }
 
         private void SetClockFont(FontFamily ff)
@@ -1141,14 +1176,16 @@ namespace HyperOS.Pages
 
                 // Force child elements to Left alignment (free positioning is absolute)
                 // Use dateAlign auto-computed by Editor (based on clock center)
-                TimePanel.HorizontalAlignment = HorizontalAlignment.Left;
-                BehindTimePanel.HorizontalAlignment = HorizontalAlignment.Left;
+                HorizontalAlignment childAlign = HorizontalAlignment.Center;
                 switch (dateAlign)
                 {
-                    case 0: DateInfoPanel.HorizontalAlignment = HorizontalAlignment.Left; break;
-                    case 2: DateInfoPanel.HorizontalAlignment = HorizontalAlignment.Right; break;
-                    default: DateInfoPanel.HorizontalAlignment = HorizontalAlignment.Center; break;
+                    case 0: childAlign = HorizontalAlignment.Left; break;
+                    case 2: childAlign = HorizontalAlignment.Right; break;
                 }
+                
+                TimePanel.HorizontalAlignment = childAlign;
+                BehindTimePanel.HorizontalAlignment = childAlign;
+                DateInfoPanel.HorizontalAlignment = childAlign;
 
                 BehindClockPanel.VerticalAlignment = VerticalAlignment.Top;
                 BehindClockPanel.HorizontalAlignment = HorizontalAlignment.Left;
@@ -1183,6 +1220,78 @@ namespace HyperOS.Pages
                 ClockPanel.SizeChanged -= ClockPanel_SizeChanged;
                 ClockPanel.SizeChanged += ClockPanel_SizeChanged;
             }
+        }
+
+        private void ApplySignatureStyle()
+        {
+            MainSignatureText.Visibility = showSignature ? Visibility.Visible : Visibility.Collapsed;
+            if (!showSignature || string.IsNullOrEmpty(sigText)) return;
+
+            MainSignatureText.Text = sigLayout == 1 ? string.Join("\n", sigText.ToCharArray()) : sigText;
+            var fontNames = new string[] {
+                "MiSans", "MiSans", "MiSans", "Bebas Neue", "Playfair Display",
+                "DM Serif Display", "Instrument Serif", "Montserrat", "Poppins",
+                "Raleway", "Abril Fatface", "Playfair Display", "Bodoni Moda",
+                "Bodoni Moda", "Segoe WP", "Segoe WP Black"
+            };
+            int fIdx = Math.Max(0, Math.Min(sigFontIndex, fontNames.Length - 1));
+            var ff = new FontFamily("/Assets/Fonts/" + fontNames[fIdx].Replace(" ", "") + "-Regular.ttf#" + fontNames[fIdx]);
+            if (fIdx == 1) ff = new FontFamily("/Assets/Fonts/MiSans-Demibold.ttf#MiSans");
+            if (fIdx == 2) ff = new FontFamily("/Assets/Fonts/MiSans-Light.ttf#MiSans");
+            if (fIdx == 11) ff = new FontFamily("/Assets/Fonts/PlayfairDisplay-Italic.ttf#Playfair Display");
+            if (fIdx == 13) ff = new FontFamily("/Assets/Fonts/BodoniModa-Italic.ttf#Bodoni Moda");
+            if (fIdx == 14) ff = new FontFamily("Segoe WP");
+            if (fIdx == 15) ff = new FontFamily("Segoe WP Black");
+
+            MainSignatureText.FontFamily = ff;
+            MainSignatureText.FontSize = 48;
+            MainSignatureText.CharacterSpacing = (int)sigSpacing;
+            if (sigLayout == 1)
+            {
+                MainSignatureText.LineStackingStrategy = LineStackingStrategy.BlockLineHeight;
+                MainSignatureText.LineHeight = 48 + (sigSpacing / 20.0);
+            }
+            else
+            {
+                MainSignatureText.LineHeight = 0;
+            }
+            
+            Brush brush;
+            if (sigBlend > 0)
+            {
+                switch (sigBlend)
+                {
+                    case 1: brush = MakeGradient(C(255, 140, 50),  C(255, 80, 150));  break; // Sunset
+                    case 2: brush = MakeGradient(C(0, 210, 255),   C(58, 80, 200));   break; // Ocean
+                    case 3: brush = MakeGradient(C(80, 255, 120),  C(180, 80, 255));  break; // Aurora
+                    case 4: brush = MakeGradient(C(255, 0, 200),   C(0, 255, 255));   break; // Neon
+                    case 5: brush = MakeGradient(C(255, 105, 180), C(148, 0, 211));   break; // Rose
+                    case 6: brush = MakeGradient(C(255, 50, 0),    C(255, 165, 0));   break; // Fire
+                    case 7: brush = MakeGradient(C(255, 255, 255), C(173, 216, 230)); break; // Ice
+                    case 8: brush = MakeGradient(C(50, 205, 50),   C(255, 255, 0));   break; // Lime
+                    case 9: brush = MakeGradient(C(75, 0, 130),    C(25, 25, 112));   break; // Twilight
+                    default: brush = new SolidColorBrush(Colors.White); break;
+                }
+            }
+            else
+            {
+                switch (sigColorIdx)
+                {
+                    case 1: brush = new SolidColorBrush(C(255, 215, 0)); break;   // Gold
+                    case 2: brush = new SolidColorBrush(C(135, 206, 235)); break; // Sky Blue
+                    case 3: brush = new SolidColorBrush(C(255, 182, 193)); break; // Pink
+                    case 4: brush = new SolidColorBrush(C(255, 68, 68)); break;   // Red
+                    case 5: brush = new SolidColorBrush(C(91, 255, 176)); break;  // Mint
+                    case 6: brush = new SolidColorBrush(C(196, 167, 255)); break; // Lavender
+                    case 7: brush = new SolidColorBrush(C(255, 140, 66)); break;  // Orange
+                    case 8: brush = new SolidColorBrush(C(0, 229, 255)); break;   // Cyan
+                    case 9: brush = new SolidColorBrush(C(160, 160, 176)); break; // Silver
+                    default: brush = new SolidColorBrush(Colors.White); break;
+                }
+            }
+            MainSignatureText.Foreground = brush;
+
+            MainSignatureText.Margin = new Thickness(signatureX, signatureY, 0, 0);
         }
 
         private void ClockPanel_SizeChanged(object sender, SizeChangedEventArgs e)
@@ -1757,7 +1866,7 @@ namespace HyperOS.Pages
                 hasDepth ? (preset.DepthHourBehind ? brush : transBrush) : brush,
                 hasDepth ? (preset.DepthColonBehind ? brush : transBrush) : brush,
                 hasDepth ? (preset.DepthMinuteBehind ? brush : transBrush) : brush,
-                hasDepth ? transBrush : new SolidColorBrush(MC.FromArgb(180, 255, 255, 255)));
+                hasDepth ? transBrush : new SolidColorBrush(MC.FromArgb(180, 255, 255, 255)), index);
             inner.Children.Add(behindStack);
 
             // --- FOREGROUND OVERLAY ---
@@ -1776,7 +1885,7 @@ namespace HyperOS.Pages
                     preset.DepthHourBehind ? transBrush : brush,
                     preset.DepthColonBehind ? transBrush : brush,
                     preset.DepthMinuteBehind ? transBrush : brush,
-                    new SolidColorBrush(MC.FromArgb(180, 255, 255, 255)));
+                    new SolidColorBrush(MC.FromArgb(180, 255, 255, 255)), index);
                 inner.Children.Add(frontStack);
             }
 
@@ -1889,7 +1998,9 @@ namespace HyperOS.Pages
                     "ClockLayout",
                     "ShowWeather", "ShowCountdown", "UseDepthEffect", "DepthHourBehind", "DepthColonBehind", "DepthMinuteBehind",
                     "ClockX", "ClockY", "WeatherX", "WeatherY", "CountdownX", "CountdownY",
-                    "bIsAnimOn", "DateAlign", "CountdownName", "CountdownTarget", "OwnerInfo" };
+                    "bIsAnimOn", "DateAlign", "CountdownName", "CountdownTarget", "OwnerInfo",
+                    "ShowSignature", "SignatureX", "SignatureY", "SignatureText", "SignatureFont",
+                    "SignatureSpacing", "SignatureAlign", "SignatureColor", "SignatureBlend", "SignatureLayout" };
                 foreach (var key in keys)
                 {
                     string sk = pfx + key;
