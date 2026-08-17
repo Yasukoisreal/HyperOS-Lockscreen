@@ -36,6 +36,9 @@ namespace HyperOS.Pages
         private int clockBlend = 0;
         private int dateAlign = 1; // 0=Left, 1=Center, 2=Right
         private int clockLayout = 0; // 0=Horizontal, 1=Vertical, 2=Analog Minimal, 3=Analog Classic, 4=Analog Swiss
+        private double clockOpacity = 1.0;
+        private int clockHue = -1;
+        private bool isUpdatingColorUI;
 
         // Widget settings
         private bool showWeather;
@@ -50,6 +53,8 @@ namespace HyperOS.Pages
         private int sigLayout = 0; // 0=Horizontal, 1=Vertical
         private int sigColor = 0;
         private int sigBlend = 0;
+        private double sigOpacity = 1.0;
+        private int sigHue = -1;
         private double signatureX = 24;
         private double signatureY = 120;
 
@@ -364,6 +369,8 @@ namespace HyperOS.Pages
             clockSize = Get(s, "ClockSize", 2);
             clockColor = Get(s, "ClockColor", 0);
             clockBlend = Get(s, "ClockBlend", 0);
+            clockOpacity = Get(s, "ClockOpacity", 1.0);
+            clockHue = Get(s, "ClockHue", -1);
             dateAlign = Get(s, "DateAlign", 1);
             clockLayout = Get(s, "ClockLayout", 0);
             showWeather = Get(s, "ShowWeather", false);
@@ -411,6 +418,8 @@ namespace HyperOS.Pages
             sigLayout = Get(s, "SignatureLayout", 0);
             sigColor = Get(s, "SignatureColor", 0);
             sigBlend = Get(s, "SignatureBlend", 0);
+            sigOpacity = Get(s, "SignatureOpacity", 1.0);
+            sigHue = Get(s, "SignatureHue", -1);
 
             signatureX = Get(s, "SignatureX", defClockX);
             signatureY = Get(s, "SignatureY", defClockY + 220);
@@ -658,7 +667,10 @@ namespace HyperOS.Pages
                 }
                 SignatureHandle.Margin = new Thickness(signatureX, signatureY, 0, 0);
                 ApplySignatureColor();
+                PSignature.Opacity = sigOpacity;
             }
+
+            ClockHandle.Opacity = clockOpacity;
 
             // Weather
             if (showWeather)
@@ -885,6 +897,10 @@ namespace HyperOS.Pages
             {
                 brush = new SolidColorBrush(Colors.White);
             }
+            else if (clockHue >= 0)
+            {
+                brush = new SolidColorBrush(ColorFromHSV(clockHue, 1.0, 1.0));
+            }
             else if (clockBlend > 0)
             {
                 switch (clockBlend)
@@ -945,10 +961,33 @@ namespace HyperOS.Pages
             return lgb;
         }
 
+        public static Color ColorFromHSV(double hue, double saturation, double value)
+        {
+            int hi = Convert.ToInt32(Math.Floor(hue / 60)) % 6;
+            double f = hue / 60 - Math.Floor(hue / 60);
+
+            value = value * 255;
+            int v = Convert.ToInt32(value);
+            int p = Convert.ToInt32(value * (1 - saturation));
+            int q = Convert.ToInt32(value * (1 - f * saturation));
+            int t = Convert.ToInt32(value * (1 - (1 - f) * saturation));
+
+            if (hi == 0) return Color.FromArgb(255, (byte)v, (byte)t, (byte)p);
+            else if (hi == 1) return Color.FromArgb(255, (byte)q, (byte)v, (byte)p);
+            else if (hi == 2) return Color.FromArgb(255, (byte)p, (byte)v, (byte)t);
+            else if (hi == 3) return Color.FromArgb(255, (byte)p, (byte)q, (byte)v);
+            else if (hi == 4) return Color.FromArgb(255, (byte)t, (byte)p, (byte)v);
+            else return Color.FromArgb(255, (byte)v, (byte)p, (byte)q);
+        }
+
         private void ApplySignatureColor()
         {
             Brush brush;
-            if (sigBlend > 0)
+            if (sigHue >= 0)
+            {
+                brush = new SolidColorBrush(ColorFromHSV(sigHue, 1.0, 1.0));
+            }
+            else if (sigBlend > 0)
             {
                 switch (sigBlend)
                 {
@@ -1461,15 +1500,19 @@ namespace HyperOS.Pages
             {
                 clockColor = c;
                 clockBlend = 0;
+                clockHue = -1;
                 Save("ClockColor", clockColor);
                 Save("ClockBlend", 0);
+                Save("ClockHue", -1);
             }
             else
             {
                 sigColor = c;
                 sigBlend = 0;
+                sigHue = -1;
                 Save("SignatureColor", sigColor);
                 Save("SignatureBlend", 0);
+                Save("SignatureHue", -1);
             }
             UpdateColorSelection();
             UpdateBlendSelection();
@@ -1481,11 +1524,17 @@ namespace HyperOS.Pages
             Ellipse[] circles = { ColorW, ColorG, ColorB, ColorP, ColorR, ColorMint, ColorLav, ColorOr, ColorCy, ColorSi };
             int curColor = colorScope == "Clock" ? clockColor : sigColor;
             int curBlend = colorScope == "Clock" ? clockBlend : sigBlend;
+            int curHue = colorScope == "Clock" ? clockHue : sigHue;
             for (int i = 0; i < circles.Length; i++)
             {
                 if (circles[i] != null)
-                    circles[i].Stroke = (i == curColor && curBlend == 0) ? SelectBrush : TransparentBrush;
+                    circles[i].Stroke = (i == curColor && curBlend == 0 && curHue < 0) ? SelectBrush : TransparentBrush;
             }
+            
+            isUpdatingColorUI = true;
+            EdColorOpacity.Value = colorScope == "Clock" ? clockOpacity : sigOpacity;
+            EdColorHue.Value = curHue;
+            isUpdatingColorUI = false;
         }
 
         private void Blend_Tap(object sender, System.Windows.Input.GestureEventArgs e)
@@ -1495,12 +1544,16 @@ namespace HyperOS.Pages
             if (colorScope == "Clock")
             {
                 clockBlend = b;
+                clockHue = -1;
                 Save("ClockBlend", clockBlend);
+                Save("ClockHue", -1);
             }
             else
             {
                 sigBlend = b;
+                sigHue = -1;
                 Save("SignatureBlend", sigBlend);
+                Save("SignatureHue", -1);
             }
             UpdateBlendSelection();
             UpdateColorSelection();
@@ -1511,16 +1564,51 @@ namespace HyperOS.Pages
         {
             Border[] pills = { BlendNone, BlendSunset, BlendOcean, BlendAurora, BlendNeon, BlendRose, BlendFire, BlendIce, BlendForest, BlendCyber };
             int curBlend = colorScope == "Clock" ? clockBlend : sigBlend;
+            int curHue = colorScope == "Clock" ? clockHue : sigHue;
             for (int i = 0; i < pills.Length; i++)
             {
                 if (pills[i] != null)
                 {
-                    pills[i].Background = (i == curBlend) ? AccentBrush : InactiveTabBg;
-                    ((TextBlock)pills[i].Child).Foreground = (i == curBlend) ?
+                    pills[i].Background = (i == curBlend && curHue < 0) ? AccentBrush : InactiveTabBg;
+                    ((TextBlock)pills[i].Child).Foreground = (i == curBlend && curHue < 0) ?
                         new SolidColorBrush(Colors.White) :
                         new SolidColorBrush(Color.FromArgb(0xCC, 0xFF, 0xFF, 0xFF));
                 }
             }
+        }
+
+        private void EdColorOpacity_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            if (isUpdatingColorUI) return;
+            if (colorScope == "Clock")
+            {
+                clockOpacity = e.NewValue;
+                Save("ClockOpacity", clockOpacity);
+            }
+            else
+            {
+                sigOpacity = e.NewValue;
+                Save("SignatureOpacity", sigOpacity);
+            }
+            ApplyPreview();
+        }
+
+        private void EdColorHue_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            if (isUpdatingColorUI) return;
+            if (colorScope == "Clock")
+            {
+                clockHue = (int)e.NewValue;
+                Save("ClockHue", clockHue);
+            }
+            else
+            {
+                sigHue = (int)e.NewValue;
+                Save("SignatureHue", sigHue);
+            }
+            UpdateColorSelection();
+            UpdateBlendSelection();
+            ApplyPreview();
         }
 
         private void DateAlign_Tap(object sender, System.Windows.Input.GestureEventArgs e)
@@ -2131,13 +2219,13 @@ namespace HyperOS.Pages
 
         // My Sets
         private static readonly string[] SetKeys = { "ClockStyle", "ClockPosition", "ClockHAlign",
-            "ClockColor", "ClockBlend", "ClockSize", "ClockLayout",
+            "ClockColor", "ClockBlend", "ClockOpacity", "ClockHue", "ClockSize", "ClockLayout",
             "ShowWeather", "ShowCountdown", "UseDepthEffect",
             "DepthHourBehind", "DepthColonBehind", "DepthMinuteBehind",
             "ClockX", "ClockY", "WeatherX", "WeatherY", "CountdownX", "CountdownY",
             "bIsAnimOn", "DateAlign", "CountdownName", "CountdownTarget", "OwnerInfo",
             "ShowSignature", "SignatureX", "SignatureY", "SignatureText", "SignatureFont",
-            "SignatureSpacing", "SignatureAlign", "SignatureColor", "SignatureBlend", "SignatureLayout" };
+            "SignatureSpacing", "SignatureAlign", "SignatureColor", "SignatureBlend", "SignatureOpacity", "SignatureHue", "SignatureLayout" };
 
         private void TakeSettingsSnapshot()
         {
