@@ -374,7 +374,28 @@ namespace HyperOS.Pages
             object sender, ManipulationStartedEventArgs e)
         {
             // Record start point and stop any ongoing snap back animation
-            try { ((Storyboard)Resources["SnapBackAnim"]).Stop(); } catch { }
+            try 
+            {
+                Storyboard snapBack = (Storyboard)Resources["SnapBackAnim"];
+                var state = snapBack.GetCurrentState();
+                if (state == System.Windows.Media.Animation.ClockState.Active || state == System.Windows.Media.Animation.ClockState.Filling)
+                {
+                    // Attempt to grab current animated values before stopping
+                    var t = (CompositeTransform)OverlayInformationPanel.RenderTransform;
+                    var tb = (CompositeTransform)BehindForegroundGrid.RenderTransform;
+                    double currentY = t.TranslateY;
+                    double currentOpacity = OverlayInformationPanel.Opacity;
+
+                    snapBack.Stop();
+
+                    // Apply the captured values as the new base values
+                    t.TranslateY = currentY;
+                    tb.TranslateY = currentY;
+                    OverlayInformationPanel.Opacity = currentOpacity;
+                    BehindForegroundGrid.Opacity = currentOpacity;
+                }
+            } 
+            catch { }
         }
 
         private void OverlayInformationPanel_ManipulationDelta(
