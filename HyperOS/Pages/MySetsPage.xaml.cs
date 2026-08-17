@@ -603,9 +603,9 @@ namespace HyperOS.Pages
             {
                 if (s.Contains(px + key))
                     s[key] = s[px + key];
-                else if (key == "ClockX" || key == "ClockY" || key == "SignatureX" || key == "SignatureY")
+                else
                 {
-                    // Remove global position keys if preset doesn't have them (center default)
+                    // Remove global keys if preset doesn't have them (fallback to default)
                     if (s.Contains(key)) s.Remove(key);
                 }
             }
