@@ -611,18 +611,61 @@ namespace HyperOS.Pages
                     if (s.Contains(key)) s.Remove(key);
                 }
             }
-            
             // Ensure background image is passed to Editor/LockScreen
-            if (!string.IsNullOrEmpty(preset.BackgroundImage))
+            try
             {
-                s[px + "BackgroundImage"] = preset.BackgroundImage;
-                s["BackgroundImage"] = preset.BackgroundImage; // also sync to global if needed
+                using (var store = System.IO.IsolatedStorage.IsolatedStorageFile.GetUserStoreForApplication())
+                {
+                    string presetBg = "Background_" + index + ".jpg";
+                    if (store.FileExists(presetBg))
+                    {
+                        // User has a custom wallpaper saved for this preset
+                        if (store.FileExists("Background.jpg"))
+                            store.DeleteFile("Background.jpg");
+                        store.CopyFile(presetBg, "Background.jpg");
+                        
+                        s[px + "BackgroundImage"] = null; // Clear fallback string
+                        if (s.Contains("BackgroundImage")) s.Remove("BackgroundImage");
+                    }
+                    else
+                    {
+                        // No custom wallpaper - copy default from app resources
+                        string defaultBg = (preset.BackgroundImage ?? "").TrimStart('/');
+                        if (!string.IsNullOrEmpty(defaultBg))
+                        {
+                            try
+                            {
+                                var sri = System.Windows.Application.GetResourceStream(new Uri(defaultBg, UriKind.Relative));
+                                if (sri != null && sri.Stream != null)
+                                {
+                                    if (store.FileExists("Background.jpg"))
+                                        store.DeleteFile("Background.jpg");
+                                    using (var iso = store.OpenFile("Background.jpg",
+                                        System.IO.FileMode.Create, System.IO.FileAccess.Write))
+                                    {
+                                        sri.Stream.CopyTo(iso);
+                                    }
+                                    sri.Stream.Dispose();
+                                }
+                            }
+                            catch { }
+
+                            // Also save the string for Editor fallback
+                            s[px + "BackgroundImage"] = preset.BackgroundImage;
+                            s["BackgroundImage"] = preset.BackgroundImage;
+                        }
+                        else
+                        {
+                            // No wallpaper at all
+                            if (store.FileExists("Background.jpg"))
+                                store.DeleteFile("Background.jpg");
+                            if (s.Contains(px + "BackgroundImage")) s.Remove(px + "BackgroundImage");
+                            if (s.Contains("BackgroundImage")) s.Remove("BackgroundImage");
+                        }
+                    }
+                }
             }
-            else
-            {
-                if (s.Contains(px + "BackgroundImage")) s.Remove(px + "BackgroundImage");
-                if (s.Contains("BackgroundImage")) s.Remove("BackgroundImage");
-            }
+            catch { }
             
             s.Save();
         }
