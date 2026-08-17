@@ -570,13 +570,15 @@ namespace HyperOS.Pages
 
         #region Actions
 
-        private void Customise_Tap(object sender, System.Windows.Input.GestureEventArgs e)
+        private void SyncPresetToGlobal(int index)
         {
-            var preset = Presets[currentIndex];
             var s = IsolatedStorageSettings.ApplicationSettings;
-            string px = "Set" + currentIndex + "_";
+            s["ActivePresetIndex"] = index;
 
-            // Ensure Set{n}_ keys exist with preset defaults for first-time cards
+            var preset = Presets[index];
+            string px = "Set" + index + "_";
+
+            // If this preset hasn't been saved yet, initialize its default keys
             if (!s.Contains(px + "ClockStyle"))
             {
                 s[px + "ClockStyle"] = preset.ClockStyle;
@@ -594,7 +596,7 @@ namespace HyperOS.Pages
                 s[px + "DepthMinuteBehind"] = preset.DepthMinuteBehind;
             }
 
-            // Sync ALL Set{n}_ keys to global keys so EditorPage reads correctly (BUG 4 fix)
+            // Sync ALL Set{n}_ keys to global keys so EditorPage and LockScreen read correctly
             string[] keys = { "ClockStyle", "ClockSize", "ClockColor", "ClockBlend", "DateAlign", "ClockLayout",
                 "ClockX", "ClockY", "UseDepthEffect", "DepthHourBehind", "DepthColonBehind", "DepthMinuteBehind",
                 "ShowWeather", "ShowCountdown", "WeatherX", "WeatherY", "CountdownX", "CountdownY",
@@ -610,7 +612,7 @@ namespace HyperOS.Pages
                 }
             }
             
-            // Ensure background image is passed to Editor
+            // Ensure background image is passed to Editor/LockScreen
             if (!string.IsNullOrEmpty(preset.BackgroundImage))
             {
                 s[px + "BackgroundImage"] = preset.BackgroundImage;
@@ -623,6 +625,11 @@ namespace HyperOS.Pages
             }
             
             s.Save();
+        }
+
+        private void Customise_Tap(object sender, System.Windows.Input.GestureEventArgs e)
+        {
+            SyncPresetToGlobal(currentIndex);
 
             // Navigate to editor with preset index
             NavigationService.Navigate(
@@ -643,9 +650,7 @@ namespace HyperOS.Pages
 
         private void Apply_Tap(object sender, System.Windows.Input.GestureEventArgs e)
         {
-            var s = IsolatedStorageSettings.ApplicationSettings;
-            s["ActivePresetIndex"] = currentIndex;
-            s.Save();
+            SyncPresetToGlobal(currentIndex);
 
             if (NavigationService.CanGoBack)
                 NavigationService.GoBack();
