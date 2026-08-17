@@ -563,15 +563,6 @@
                 </StackPanel>
 
 
-                <!-- Unlock button (invisible touch target) -->
-                <Border x:Name="UnlockButton" Background="Transparent"
-                    Width="120" Height="120"
-                    HorizontalAlignment="Center" VerticalAlignment="Bottom"
-                    Tap="UnlockButton_Tap" Margin="0,0,0,60">
-                    <Border.Projection><PlaneProjection/></Border.Projection>
-                    <Border.RenderTransform><CompositeTransform/></Border.RenderTransform>
-                </Border>
-
 
 
                 <!-- Quick shortcuts — bottom corners (HyperOS style) -->

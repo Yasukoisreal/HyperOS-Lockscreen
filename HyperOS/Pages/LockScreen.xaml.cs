@@ -470,11 +470,6 @@ namespace HyperOS.Pages
 
         #region Unlock Methods
 
-        private void UnlockButton_Tap(object sender, System.Windows.Input.GestureEventArgs e)
-        {
-            ShowUnlockMethod();
-        }
-
         private void ShowUnlockMethod()
         {
             if (bIsPasswordEnabled)
