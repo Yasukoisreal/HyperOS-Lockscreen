@@ -48,7 +48,7 @@ namespace HyperOS.Pages
         private int patternTries = 5;
 
         // Swipe threshold
-        private double yToUnlock = 100;
+        private double yToUnlock = 250;
 
         // Cached resources (CPU optimization)
         private static readonly SolidColorBrush FilledBrush = new SolidColorBrush(Colors.White);
