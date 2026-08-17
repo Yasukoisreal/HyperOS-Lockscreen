@@ -635,6 +635,22 @@ namespace HyperOS.Pages
                 new Uri("/Pages/SettingsPage.xaml", UriKind.Relative));
         }
 
+        private void Exit_Tap(object sender, System.Windows.Input.GestureEventArgs e)
+        {
+            if (NavigationService.CanGoBack)
+                NavigationService.GoBack();
+        }
+
+        private void Apply_Tap(object sender, System.Windows.Input.GestureEventArgs e)
+        {
+            var s = IsolatedStorageSettings.ApplicationSettings;
+            s["ActivePresetIndex"] = currentIndex;
+            s.Save();
+
+            if (NavigationService.CanGoBack)
+                NavigationService.GoBack();
+        }
+
         #endregion
 
         protected override void OnNavigatedTo(NavigationEventArgs e)

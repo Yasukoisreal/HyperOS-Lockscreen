@@ -11,14 +11,20 @@
     <Grid Background="#111111">
         <!-- Header -->
         <Grid VerticalAlignment="Top" Margin="16,28,16,0" Canvas.ZIndex="10">
-            <TextBlock Text="My Sets"
-                FontFamily="/Assets/Fonts/MiSans-Demibold.ttf#MiSans"
-                FontSize="20" Foreground="#AAFFFFFF"
-                HorizontalAlignment="Left" VerticalAlignment="Center"/>
-            <Border Tap="Settings_Tap" HorizontalAlignment="Right"
+            <!-- Exit -->
+            <Border HorizontalAlignment="Left" Background="#444444" CornerRadius="14" Padding="16,6" Tap="Exit_Tap">
+                <TextBlock Text="Exit" FontSize="14" Foreground="White" FontFamily="/Assets/Fonts/MiSans-Demibold.ttf#MiSans"/>
+            </Border>
+            
+            <Border Tap="Settings_Tap" HorizontalAlignment="Center"
                 Width="40" Height="40" Background="Transparent">
                 <TextBlock Text="⚙" FontSize="20" Foreground="#77FFFFFF"
                     HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Border>
+            
+            <!-- Apply -->
+            <Border HorizontalAlignment="Right" Background="#3A7BF2" CornerRadius="14" Padding="16,6" Tap="Apply_Tap">
+                <TextBlock Text="Apply" FontSize="14" Foreground="White" FontFamily="/Assets/Fonts/MiSans-Demibold.ttf#MiSans"/>
             </Border>
         </Grid>
 

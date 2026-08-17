@@ -289,53 +289,13 @@
         </Grid>
 
         <!-- ═══════════════════════════════════════════════════ -->
-        <!--       BOTTOM CONTROLS (tab bar + properties)       -->
+        <!--       FLOATING POPUP MENU CONTAINER                -->
         <!-- ═══════════════════════════════════════════════════ -->
-        <Grid x:Name="BottomControls" VerticalAlignment="Bottom">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-            </Grid.RowDefinitions>
-
-            <!-- ─── TAB BAR ─── -->
-            <ScrollViewer Grid.Row="0" HorizontalScrollBarVisibility="Hidden"
-                          VerticalScrollBarVisibility="Disabled" Height="44"
-                          Margin="0,0,0,0">
-                <StackPanel Orientation="Horizontal" Margin="12,4,12,4">
-                    <Border x:Name="TabClock" Style="{StaticResource TabPill}"
-                            Tap="Tab_Tap" Tag="Clock">
-                        <TextBlock x:Name="TabClockText" Text="🕐 Clock" Style="{StaticResource TabText}"/>
-                    </Border>
-                    <Border x:Name="TabWeather" Style="{StaticResource TabPill}"
-                            Tap="Tab_Tap" Tag="Weather">
-                        <TextBlock x:Name="TabWeatherText" Text="☀ Weather" Style="{StaticResource TabText}"/>
-                    </Border>
-                    <Border x:Name="TabCountdown" Style="{StaticResource TabPill}"
-                            Tap="Tab_Tap" Tag="Countdown">
-                        <TextBlock x:Name="TabCountdownText" Text="⏱ Countdown" Style="{StaticResource TabText}"/>
-                    </Border>
-                    <Border x:Name="TabSignature" Style="{StaticResource TabPill}"
-                            Tap="Tab_Tap" Tag="Signature">
-                        <TextBlock x:Name="TabSignatureText" Text="✍ Signature" Style="{StaticResource TabText}"/>
-                    </Border>
-                    <Border x:Name="TabDisplay" Style="{StaticResource TabPill}"
-                            Tap="Tab_Tap" Tag="Display">
-                        <TextBlock x:Name="TabDisplayText" Text="★ Display" Style="{StaticResource TabText}"/>
-                    </Border>
-                </StackPanel>
-            </ScrollViewer>
-
-            <!-- ─── PROPERTY PANEL ─── -->
-            <Border Grid.Row="1" x:Name="PropPanel"
-                    CornerRadius="16,16,0,0" MaxHeight="260">
-                <Border.Background>
-                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                        <GradientStop Color="#F5101020" Offset="0"/>
-                        <GradientStop Color="#F5080814" Offset="1"/>
-                    </LinearGradientBrush>
-                </Border.Background>
-                <ScrollViewer Margin="0,6,0,0" VerticalScrollBarVisibility="Auto">
-                    <StackPanel Margin="16,0,16,16">
+        <Border x:Name="PropPanel" VerticalAlignment="Bottom" Margin="16,0,16,84"
+                CornerRadius="16" Background="#DD1A1A2E" Visibility="Collapsed"
+                BorderThickness="1" BorderBrush="#33FFFFFF" MaxHeight="320">
+            <ScrollViewer Margin="0,12,0,12" VerticalScrollBarVisibility="Auto">
+                <StackPanel Margin="16,0,16,0">
 
                         <!-- ══ CLOCK PROPERTIES ══ -->
                         <StackPanel x:Name="ClockProps" Visibility="Visible">
@@ -403,82 +363,6 @@
                                 <Border x:Name="SizeXXL" Tap="Size_Tap" Tag="4" Style="{StaticResource PropOptionPill}">
                                     <TextBlock Text="XXL" Style="{StaticResource PropOptionText}"/>
                                 </Border>
-                            </StackPanel>
-
-                            <StackPanel x:Name="ColorSectionContainer">
-                            <!-- Color -->
-                            <TextBlock Text="COLOR" Style="{StaticResource PropLabel}"/>
-                            <ScrollViewer HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled">
-                            <StackPanel Orientation="Horizontal">
-                                <Ellipse x:Name="ColorW" Width="32" Height="32" Fill="White"
-                                         Stroke="Transparent" StrokeThickness="2"
-                                         Tap="Color_Tap" Tag="0" Margin="0,0,8,0"/>
-                                <Ellipse x:Name="ColorG" Width="32" Height="32" Fill="#FFD700"
-                                         Stroke="Transparent" StrokeThickness="2"
-                                         Tap="Color_Tap" Tag="1" Margin="0,0,8,0"/>
-                                <Ellipse x:Name="ColorB" Width="32" Height="32" Fill="#87CEEB"
-                                         Stroke="Transparent" StrokeThickness="2"
-                                         Tap="Color_Tap" Tag="2" Margin="0,0,8,0"/>
-                                <Ellipse x:Name="ColorP" Width="32" Height="32" Fill="#FFB6C1"
-                                         Stroke="Transparent" StrokeThickness="2"
-                                         Tap="Color_Tap" Tag="3" Margin="0,0,8,0"/>
-                                <Ellipse x:Name="ColorR" Width="32" Height="32" Fill="#FF4444"
-                                         Stroke="Transparent" StrokeThickness="2"
-                                         Tap="Color_Tap" Tag="4" Margin="0,0,8,0"/>
-                                <Ellipse x:Name="ColorMint" Width="32" Height="32" Fill="#5BFFB0"
-                                         Stroke="Transparent" StrokeThickness="2"
-                                         Tap="Color_Tap" Tag="5" Margin="0,0,8,0"/>
-                                <Ellipse x:Name="ColorLav" Width="32" Height="32" Fill="#C4A7FF"
-                                         Stroke="Transparent" StrokeThickness="2"
-                                         Tap="Color_Tap" Tag="6" Margin="0,0,8,0"/>
-                                <Ellipse x:Name="ColorOr" Width="32" Height="32" Fill="#FF8C42"
-                                         Stroke="Transparent" StrokeThickness="2"
-                                         Tap="Color_Tap" Tag="7" Margin="0,0,8,0"/>
-                                <Ellipse x:Name="ColorCy" Width="32" Height="32" Fill="#00E5FF"
-                                         Stroke="Transparent" StrokeThickness="2"
-                                         Tap="Color_Tap" Tag="8" Margin="0,0,8,0"/>
-                                <Ellipse x:Name="ColorSi" Width="32" Height="32" Fill="#A0A0B0"
-                                         Stroke="Transparent" StrokeThickness="2"
-                                         Tap="Color_Tap" Tag="9" Margin="0,0,0,0"/>
-                            </StackPanel>
-                            </ScrollViewer>
-
-                            <!-- Gradient -->
-                            <TextBlock Text="GRADIENT" Style="{StaticResource PropLabel}"/>
-                            <ScrollViewer HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled">
-                            <StackPanel x:Name="BlendPanel" Orientation="Horizontal">
-                                <Border x:Name="BlendNone" Tap="Blend_Tap" Tag="0" Style="{StaticResource PropOptionPill}">
-                                    <TextBlock Text="None" Style="{StaticResource PropOptionText}"/>
-                                </Border>
-                                <Border x:Name="BlendSunset" Tap="Blend_Tap" Tag="1" Style="{StaticResource PropOptionPill}">
-                                    <TextBlock Text="Sunset" Style="{StaticResource PropOptionText}"/>
-                                </Border>
-                                <Border x:Name="BlendOcean" Tap="Blend_Tap" Tag="2" Style="{StaticResource PropOptionPill}">
-                                    <TextBlock Text="Ocean" Style="{StaticResource PropOptionText}"/>
-                                </Border>
-                                <Border x:Name="BlendAurora" Tap="Blend_Tap" Tag="3" Style="{StaticResource PropOptionPill}">
-                                    <TextBlock Text="Aurora" Style="{StaticResource PropOptionText}"/>
-                                </Border>
-                                <Border x:Name="BlendNeon" Tap="Blend_Tap" Tag="4" Style="{StaticResource PropOptionPill}">
-                                    <TextBlock Text="Neon" Style="{StaticResource PropOptionText}"/>
-                                </Border>
-                                <Border x:Name="BlendRose" Tap="Blend_Tap" Tag="5" Style="{StaticResource PropOptionPill}">
-                                    <TextBlock Text="Rose" Style="{StaticResource PropOptionText}"/>
-                                </Border>
-                                <Border x:Name="BlendFire" Tap="Blend_Tap" Tag="6" Style="{StaticResource PropOptionPill}">
-                                    <TextBlock Text="Fire" Style="{StaticResource PropOptionText}"/>
-                                </Border>
-                                <Border x:Name="BlendIce" Tap="Blend_Tap" Tag="7" Style="{StaticResource PropOptionPill}">
-                                    <TextBlock Text="Ice" Style="{StaticResource PropOptionText}"/>
-                                </Border>
-                                <Border x:Name="BlendLime" Tap="Blend_Tap" Tag="8" Style="{StaticResource PropOptionPill}">
-                                    <TextBlock Text="Lime" Style="{StaticResource PropOptionText}"/>
-                                </Border>
-                                <Border x:Name="BlendTwilight" Tap="Blend_Tap" Tag="9" Style="{StaticResource PropOptionPill}">
-                                    <TextBlock Text="Twilight" Style="{StaticResource PropOptionText}"/>
-                                </Border>
-                            </StackPanel>
-                            </ScrollViewer>
                             </StackPanel>
 
                             <!-- Date Align (manual) -->
@@ -624,60 +508,6 @@
                                     </Border>
                                 </StackPanel>
                             </ScrollViewer>
-
-                            <!-- Color -->
-                            <TextBlock Text="COLOR" Style="{StaticResource PropLabel}"/>
-                            <ScrollViewer HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled">
-                            <StackPanel Orientation="Horizontal">
-                                <Ellipse x:Name="SigColorW" Width="32" Height="32" Fill="White" Stroke="Transparent" StrokeThickness="2" Tap="SigColor_Tap" Tag="0" Margin="0,0,8,0"/>
-                                <Ellipse x:Name="SigColorG" Width="32" Height="32" Fill="#FFD700" Stroke="Transparent" StrokeThickness="2" Tap="SigColor_Tap" Tag="1" Margin="0,0,8,0"/>
-                                <Ellipse x:Name="SigColorB" Width="32" Height="32" Fill="#87CEEB" Stroke="Transparent" StrokeThickness="2" Tap="SigColor_Tap" Tag="2" Margin="0,0,8,0"/>
-                                <Ellipse x:Name="SigColorP" Width="32" Height="32" Fill="#FFB6C1" Stroke="Transparent" StrokeThickness="2" Tap="SigColor_Tap" Tag="3" Margin="0,0,8,0"/>
-                                <Ellipse x:Name="SigColorR" Width="32" Height="32" Fill="#FF4444" Stroke="Transparent" StrokeThickness="2" Tap="SigColor_Tap" Tag="4" Margin="0,0,8,0"/>
-                                <Ellipse x:Name="SigColorMint" Width="32" Height="32" Fill="#5BFFB0" Stroke="Transparent" StrokeThickness="2" Tap="SigColor_Tap" Tag="5" Margin="0,0,8,0"/>
-                                <Ellipse x:Name="SigColorLav" Width="32" Height="32" Fill="#C4A7FF" Stroke="Transparent" StrokeThickness="2" Tap="SigColor_Tap" Tag="6" Margin="0,0,8,0"/>
-                                <Ellipse x:Name="SigColorOr" Width="32" Height="32" Fill="#FF8C42" Stroke="Transparent" StrokeThickness="2" Tap="SigColor_Tap" Tag="7" Margin="0,0,8,0"/>
-                                <Ellipse x:Name="SigColorCy" Width="32" Height="32" Fill="#00E5FF" Stroke="Transparent" StrokeThickness="2" Tap="SigColor_Tap" Tag="8" Margin="0,0,8,0"/>
-                                <Ellipse x:Name="SigColorSi" Width="32" Height="32" Fill="#A0A0B0" Stroke="Transparent" StrokeThickness="2" Tap="SigColor_Tap" Tag="9" Margin="0,0,0,0"/>
-                            </StackPanel>
-                            </ScrollViewer>
-                            
-                            <!-- Gradient -->
-                            <TextBlock Text="GRADIENT" Style="{StaticResource PropLabel}"/>
-                            <ScrollViewer HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled">
-                            <StackPanel Orientation="Horizontal">
-                                <Border x:Name="SigBlendNone" Tap="SigBlend_Tap" Tag="0" Style="{StaticResource PropOptionPill}">
-                                    <TextBlock Text="None" Style="{StaticResource PropOptionText}"/>
-                                </Border>
-                                <Border x:Name="SigBlendSunset" Tap="SigBlend_Tap" Tag="1" Style="{StaticResource PropOptionPill}">
-                                    <TextBlock Text="Sunset" Style="{StaticResource PropOptionText}"/>
-                                </Border>
-                                <Border x:Name="SigBlendOcean" Tap="SigBlend_Tap" Tag="2" Style="{StaticResource PropOptionPill}">
-                                    <TextBlock Text="Ocean" Style="{StaticResource PropOptionText}"/>
-                                </Border>
-                                <Border x:Name="SigBlendAurora" Tap="SigBlend_Tap" Tag="3" Style="{StaticResource PropOptionPill}">
-                                    <TextBlock Text="Aurora" Style="{StaticResource PropOptionText}"/>
-                                </Border>
-                                <Border x:Name="SigBlendNeon" Tap="SigBlend_Tap" Tag="4" Style="{StaticResource PropOptionPill}">
-                                    <TextBlock Text="Neon" Style="{StaticResource PropOptionText}"/>
-                                </Border>
-                                <Border x:Name="SigBlendRose" Tap="SigBlend_Tap" Tag="5" Style="{StaticResource PropOptionPill}">
-                                    <TextBlock Text="Rose" Style="{StaticResource PropOptionText}"/>
-                                </Border>
-                                <Border x:Name="SigBlendFire" Tap="SigBlend_Tap" Tag="6" Style="{StaticResource PropOptionPill}">
-                                    <TextBlock Text="Fire" Style="{StaticResource PropOptionText}"/>
-                                </Border>
-                                <Border x:Name="SigBlendIce" Tap="SigBlend_Tap" Tag="7" Style="{StaticResource PropOptionPill}">
-                                    <TextBlock Text="Ice" Style="{StaticResource PropOptionText}"/>
-                                </Border>
-                                <Border x:Name="SigBlendLime" Tap="SigBlend_Tap" Tag="8" Style="{StaticResource PropOptionPill}">
-                                    <TextBlock Text="Lime" Style="{StaticResource PropOptionText}"/>
-                                </Border>
-                                <Border x:Name="SigBlendTwilight" Tap="SigBlend_Tap" Tag="9" Style="{StaticResource PropOptionPill}">
-                                    <TextBlock Text="Twilight" Style="{StaticResource PropOptionText}"/>
-                                </Border>
-                            </StackPanel>
-                            </ScrollViewer>
                             
                             <Button Content="Save Signature" Click="EdSaveSignature_Click"
                                 Style="{StaticResource EditorActionBtn}" Margin="0,8,0,0"/>
@@ -748,11 +578,102 @@
                                 </Grid>
                             </StackPanel>
 
+                            <!-- ══ COLOR PROPERTIES ══ -->
+                            <StackPanel x:Name="ColorProps" Visibility="Collapsed">
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+                                    <Border x:Name="ColorScopeClock" Tap="ColorScope_Tap" Tag="Clock" Style="{StaticResource PropOptionPill}" Background="#3A7BF2">
+                                        <TextBlock Text="Clock" Style="{StaticResource PropOptionText}" Foreground="White"/>
+                                    </Border>
+                                    <Border x:Name="ColorScopeSignature" Tap="ColorScope_Tap" Tag="Signature" Style="{StaticResource PropOptionPill}">
+                                        <TextBlock Text="Signature" Style="{StaticResource PropOptionText}"/>
+                                    </Border>
+                                </StackPanel>
+
+                                <!-- Solid Color -->
+                                <TextBlock Text="COLOR" Style="{StaticResource PropLabel}"/>
+                                <ScrollViewer HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled">
+                                <StackPanel Orientation="Horizontal">
+                                    <Ellipse x:Name="ColorW" Width="32" Height="32" Fill="White" Stroke="Transparent" StrokeThickness="2" Tap="Color_Tap" Tag="0" Margin="0,0,8,0"/>
+                                    <Ellipse x:Name="ColorG" Width="32" Height="32" Fill="#FFD700" Stroke="Transparent" StrokeThickness="2" Tap="Color_Tap" Tag="1" Margin="0,0,8,0"/>
+                                    <Ellipse x:Name="ColorB" Width="32" Height="32" Fill="#87CEEB" Stroke="Transparent" StrokeThickness="2" Tap="Color_Tap" Tag="2" Margin="0,0,8,0"/>
+                                    <Ellipse x:Name="ColorP" Width="32" Height="32" Fill="#FFB6C1" Stroke="Transparent" StrokeThickness="2" Tap="Color_Tap" Tag="3" Margin="0,0,8,0"/>
+                                    <Ellipse x:Name="ColorR" Width="32" Height="32" Fill="#FF4444" Stroke="Transparent" StrokeThickness="2" Tap="Color_Tap" Tag="4" Margin="0,0,8,0"/>
+                                    <Ellipse x:Name="ColorMint" Width="32" Height="32" Fill="#5BFFB0" Stroke="Transparent" StrokeThickness="2" Tap="Color_Tap" Tag="5" Margin="0,0,8,0"/>
+                                    <Ellipse x:Name="ColorLav" Width="32" Height="32" Fill="#C4A7FF" Stroke="Transparent" StrokeThickness="2" Tap="Color_Tap" Tag="6" Margin="0,0,8,0"/>
+                                    <Ellipse x:Name="ColorOr" Width="32" Height="32" Fill="#FF8C42" Stroke="Transparent" StrokeThickness="2" Tap="Color_Tap" Tag="7" Margin="0,0,8,0"/>
+                                    <Ellipse x:Name="ColorCy" Width="32" Height="32" Fill="#00E5FF" Stroke="Transparent" StrokeThickness="2" Tap="Color_Tap" Tag="8" Margin="0,0,8,0"/>
+                                    <Ellipse x:Name="ColorSi" Width="32" Height="32" Fill="#A0A0B0" Stroke="Transparent" StrokeThickness="2" Tap="Color_Tap" Tag="9" Margin="0,0,0,0"/>
+                                </StackPanel>
+                                </ScrollViewer>
+                                
+                                <!-- Gradient -->
+                                <TextBlock Text="GRADIENT" Style="{StaticResource PropLabel}"/>
+                                <ScrollViewer HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled">
+                                <StackPanel Orientation="Horizontal">
+                                    <Border x:Name="BlendNone" Tap="Blend_Tap" Tag="0" Style="{StaticResource PropOptionPill}">
+                                        <TextBlock Text="None" Style="{StaticResource PropOptionText}"/>
+                                    </Border>
+                                    <Border x:Name="BlendSunset" Tap="Blend_Tap" Tag="1" Style="{StaticResource PropOptionPill}">
+                                        <TextBlock Text="Sunset" Style="{StaticResource PropOptionText}"/>
+                                    </Border>
+                                    <Border x:Name="BlendOcean" Tap="Blend_Tap" Tag="2" Style="{StaticResource PropOptionPill}">
+                                        <TextBlock Text="Ocean" Style="{StaticResource PropOptionText}"/>
+                                    </Border>
+                                    <Border x:Name="BlendAurora" Tap="Blend_Tap" Tag="3" Style="{StaticResource PropOptionPill}">
+                                        <TextBlock Text="Aurora" Style="{StaticResource PropOptionText}"/>
+                                    </Border>
+                                    <Border x:Name="BlendNeon" Tap="Blend_Tap" Tag="4" Style="{StaticResource PropOptionPill}">
+                                        <TextBlock Text="Neon" Style="{StaticResource PropOptionText}"/>
+                                    </Border>
+                                    <Border x:Name="BlendRose" Tap="Blend_Tap" Tag="5" Style="{StaticResource PropOptionPill}">
+                                        <TextBlock Text="Rose" Style="{StaticResource PropOptionText}"/>
+                                    </Border>
+                                    <Border x:Name="BlendFire" Tap="Blend_Tap" Tag="6" Style="{StaticResource PropOptionPill}">
+                                        <TextBlock Text="Fire" Style="{StaticResource PropOptionText}"/>
+                                    </Border>
+                                    <Border x:Name="BlendIce" Tap="Blend_Tap" Tag="7" Style="{StaticResource PropOptionPill}">
+                                        <TextBlock Text="Ice" Style="{StaticResource PropOptionText}"/>
+                                    </Border>
+                                    <Border x:Name="BlendForest" Tap="Blend_Tap" Tag="8" Style="{StaticResource PropOptionPill}">
+                                        <TextBlock Text="Forest" Style="{StaticResource PropOptionText}"/>
+                                    </Border>
+                                    <Border x:Name="BlendCyber" Tap="Blend_Tap" Tag="9" Style="{StaticResource PropOptionPill}">
+                                        <TextBlock Text="Cyber" Style="{StaticResource PropOptionText}"/>
+                                    </Border>
+                                </StackPanel>
+                                </ScrollViewer>
+                            </StackPanel>
                         </StackPanel>
 
                     </StackPanel>
                 </ScrollViewer>
             </Border>
+        <!-- ═══════════════════════════════════════════════════ -->
+        <!--              BOTTOM TOOLBAR (Floating)             -->
+        <!-- ═══════════════════════════════════════════════════ -->
+        <Grid x:Name="BottomToolbar" VerticalAlignment="Bottom" Height="72" Background="#DD080814">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <StackPanel Margin="16,0" Tap="Toolbar_Wallpaper_Tap">
+                    <Border Width="48" Height="48" CornerRadius="24" Background="#33FFFFFF">
+                        <TextBlock Text="🖼" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="20"/>
+                    </Border>
+                </StackPanel>
+                <StackPanel Margin="16,0" Tap="Toolbar_Filter_Tap">
+                    <Border Width="48" Height="48" CornerRadius="24" Background="#33FFFFFF">
+                        <TextBlock Text="✨" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="20"/>
+                    </Border>
+                </StackPanel>
+                <StackPanel Margin="16,0" Tap="Toolbar_Depth_Tap">
+                    <Border Width="48" Height="48" CornerRadius="24" Background="#33FFFFFF">
+                        <TextBlock Text="🎭" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="20"/>
+                    </Border>
+                </StackPanel>
+                <StackPanel Margin="16,0" Tap="Toolbar_Color_Tap">
+                    <Border Width="48" Height="48" CornerRadius="24" Background="#33FFFFFF">
+                        <TextBlock Text="🎨" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="20"/>
+                    </Border>
+                </StackPanel>
+            </StackPanel>
         </Grid>
 
         <!-- ═══ ALIGNMENT GUIDES ═══ -->

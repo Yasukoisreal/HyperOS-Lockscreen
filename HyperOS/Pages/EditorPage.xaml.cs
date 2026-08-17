@@ -421,9 +421,7 @@ namespace HyperOS.Pages
             EdSigSpacing.Value = sigSpacing;
             UpdateSigAlignSelection();
             UpdateSigLayoutSelection();
-            UpdateSigColorSelection();
-            UpdateSigBlendSelection();
-
+            // Unified color selections updated on demand
             EdDepthClock.IsChecked = depthHourBehind; // For analog: entire clock behind
             EdDepthLayers.Visibility = useDepthEffect ? Visibility.Visible : Visibility.Collapsed;
             UpdateDepthRowVisibility();
@@ -630,9 +628,7 @@ namespace HyperOS.Pages
                 DrawAnalogClock(PAnalogClock, diameter, now.Hour, now.Minute, clockLayout);
             }
 
-            // Hide color options for analog clock
-            ColorSectionContainer.Visibility = isAnalog ? Visibility.Collapsed : Visibility.Visible;
-
+            // Color options for analog clock are not restricted currently
             // Date alignment
             ApplyDateAlign();
 
@@ -1153,6 +1149,7 @@ namespace HyperOS.Pages
         {
             var handle = (Border)sender;
             string tag = (string)handle.Tag;
+            PropPanel.Visibility = Visibility.Visible;
             SelectTab(tag);
             e.Handled = true;
         }
@@ -1222,6 +1219,7 @@ namespace HyperOS.Pages
         private void Background_Tap(object sender, System.Windows.Input.GestureEventArgs e)
         {
             SelectHandle(null);
+            PropPanel.Visibility = Visibility.Collapsed;
         }
 
         private bool toolbarHidden = false;
@@ -1232,7 +1230,7 @@ namespace HyperOS.Pages
 
             if (toolbarHidden)
             {
-                // Slide bottom controls down (out of view)
+                // Slide bottom toolbar down (out of view)
                 var sbDown = new System.Windows.Media.Animation.Storyboard();
                 var animBottom = new System.Windows.Media.Animation.DoubleAnimation
                 {
@@ -1240,10 +1238,13 @@ namespace HyperOS.Pages
                     EasingFunction = new System.Windows.Media.Animation.CubicEase
                     { EasingMode = System.Windows.Media.Animation.EasingMode.EaseIn }
                 };
-                System.Windows.Media.Animation.Storyboard.SetTarget(animBottom, BottomControls);
+                System.Windows.Media.Animation.Storyboard.SetTarget(animBottom, BottomToolbar);
                 System.Windows.Media.Animation.Storyboard.SetTargetProperty(animBottom,
                     new PropertyPath("(UIElement.RenderTransform).(CompositeTransform.TranslateY)"));
                 sbDown.Children.Add(animBottom);
+                
+                // Hide prop panel instantly
+                PropPanel.Visibility = Visibility.Collapsed;
 
                 // Fade header out
                 var animHeader = new System.Windows.Media.Animation.DoubleAnimation
@@ -1258,27 +1259,42 @@ namespace HyperOS.Pages
                 sbDown.Completed += (s, ev) =>
                 {
                     HeaderBar.IsHitTestVisible = false;
-                    BottomControls.IsHitTestVisible = false;
+                    BottomToolbar.IsHitTestVisible = false;
+                    PropPanel.IsHitTestVisible = false;
                 };
                 // Ensure transforms exist
-                if (!(BottomControls.RenderTransform is CompositeTransform))
-                    BottomControls.RenderTransform = new CompositeTransform();
+                if (!(BottomToolbar.RenderTransform is CompositeTransform))
+                    BottomToolbar.RenderTransform = new CompositeTransform();
+                if (!(PropPanel.RenderTransform is CompositeTransform))
+                    PropPanel.RenderTransform = new CompositeTransform();
                 sbDown.Begin();
             }
             else
             {
-                // Slide bottom controls back up
+                // Slide bottom toolbar up (into view)
                 var sbUp = new System.Windows.Media.Animation.Storyboard();
                 var animBottom = new System.Windows.Media.Animation.DoubleAnimation
                 {
-                    To = 0, Duration = TimeSpan.FromMilliseconds(250),
+                    To = 0, Duration = TimeSpan.FromMilliseconds(300),
                     EasingFunction = new System.Windows.Media.Animation.CubicEase
                     { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut }
                 };
-                System.Windows.Media.Animation.Storyboard.SetTarget(animBottom, BottomControls);
+                System.Windows.Media.Animation.Storyboard.SetTarget(animBottom, BottomToolbar);
                 System.Windows.Media.Animation.Storyboard.SetTargetProperty(animBottom,
                     new PropertyPath("(UIElement.RenderTransform).(CompositeTransform.TranslateY)"));
                 sbUp.Children.Add(animBottom);
+
+                // Slide prop panel up (into view)
+                var animPanel = new System.Windows.Media.Animation.DoubleAnimation
+                {
+                    To = 0, Duration = TimeSpan.FromMilliseconds(300),
+                    EasingFunction = new System.Windows.Media.Animation.CubicEase
+                    { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut }
+                };
+                System.Windows.Media.Animation.Storyboard.SetTarget(animPanel, PropPanel);
+                System.Windows.Media.Animation.Storyboard.SetTargetProperty(animPanel,
+                    new PropertyPath("(UIElement.RenderTransform).(CompositeTransform.TranslateY)"));
+                sbUp.Children.Add(animPanel);
 
                 // Fade header back in
                 var animHeader = new System.Windows.Media.Animation.DoubleAnimation
@@ -1291,7 +1307,8 @@ namespace HyperOS.Pages
                 sbUp.Children.Add(animHeader);
 
                 HeaderBar.IsHitTestVisible = true;
-                BottomControls.IsHitTestVisible = true;
+                BottomToolbar.IsHitTestVisible = true;
+                PropPanel.IsHitTestVisible = true;
                 sbUp.Begin();
             }
 
@@ -1302,31 +1319,23 @@ namespace HyperOS.Pages
 
         #region Tab Navigation
 
-        private void Tab_Tap(object sender, System.Windows.Input.GestureEventArgs e)
-        {
-            var border = (Border)sender;
-            string tag = (string)border.Tag;
-            SelectTab(tag);
-        }
+        // (Tab_Tap removed since bottom tabs are replaced by BottomToolbar)
 
         private void SelectTab(string tab)
         {
             selectedTab = tab;
 
-            // Update tab visuals
-            SetTabActive(TabClock, TabClockText, tab == "Clock");
-            SetTabActive(TabWeather, TabWeatherText, tab == "Weather");
-            SetTabActive(TabCountdown, TabCountdownText, tab == "Countdown");
-            SetTabActive(TabSignature, TabSignatureText, tab == "Signature");
-            SetTabActive(TabDisplay, TabDisplayText, tab == "Display");
-
             // Show corresponding properties
-            ClockProps.Visibility = tab == "Clock" ? Visibility.Visible : Visibility.Collapsed;
-            WeatherProps.Visibility = tab == "Weather" ? Visibility.Visible : Visibility.Collapsed;
-            CountdownProps.Visibility = tab == "Countdown" ? Visibility.Visible : Visibility.Collapsed;
-            SignatureProps.Visibility = tab == "Signature" ? Visibility.Visible : Visibility.Collapsed;
-            DisplayProps.Visibility = tab == "Display" ? Visibility.Visible : Visibility.Collapsed;
-
+            if (ClockProps != null) ClockProps.Visibility = tab == "Clock" ? Visibility.Visible : Visibility.Collapsed;
+            if (WeatherProps != null) WeatherProps.Visibility = tab == "Weather" ? Visibility.Visible : Visibility.Collapsed;
+            if (CountdownProps != null) CountdownProps.Visibility = tab == "Countdown" ? Visibility.Visible : Visibility.Collapsed;
+            if (SignatureProps != null) SignatureProps.Visibility = tab == "Signature" ? Visibility.Visible : Visibility.Collapsed;
+            if (DisplayProps != null) DisplayProps.Visibility = tab == "Display" ? Visibility.Visible : Visibility.Collapsed;
+            
+            if (ColorProps != null) ColorProps.Visibility = tab == "Color" ? Visibility.Visible : Visibility.Collapsed;
+            // if (FilterProps != null) FilterProps.Visibility = tab == "Filter" ? Visibility.Visible : Visibility.Collapsed;
+            // if (DepthProps != null) DepthProps.Visibility = tab == "Depth" ? Visibility.Visible : Visibility.Collapsed;
+            
             // Select corresponding handle on preview
             switch (tab)
             {
@@ -1338,12 +1347,31 @@ namespace HyperOS.Pages
             }
         }
 
-        private void SetTabActive(Border tab, TextBlock text, bool active)
+        private void Toolbar_Wallpaper_Tap(object sender, System.Windows.Input.GestureEventArgs e)
         {
-            tab.Background = active ? AccentBrush : InactiveTabBg;
-            text.Foreground = active ?
-                new SolidColorBrush(Colors.White) :
-                new SolidColorBrush(Color.FromArgb(0xAA, 0xFF, 0xFF, 0xFF));
+            // Just simulate a double tap to trigger full screen preview?
+            // Actually, we want to open a wallpaper picker. For now we just select Display tab.
+            PropPanel.Visibility = Visibility.Visible;
+            SelectTab("Display");
+        }
+
+        private void Toolbar_Filter_Tap(object sender, System.Windows.Input.GestureEventArgs e)
+        {
+            // We will implement filter tab later
+        }
+
+        private void Toolbar_Depth_Tap(object sender, System.Windows.Input.GestureEventArgs e)
+        {
+            // We will toggle depth later
+        }
+
+        private void Toolbar_Color_Tap(object sender, System.Windows.Input.GestureEventArgs e)
+        {
+            PropPanel.Visibility = Visibility.Visible;
+            SelectTab("Color");
+            UpdateColorScopeSelection();
+            UpdateColorSelection();
+            UpdateBlendSelection();
         }
 
         #endregion
@@ -1404,13 +1432,45 @@ namespace HyperOS.Pages
             }
         }
 
+        private string colorScope = "Clock";
+
+        private void ColorScope_Tap(object sender, System.Windows.Input.GestureEventArgs e)
+        {
+            var border = (Border)sender;
+            colorScope = (string)border.Tag;
+            UpdateColorScopeSelection();
+            UpdateColorSelection();
+            UpdateBlendSelection();
+        }
+
+        private void UpdateColorScopeSelection()
+        {
+            if (ColorScopeClock == null || ColorScopeSignature == null) return;
+            ColorScopeClock.Background = colorScope == "Clock" ? AccentBrush : TransparentBrush;
+            ((TextBlock)ColorScopeClock.Child).Foreground = colorScope == "Clock" ? new SolidColorBrush(Colors.White) : new SolidColorBrush(Color.FromArgb(0xCC, 0xFF, 0xFF, 0xFF));
+
+            ColorScopeSignature.Background = colorScope == "Signature" ? AccentBrush : TransparentBrush;
+            ((TextBlock)ColorScopeSignature.Child).Foreground = colorScope == "Signature" ? new SolidColorBrush(Colors.White) : new SolidColorBrush(Color.FromArgb(0xCC, 0xFF, 0xFF, 0xFF));
+        }
+
         private void Color_Tap(object sender, System.Windows.Input.GestureEventArgs e)
         {
             var el = (Ellipse)sender;
-            clockColor = int.Parse((string)el.Tag);
-            clockBlend = 0;
-            Save("ClockColor", clockColor);
-            Save("ClockBlend", 0);
+            int c = int.Parse((string)el.Tag);
+            if (colorScope == "Clock")
+            {
+                clockColor = c;
+                clockBlend = 0;
+                Save("ClockColor", clockColor);
+                Save("ClockBlend", 0);
+            }
+            else
+            {
+                sigColor = c;
+                sigBlend = 0;
+                Save("SignatureColor", sigColor);
+                Save("SignatureBlend", 0);
+            }
             UpdateColorSelection();
             UpdateBlendSelection();
             ApplyPreview();
@@ -1419,18 +1479,29 @@ namespace HyperOS.Pages
         private void UpdateColorSelection()
         {
             Ellipse[] circles = { ColorW, ColorG, ColorB, ColorP, ColorR, ColorMint, ColorLav, ColorOr, ColorCy, ColorSi };
+            int curColor = colorScope == "Clock" ? clockColor : sigColor;
+            int curBlend = colorScope == "Clock" ? clockBlend : sigBlend;
             for (int i = 0; i < circles.Length; i++)
             {
-                circles[i].Stroke = (i == clockColor && clockBlend == 0) ?
-                    SelectBrush : TransparentBrush;
+                if (circles[i] != null)
+                    circles[i].Stroke = (i == curColor && curBlend == 0) ? SelectBrush : TransparentBrush;
             }
         }
 
         private void Blend_Tap(object sender, System.Windows.Input.GestureEventArgs e)
         {
             var border = (Border)sender;
-            clockBlend = int.Parse((string)border.Tag);
-            Save("ClockBlend", clockBlend);
+            int b = int.Parse((string)border.Tag);
+            if (colorScope == "Clock")
+            {
+                clockBlend = b;
+                Save("ClockBlend", clockBlend);
+            }
+            else
+            {
+                sigBlend = b;
+                Save("SignatureBlend", sigBlend);
+            }
             UpdateBlendSelection();
             UpdateColorSelection();
             ApplyPreview();
@@ -1438,13 +1509,17 @@ namespace HyperOS.Pages
 
         private void UpdateBlendSelection()
         {
-            Border[] pills = { BlendNone, BlendSunset, BlendOcean, BlendAurora, BlendNeon, BlendRose, BlendFire, BlendIce, BlendLime, BlendTwilight };
+            Border[] pills = { BlendNone, BlendSunset, BlendOcean, BlendAurora, BlendNeon, BlendRose, BlendFire, BlendIce, BlendForest, BlendCyber };
+            int curBlend = colorScope == "Clock" ? clockBlend : sigBlend;
             for (int i = 0; i < pills.Length; i++)
             {
-                pills[i].Background = (i == clockBlend) ? AccentBrush : InactiveTabBg;
-                ((TextBlock)pills[i].Child).Foreground = (i == clockBlend) ?
-                    new SolidColorBrush(Colors.White) :
-                    new SolidColorBrush(Color.FromArgb(0xCC, 0xFF, 0xFF, 0xFF));
+                if (pills[i] != null)
+                {
+                    pills[i].Background = (i == curBlend) ? AccentBrush : InactiveTabBg;
+                    ((TextBlock)pills[i].Child).Foreground = (i == curBlend) ?
+                        new SolidColorBrush(Colors.White) :
+                        new SolidColorBrush(Color.FromArgb(0xCC, 0xFF, 0xFF, 0xFF));
+                }
             }
         }
 
@@ -1629,58 +1704,7 @@ namespace HyperOS.Pages
             }
         }
 
-        private void SigColor_Tap(object sender, System.Windows.Input.GestureEventArgs e)
-        {
-            var el = (Ellipse)sender;
-            sigColor = int.Parse((string)el.Tag);
-            sigBlend = 0;
-            Save("SignatureColor", sigColor);
-            Save("SignatureBlend", 0);
-            UpdateSigColorSelection();
-            UpdateSigBlendSelection();
-            ApplyPreview();
-        }
 
-        private void SigBlend_Tap(object sender, System.Windows.Input.GestureEventArgs e)
-        {
-            var border = (Border)sender;
-            sigBlend = int.Parse((string)border.Tag);
-            Save("SignatureBlend", sigBlend);
-            UpdateSigBlendSelection();
-            UpdateSigColorSelection();
-            ApplyPreview();
-        }
-
-
-
-        private void UpdateSigColorSelection()
-        {
-            if (SignatureProps == null) return;
-            Ellipse[] circles = { SigColorW, SigColorG, SigColorB, SigColorP, SigColorR, SigColorMint, SigColorLav, SigColorOr, SigColorCy, SigColorSi };
-            for (int i = 0; i < circles.Length; i++)
-            {
-                if (circles[i] != null)
-                {
-                    circles[i].Stroke = (i == sigColor && sigBlend == 0) ? SelectBrush : TransparentBrush;
-                }
-            }
-        }
-
-        private void UpdateSigBlendSelection()
-        {
-            if (SignatureProps == null) return;
-            Border[] pills = { SigBlendNone, SigBlendSunset, SigBlendOcean, SigBlendAurora, SigBlendNeon, SigBlendRose, SigBlendFire, SigBlendIce, SigBlendLime, SigBlendTwilight };
-            for (int i = 0; i < pills.Length; i++)
-            {
-                if (pills[i] != null)
-                {
-                    pills[i].Background = (i == sigBlend) ? AccentBrush : InactiveTabBg;
-                    ((TextBlock)pills[i].Child).Foreground = (i == sigBlend) ?
-                        new SolidColorBrush(Colors.White) :
-                        new SolidColorBrush(Color.FromArgb(0xCC, 0xFF, 0xFF, 0xFF));
-                }
-            }
-        }
 
         #endregion
 
