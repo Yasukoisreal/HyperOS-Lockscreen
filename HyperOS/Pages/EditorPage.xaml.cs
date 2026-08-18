@@ -2479,10 +2479,10 @@ namespace HyperOS.Pages
             string prompt = AIPromptTextBox.Text.Trim();
             if (string.IsNullOrEmpty(prompt)) prompt = aiSelectedStyle + " landscape scenery";
 
-            string token = Get<string>(IsolatedStorageSettings.ApplicationSettings, "HFApiToken", "").Trim();
+            string token = Get<string>(IsolatedStorageSettings.ApplicationSettings, "DeepAIApiKey", "").Trim();
             if (string.IsNullOrEmpty(token))
             {
-                MessageBox.Show("Vui lòng nhập Hugging Face Token trong mục Settings (API KEYS).", "Thiếu Token", MessageBoxButton.OK);
+                MessageBox.Show("Vui lòng nhập DeepAI API Key trong mục Settings.", "Thiếu API Key", MessageBoxButton.OK);
                 AIPromptDialog.Visibility = Visibility.Collapsed;
                 return;
             }
@@ -2490,55 +2490,78 @@ namespace HyperOS.Pages
             AIPromptDialog.Visibility = Visibility.Collapsed;
             if (FilterProcessingText != null)
             {
-                FilterProcessingText.Text = "Đang tạo ảnh AI (có thể mất 15-60s)...";
+                FilterProcessingText.Text = "Đang tạo ảnh AI qua DeepAI...";
                 FilterProcessingText.Visibility = Visibility.Visible;
             }
 
-            string modelUrl = "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0";
+            string modelUrl = "https://api.deepai.org/api/text2img";
             string fullPrompt = prompt + ", in " + aiSelectedStyle + " style, highly detailed, 4k wallpaper, masterpiece";
 
             try
             {
                 using (var client = new System.Net.Http.HttpClient())
                 {
-                    client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+                    client.DefaultRequestHeaders.Add("api-key", token);
                     
-                    string json = "{\"inputs\":\"" + fullPrompt.Replace("\"", "\\\"").Replace("\n", " ") + "\"}";
-                    var content = new System.Net.Http.StringContent(json, System.Text.Encoding.UTF8, "application/json");
+                    var content = new System.Net.Http.MultipartFormDataContent();
+                    content.Add(new System.Net.Http.StringContent(fullPrompt), "text");
 
                     var response = await client.PostAsync(modelUrl, content);
                     
                     if (response.IsSuccessStatusCode)
                     {
-                        byte[] imgBytes = await response.Content.ReadAsByteArrayAsync();
+                        string responseBody = await response.Content.ReadAsStringAsync();
+                        string outputUrl = "";
+                        var match = System.Text.RegularExpressions.Regex.Match(responseBody, "\"output_url\"\\s*:\\s*\"([^\"]+)\"");
+                        if (match.Success) {
+                            outputUrl = match.Groups[1].Value;
+                        }
 
-                        using (var store = IsolatedStorageFile.GetUserStoreForApplication())
+                        if (!string.IsNullOrEmpty(outputUrl))
                         {
-                            if (store.FileExists("Background_AI.jpg")) store.DeleteFile("Background_AI.jpg");
-                            using (var file = store.CreateFile("Background_AI.jpg"))
+                            var imgResponse = await client.GetAsync(outputUrl);
+                            if (imgResponse.IsSuccessStatusCode)
                             {
-                                file.Write(imgBytes, 0, imgBytes.Length);
+                                byte[] imgBytes = await imgResponse.Content.ReadAsByteArrayAsync();
+
+                                using (var store = IsolatedStorageFile.GetUserStoreForApplication())
+                                {
+                                    if (store.FileExists("Background_AI.jpg")) store.DeleteFile("Background_AI.jpg");
+                                    using (var file = store.CreateFile("Background_AI.jpg"))
+                                    {
+                                        file.Write(imgBytes, 0, imgBytes.Length);
+                                    }
+                                }
+
+                                if (FilterProcessingText != null) FilterProcessingText.Visibility = Visibility.Collapsed;
+                                MessageBox.Show("Tạo ảnh AI thành công!", "Thành công", MessageBoxButton.OK);
+
+                                using (var store = IsolatedStorageFile.GetUserStoreForApplication())
+                                {
+                                    if (store.FileExists("Background.jpg")) store.DeleteFile("Background.jpg");
+                                    store.CopyFile("Background_AI.jpg", "Background.jpg");
+                                }
+
+                                hasUnsavedChanges = true;
+                                LoadPreviewImages();
+                            }
+                            else
+                            {
+                                if (FilterProcessingText != null) FilterProcessingText.Visibility = Visibility.Collapsed;
+                                MessageBox.Show("Tạo xong nhưng tải ảnh thất bại.", "Lỗi", MessageBoxButton.OK);
                             }
                         }
-
-                        if (FilterProcessingText != null) FilterProcessingText.Visibility = Visibility.Collapsed;
-                        MessageBox.Show("Tạo ảnh AI thành công!", "Thành công", MessageBoxButton.OK);
-
-                        // Use the new AI image as background
-                        using (var store = IsolatedStorageFile.GetUserStoreForApplication())
+                        else
                         {
-                            if (store.FileExists("Background.jpg")) store.DeleteFile("Background.jpg");
-                            store.CopyFile("Background_AI.jpg", "Background.jpg");
+                            if (FilterProcessingText != null) FilterProcessingText.Visibility = Visibility.Collapsed;
+                            MessageBox.Show("Không tìm thấy link ảnh trả về từ DeepAI.", "Lỗi", MessageBoxButton.OK);
                         }
-
-                        hasUnsavedChanges = true;
-                        LoadPreviewImages();
                     }
                     else
                     {
                         string errBody = await response.Content.ReadAsStringAsync();
                         if (FilterProcessingText != null) FilterProcessingText.Visibility = Visibility.Collapsed;
-                        MessageBox.Show($"Lỗi từ server ({(int)response.StatusCode}): {errBody}\n\n(Nếu model đang ngủ, thử lại sau 30s)", "Lỗi API", MessageBoxButton.OK);
+                        MessageBox.Show($"Lỗi từ DeepAI ({(int)response.StatusCode}): {errBody}", "Lỗi API", MessageBoxButton.OK);
                     }
                 }
             }

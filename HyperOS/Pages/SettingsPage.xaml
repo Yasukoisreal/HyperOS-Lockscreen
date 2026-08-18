@@ -129,13 +129,13 @@
                     Foreground="#44FFFFFF" HorizontalAlignment="Center" Margin="0,4,0,0"
                     FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"/>
 
-                <!-- HUGGING FACE API TOKEN -->
-                <TextBlock Text="HUGGING FACE TOKEN" FontSize="13" Foreground="#55FFFFFF"
+                <!-- DEEPAI API TOKEN -->
+                <TextBlock Text="DEEPAI API KEY" FontSize="13" Foreground="#55FFFFFF"
                     FontFamily="/Assets/Fonts/MiSans-Demibold.ttf#MiSans" Margin="0,24,0,8"/>
-                <TextBox x:Name="HFApiKeyBox" Background="#14FFFFFF" Foreground="White"
+                <TextBox x:Name="DeepAIApiKeyBox" Background="#14FFFFFF" Foreground="White"
                     FontSize="14" FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"
-                    LostFocus="HFApiKey_LostFocus" InputScope="Url" BorderThickness="0"/>
-                <TextBlock Text="Free: huggingface.co/settings/tokens" FontSize="11"
+                    LostFocus="DeepAIApiKey_LostFocus" InputScope="Default" BorderThickness="0"/>
+                <TextBlock Text="Free: deepai.org/dashboard/profile" FontSize="11"
                     Foreground="#44FFFFFF" HorizontalAlignment="Center" Margin="0,4,0,0"
                     FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"/>
 
