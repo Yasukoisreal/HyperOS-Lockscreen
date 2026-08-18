@@ -69,27 +69,6 @@
                     <CubicEase EasingMode="EaseIn"/>
                 </DoubleAnimation.EasingFunction>
             </DoubleAnimation>
-            <DoubleAnimation Storyboard.TargetName="BehindForegroundGrid"
-                Storyboard.TargetProperty="(UIElement.RenderTransform).(CompositeTransform.TranslateY)"
-                From="30" To="0" Duration="0:0:0.4">
-                <DoubleAnimation.EasingFunction>
-                    <CubicEase EasingMode="EaseOut"/>
-                </DoubleAnimation.EasingFunction>
-            </DoubleAnimation>
-        </Storyboard>
-
-        <Storyboard x:Name="EnterMySetsAnim">
-            <DoubleAnimation Storyboard.TargetName="MySetsOverlay"
-                Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.35">
-                <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
-            </DoubleAnimation>
-        </Storyboard>
-
-        <Storyboard x:Name="ExitMySetsAnim" Completed="ExitMySetsAnim_Completed">
-            <DoubleAnimation Storyboard.TargetName="MySetsOverlay"
-                Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.35">
-                <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
-            </DoubleAnimation>
         </Storyboard>
 
         <!-- Clock fade-in animation -->
@@ -774,8 +753,8 @@
             </StackPanel>
         </Grid>
 
-        <!-- ============ MY SETS OVERLAY (Swapping presets) ============ -->
-        <Grid x:Name="MySetsOverlay" Visibility="Collapsed" Background="#EE111111" Opacity="0">
+        <!-- ============ MY SETS OVERLAY ============ -->
+        <Grid x:Name="MySetsOverlay" Visibility="Collapsed" Background="#EE111111">
             <!-- Header -->
             <Grid VerticalAlignment="Top" Margin="16,28,16,0" Canvas.ZIndex="10">
                 <TextBlock Text="My Sets"

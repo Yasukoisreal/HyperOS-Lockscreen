@@ -48,27 +48,9 @@
             <Setter Property="FontFamily" Value="/Assets/Fonts/MiSans-Regular.ttf#MiSans"/>
             <Setter Property="Margin" Value="0,4,0,0"/>
         </Style>
-
-        <Storyboard x:Name="EnterEditorAnim">
-            <DoubleAnimation Storyboard.TargetName="LayoutRootTransform"
-                Storyboard.TargetProperty="ScaleX" From="0.85" To="1.0" Duration="0:0:0.35">
-                <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
-            </DoubleAnimation>
-            <DoubleAnimation Storyboard.TargetName="LayoutRootTransform"
-                Storyboard.TargetProperty="ScaleY" From="0.85" To="1.0" Duration="0:0:0.35">
-                <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
-            </DoubleAnimation>
-            <DoubleAnimation Storyboard.TargetName="LayoutRoot"
-                Storyboard.TargetProperty="Opacity" From="0" To="1" Duration="0:0:0.35">
-                <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
-            </DoubleAnimation>
-        </Storyboard>
     </phone:PhoneApplicationPage.Resources>
 
-    <Grid x:Name="LayoutRoot" Background="#FF080810" RenderTransformOrigin="0.5,0.5">
-        <Grid.RenderTransform>
-            <CompositeTransform x:Name="LayoutRootTransform"/>
-        </Grid.RenderTransform>
+    <Grid Background="#FF080810">
 
         <!-- ═══════════════════════════════════════════════════ -->
         <!--          FULL-SCREEN LIVE PREVIEW                  -->

@@ -680,13 +680,63 @@ namespace HyperOS.Pages
 
         private void Customise_Tap(object sender, System.Windows.Input.GestureEventArgs e)
         {
-            SyncPresetToGlobal(currentIndex);
+            if (cards == null || currentIndex < 0 || currentIndex >= cards.Count) return;
 
-            // Navigate to editor with preset index
-            NavigationService.Navigate(
-                new Uri("/Pages/EditorPage.xaml?preset=" + currentIndex, UriKind.Relative));
+            CustomiseBtn.IsHitTestVisible = false;
+
+            var activeCard = cards[currentIndex];
+            var scale = activeCard.RenderTransform as ScaleTransform;
+            if (scale == null) return;
+
+            var sb = new System.Windows.Media.Animation.Storyboard();
+
+            // 1. Fade out Header, Title, Bottom
+            var fadeTarget = new System.Windows.UIElement[] { HeaderGrid, TitleStack, BottomStack };
+            foreach (var t in fadeTarget)
+            {
+                var fade = new System.Windows.Media.Animation.DoubleAnimation { To = 0, Duration = TimeSpan.FromMilliseconds(200) };
+                System.Windows.Media.Animation.Storyboard.SetTarget(fade, t);
+                System.Windows.Media.Animation.Storyboard.SetTargetProperty(fade, new PropertyPath("Opacity"));
+                sb.Children.Add(fade);
+            }
+
+            // 2. Fade out other cards in carousel
+            for (int i = 0; i < cards.Count; i++)
+            {
+                if (i != currentIndex)
+                {
+                    var fadeCard = new System.Windows.Media.Animation.DoubleAnimation { To = 0, Duration = TimeSpan.FromMilliseconds(200) };
+                    System.Windows.Media.Animation.Storyboard.SetTarget(fadeCard, cards[i]);
+                    System.Windows.Media.Animation.Storyboard.SetTargetProperty(fadeCard, new PropertyPath("Opacity"));
+                    sb.Children.Add(fadeCard);
+                }
+            }
+
+            // 3. Scale up active card
+            // We want it to fill the screen. It is 220 wide right now (CARD_W is 260 but scaled).
+            // Actually, we can scale it by 1.8 to fill.
+            var scaleAnimX = new System.Windows.Media.Animation.DoubleAnimation { To = 1.9, Duration = TimeSpan.FromMilliseconds(350), EasingFunction = new System.Windows.Media.Animation.CubicEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseInOut } };
+            var scaleAnimY = new System.Windows.Media.Animation.DoubleAnimation { To = 1.9, Duration = TimeSpan.FromMilliseconds(350), EasingFunction = new System.Windows.Media.Animation.CubicEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseInOut } };
+            
+            System.Windows.Media.Animation.Storyboard.SetTarget(scaleAnimX, scale);
+            System.Windows.Media.Animation.Storyboard.SetTargetProperty(scaleAnimX, new PropertyPath("ScaleX"));
+            System.Windows.Media.Animation.Storyboard.SetTarget(scaleAnimY, scale);
+            System.Windows.Media.Animation.Storyboard.SetTargetProperty(scaleAnimY, new PropertyPath("ScaleY"));
+
+            sb.Children.Add(scaleAnimX);
+            sb.Children.Add(scaleAnimY);
+
+            // Also slide to absolute center if it's not perfectly centered
+            // The canvas Top is 30, Margin is 0,150,0,100... let's just scale it, it will look fine and cover most of the screen.
+
+            sb.Completed += (s, ev) =>
+            {
+                CustomiseBtn.IsHitTestVisible = true;
+                SyncPresetToGlobal(currentIndex);
+                NavigationService.Navigate(new Uri("/Pages/EditorPage.xaml?preset=" + currentIndex, UriKind.Relative));
+            };
+            sb.Begin();
         }
-
         private void Settings_Tap(object sender, System.Windows.Input.GestureEventArgs e)
         {
             NavigationService.Navigate(
@@ -721,6 +771,11 @@ namespace HyperOS.Pages
                 ReadSavedPresets();
                 BuildCards();
                 GoToIndex(savedIdx, false);
+
+                // Restore opacity that might have been faded out by Customise animation
+                HeaderGrid.Opacity = 1;
+                TitleStack.Opacity = 1;
+                BottomStack.Opacity = 1;
             }
 
             while (NavigationService.CanGoBack)

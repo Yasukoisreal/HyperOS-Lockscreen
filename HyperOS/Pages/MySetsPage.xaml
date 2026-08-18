@@ -8,9 +8,9 @@
     shell:SystemTray.IsVisible="False"
     Loaded="Page_Loaded">
 
-    <Grid Background="#111111">
+    <Grid x:Name="LayoutRoot" Background="#111111">
         <!-- Header -->
-        <Grid VerticalAlignment="Top" Margin="16,28,16,0" Canvas.ZIndex="10">
+        <Grid x:Name="HeaderGrid" VerticalAlignment="Top" Margin="16,28,16,0" Canvas.ZIndex="10">
             <!-- Exit -->
             <Border HorizontalAlignment="Left" Background="#444444" CornerRadius="14" Padding="16,6" Tap="Exit_Tap">
                 <TextBlock Text="Exit" FontSize="14" Foreground="White" FontFamily="/Assets/Fonts/MiSans-Demibold.ttf#MiSans"/>
@@ -29,7 +29,7 @@
         </Grid>
 
         <!-- Title -->
-        <StackPanel VerticalAlignment="Top" Margin="24,60,24,0" Canvas.ZIndex="10">
+        <StackPanel x:Name="TitleStack" VerticalAlignment="Top" Margin="24,60,24,0" Canvas.ZIndex="10">
             <TextBlock x:Name="SetCategory" Text="CLASSIC"
                 FontFamily="/Assets/Fonts/MiSans-Demibold.ttf#MiSans"
                 FontSize="12" Foreground="#AAFFFFFF" HorizontalAlignment="Center"
@@ -53,7 +53,7 @@
         </Canvas>
 
         <!-- Bottom -->
-        <StackPanel VerticalAlignment="Bottom" Margin="0,0,0,20" HorizontalAlignment="Center">
+        <StackPanel x:Name="BottomStack" VerticalAlignment="Bottom" Margin="0,0,0,20" HorizontalAlignment="Center">
             <Border x:Name="CustomiseBtn" Tap="Customise_Tap"
                 Background="#55FFFFFF" CornerRadius="22" Padding="36,10"
                 Margin="0,0,0,14">
