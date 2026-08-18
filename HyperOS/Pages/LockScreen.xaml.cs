@@ -70,6 +70,9 @@ namespace HyperOS.Pages
         private bool showWeather = false;
         private double weatherLat = 0;
         private double weatherLon = 0;
+        private bool weatherRequestInFlight = false;
+        private DateTime lastWeatherFetchUtc = DateTime.MinValue;
+        private static readonly TimeSpan WeatherMinRefreshInterval = TimeSpan.FromMinutes(5);
 
         // Countdown
         private bool showCountdown = false;
@@ -146,7 +149,7 @@ namespace HyperOS.Pages
             {
                 weatherTimer.Start();
                 LoadCachedWeather(); // Show cached data immediately
-                FetchWeather();      // Then refresh from API
+                FetchWeather(true);  // Then refresh from API
             }
 
             // Load depth effect BEFORE animations so animation knows which parts to skip
@@ -206,7 +209,7 @@ namespace HyperOS.Pages
                     if (showWeather)
                     {
                         if (!weatherTimer.IsEnabled) weatherTimer.Start();
-                        FetchWeather();
+                        FetchWeather(true);
                     }
                     else
                     {
@@ -1516,7 +1519,7 @@ namespace HyperOS.Pages
 
         #region Weather
 
-        private void FetchWeather()
+        private void FetchWeather(bool force = false)
         {
             if (!showWeather || (weatherLat == 0 && weatherLon == 0))
             {
@@ -1527,8 +1530,18 @@ namespace HyperOS.Pages
             // Show cached weather immediately while fetching new data
             LoadCachedWeather();
 
+            if (weatherRequestInFlight) return;
+            if (!force && lastWeatherFetchUtc != DateTime.MinValue
+                && (DateTime.UtcNow - lastWeatherFetchUtc) < WeatherMinRefreshInterval)
+            {
+                return;
+            }
+
             try
             {
+                weatherRequestInFlight = true;
+                lastWeatherFetchUtc = DateTime.UtcNow;
+
                 // Use HTTP (not HTTPS) — WP8.1 has TLS compatibility issues
                 string url = string.Format(
                     "http://api.open-meteo.com/v1/forecast?latitude={0}&longitude={1}&current_weather=true",
@@ -1578,10 +1591,15 @@ namespace HyperOS.Pages
                     {
                         Dispatcher.BeginInvoke(() => LoadCachedWeather());
                     }
+                    finally
+                    {
+                        weatherRequestInFlight = false;
+                    }
                 }, null);
             }
             catch
             {
+                weatherRequestInFlight = false;
                 LoadCachedWeather();
             }
         }
