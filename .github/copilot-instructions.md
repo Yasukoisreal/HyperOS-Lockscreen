@@ -1,4 +1,4 @@
-﻿# GitHub Copilot Instructions — HyperOS Live Lock Screen
+# GitHub Copilot Instructions — HyperOS Live Lock Screen
 
 You are assisting with a **Windows Phone 8.1 Silverlight** project. Prioritize correctness, XAML compatibility, and memory efficiency over modern patterns.
 
@@ -62,3 +62,4 @@ If you are running autonomously (via Copilot Edits or Agent mode with terminal a
 2. **Surgical Changes:** Use precise diffs/replacements. Do NOT reformat or alter existing comments, indentation, or style in unrelated blocks.
 3. **Verify before completing:** Always run build after code changes to catch WP8.1 Silverlight syntax/API errors:
    `& "C:\Program Files (x86)\MSBuild\14.0\Bin\MSBuild.exe" "HyperOS.sln" /t:Build /p:Configuration=Debug /p:Platform="x86"`
+4. **Git Version Control:** Once the build succeeds and the task is fully completed, ALWAYS automatically run `git add .` and create a clear, meaningful commit (`git commit -m "..."`).
