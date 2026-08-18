@@ -2494,7 +2494,8 @@ namespace HyperOS.Pages
                 FilterProcessingText.Visibility = Visibility.Visible;
             }
 
-            string modelUrl = "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0";
+            // Use a smaller, more reliable model for the Free API tier
+            string modelUrl = "https://api-inference.huggingface.co/models/runwayml/stable-diffusion-v1-5";
             var request = (System.Net.HttpWebRequest)System.Net.WebRequest.Create(modelUrl);
             request.Method = "POST";
             request.ContentType = "application/json";
@@ -2552,12 +2553,34 @@ namespace HyperOS.Pages
                                 });
                             }
                         }
+                        catch (System.Net.WebException ex)
+                        {
+                            string errStr = ex.Message;
+                            if (ex.Response != null)
+                            {
+                                try
+                                {
+                                    using (var errStream = ex.Response.GetResponseStream())
+                                    using (var reader = new System.IO.StreamReader(errStream))
+                                    {
+                                        string errBody = reader.ReadToEnd();
+                                        if (!string.IsNullOrEmpty(errBody)) errStr = errBody;
+                                    }
+                                }
+                                catch { }
+                            }
+                            Dispatcher.BeginInvoke(() =>
+                            {
+                                if (FilterProcessingText != null) FilterProcessingText.Visibility = Visibility.Collapsed;
+                                MessageBox.Show("Lỗi khi tải ảnh: " + errStr + "\n(Nếu model đang ngủ, vui lòng thử lại sau 30s)", "Lỗi API", MessageBoxButton.OK);
+                            });
+                        }
                         catch (Exception ex)
                         {
                             Dispatcher.BeginInvoke(() =>
                             {
                                 if (FilterProcessingText != null) FilterProcessingText.Visibility = Visibility.Collapsed;
-                                MessageBox.Show("Lỗi khi tải ảnh: " + ex.Message + "\n(Model có thể đang ngủ, thử lại sau 30s)", "Lỗi", MessageBoxButton.OK);
+                                MessageBox.Show("Lỗi: " + ex.Message, "Lỗi", MessageBoxButton.OK);
                             });
                         }
                     }, null);
