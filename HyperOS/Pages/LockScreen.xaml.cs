@@ -1860,7 +1860,10 @@ namespace HyperOS.Pages
             msCurrentIndex = startIdx;
             msOffsetX = 0;
             MSGoToIndex(startIdx, false);
+            
+            MySetsOverlay.Opacity = 0;
             MySetsOverlay.Visibility = Visibility.Visible;
+            EnterMySetsAnim.Begin();
         }
 
         private Border BuildMSCard(MSPreset preset, int index)
@@ -2143,7 +2146,7 @@ namespace HyperOS.Pages
 
             s["ActivePresetIndex"] = msCurrentIndex;
             s.Save();
-            MySetsOverlay.Visibility = Visibility.Collapsed;
+            ExitMySetsAnim.Begin();
 
             // Reload lock screen with new settings
             LoadSettings();
@@ -2162,6 +2165,11 @@ namespace HyperOS.Pages
         }
 
         private void MySets_Close_Tap(object sender, System.Windows.Input.GestureEventArgs e)
+        {
+            ExitMySetsAnim.Begin();
+        }
+
+        private void ExitMySetsAnim_Completed(object sender, EventArgs e)
         {
             MySetsOverlay.Visibility = Visibility.Collapsed;
         }

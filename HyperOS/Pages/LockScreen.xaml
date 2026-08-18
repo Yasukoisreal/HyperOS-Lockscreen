@@ -69,6 +69,43 @@
                     <CubicEase EasingMode="EaseIn"/>
                 </DoubleAnimation.EasingFunction>
             </DoubleAnimation>
+            <DoubleAnimation Storyboard.TargetName="BehindForegroundGrid"
+                Storyboard.TargetProperty="(UIElement.RenderTransform).(CompositeTransform.TranslateY)"
+                From="30" To="0" Duration="0:0:0.4">
+                <DoubleAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseOut"/>
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+        </Storyboard>
+
+        <Storyboard x:Name="EnterMySetsAnim">
+            <DoubleAnimation Storyboard.TargetName="LockScreenPanelTransform"
+                Storyboard.TargetProperty="ScaleX" To="0.85" Duration="0:0:0.35">
+                <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+            <DoubleAnimation Storyboard.TargetName="LockScreenPanelTransform"
+                Storyboard.TargetProperty="ScaleY" To="0.85" Duration="0:0:0.35">
+                <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+            <DoubleAnimation Storyboard.TargetName="MySetsOverlay"
+                Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.35">
+                <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+        </Storyboard>
+
+        <Storyboard x:Name="ExitMySetsAnim" Completed="ExitMySetsAnim_Completed">
+            <DoubleAnimation Storyboard.TargetName="LockScreenPanelTransform"
+                Storyboard.TargetProperty="ScaleX" To="1.0" Duration="0:0:0.35">
+                <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+            <DoubleAnimation Storyboard.TargetName="LockScreenPanelTransform"
+                Storyboard.TargetProperty="ScaleY" To="1.0" Duration="0:0:0.35">
+                <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+            <DoubleAnimation Storyboard.TargetName="MySetsOverlay"
+                Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.35">
+                <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
         </Storyboard>
 
         <!-- Clock fade-in animation -->
@@ -383,7 +420,10 @@
         </VisualStateManager.VisualStateGroups>
 
         <!-- ============ LOCK SCREEN PANEL ============ -->
-        <Grid x:Name="LockScreenPanel">
+        <Grid x:Name="LockScreenPanel" RenderTransformOrigin="0.5,0.5">
+            <Grid.RenderTransform>
+                <CompositeTransform x:Name="LockScreenPanelTransform"/>
+            </Grid.RenderTransform>
 
             <!-- Background Image — Full screen -->
             <Border x:Name="BackgroundImage" CacheMode="BitmapCache" RenderTransformOrigin="0.5,0.5">
@@ -753,8 +793,8 @@
             </StackPanel>
         </Grid>
 
-        <!-- ============ MY SETS OVERLAY ============ -->
-        <Grid x:Name="MySetsOverlay" Visibility="Collapsed" Background="#EE111111">
+        <!-- ============ MY SETS OVERLAY (Swapping presets) ============ -->
+        <Grid x:Name="MySetsOverlay" Visibility="Collapsed" Background="#EE111111" Opacity="0">
             <!-- Header -->
             <Grid VerticalAlignment="Top" Margin="16,28,16,0" Canvas.ZIndex="10">
                 <TextBlock Text="My Sets"

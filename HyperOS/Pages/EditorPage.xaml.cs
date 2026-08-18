@@ -132,6 +132,7 @@ namespace HyperOS.Pages
 
         private void EditorPage_Loaded(object sender, RoutedEventArgs e)
         {
+            EnterEditorAnim.Begin();
             isLoading = true;
             LoadAllSettings();
             LoadPreviewImages();
