@@ -149,9 +149,23 @@ namespace HyperOS.Pages
         private void SavePin_Click(object sender, RoutedEventArgs e)
         {
             string pin = PinBox.Text.Trim();
-            if (pin.Length != 4)
+            bool valid = pin.Length == 4;
+            if (valid)
             {
-                MessageBox.Show("PIN phải có đúng 4 chữ số.", "Sai định dạng", MessageBoxButton.OK);
+                for (int i = 0; i < pin.Length; i++)
+                {
+                    char c = pin[i];
+                    if (c < '0' || c > '9')
+                    {
+                        valid = false;
+                        break;
+                    }
+                }
+            }
+
+            if (!valid)
+            {
+                MessageBox.Show("PIN phải có đúng 4 chữ số (0-9).", "Sai định dạng", MessageBoxButton.OK);
                 return;
             }
             Save("sPassword", pin);

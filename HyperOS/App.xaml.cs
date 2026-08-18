@@ -57,31 +57,6 @@ namespace HyperOS
             }
 
         }
-
-        // Code to execute when a contract activation such as a file open or save picker returns 
-        // with the picked file or other return values
-        private async void Application_ContractActivated(object sender, Windows.ApplicationModel.Activation.IActivatedEventArgs e)
-        {
-            var fileArgs = e as Windows.ApplicationModel.Activation.FileOpenPickerContinuationEventArgs;
-            if (fileArgs != null && fileArgs.Files != null && fileArgs.Files.Count > 0)
-            {
-                var file = fileArgs.Files[0];
-                try
-                {
-                    var stream = await file.OpenStreamForReadAsync();
-                    // Foreground PNG for depth effect
-                    using (var store = System.IO.IsolatedStorage.IsolatedStorageFile.GetUserStoreForApplication())
-                    using (var iso = store.OpenFile("Foreground.png", System.IO.FileMode.Create, System.IO.FileAccess.Write))
-                    {
-                        stream.CopyTo(iso);
-                    }
-                    stream.Dispose();
-                    MessageBox.Show("Foreground PNG saved!", "Success", MessageBoxButton.OK);
-                }
-                catch { MessageBox.Show("Error saving file.", "Error", MessageBoxButton.OK); }
-            }
-        }
-
         // Code to execute when the application is launching (eg, from Start)
         // This code will not execute when the application is reactivated
         private void Application_Launching(object sender, LaunchingEventArgs e)
@@ -163,9 +138,6 @@ namespace HyperOS
 
             // Handle reset requests for clearing the backstack
             RootFrame.Navigated += CheckForResetNavigation;
-
-            // Handle contract activation such as a file open or save picker
-            PhoneApplicationService.Current.ContractActivated += Application_ContractActivated;
 
             // Ensure we don't initialize again
             phoneApplicationInitialized = true;

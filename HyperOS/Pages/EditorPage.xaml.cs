@@ -90,6 +90,7 @@ namespace HyperOS.Pages
         private System.Collections.Generic.Dictionary<string, object> settingsSnapshot;
 
         private PhotoChooserTask photoChooser;
+        private PhotoChooserTask foregroundChooser;
 
         public EditorPage()
         {
@@ -97,6 +98,10 @@ namespace HyperOS.Pages
             photoChooser = new PhotoChooserTask();
             photoChooser.ShowCamera = true;
             photoChooser.Completed += PhotoChooser_Completed;
+
+            foregroundChooser = new PhotoChooserTask();
+            foregroundChooser.ShowCamera = true;
+            foregroundChooser.Completed += ForegroundChooser_Completed;
         }
 
         private void PhotoChooser_Completed(object sender, PhotoResult args)
@@ -116,7 +121,6 @@ namespace HyperOS.Pages
                     // Reload for preview
                     args.ChosenPhoto.Position = 0;
                     var bmp = new BitmapImage();
-                    bmp.DecodePixelWidth = 480; // Optimize RAM for preview
                     bmp.SetSource(args.ChosenPhoto);
                     PreviewBgBrush.ImageSource = bmp;
                     hasUnsavedChanges = true;
@@ -125,6 +129,44 @@ namespace HyperOS.Pages
                 {
                     MessageBox.Show("Error: " + ex.Message, "Error", MessageBoxButton.OK);
                 }
+            }
+        }
+
+        private void ForegroundChooser_Completed(object sender, PhotoResult args)
+        {
+            if (args.TaskResult != TaskResult.OK || args.ChosenPhoto == null)
+                return;
+
+            try
+            {
+                using (var store = IsolatedStorageFile.GetUserStoreForApplication())
+                {
+                    if (store.FileExists("Foreground.png"))
+                        store.DeleteFile("Foreground.png");
+
+                    using (var stream = store.CreateFile("Foreground.png"))
+                    {
+                        args.ChosenPhoto.Position = 0;
+                        args.ChosenPhoto.CopyTo(stream);
+                    }
+                }
+
+                if (!useDepthEffect)
+                {
+                    useDepthEffect = true;
+                    Save("UseDepthEffect", true);
+                    EdDepthToggle.IsChecked = true;
+                    EdDepthLayers.Visibility = Visibility.Visible;
+                }
+
+                hasUnsavedChanges = true;
+                LoadPreviewImages();
+                Dispatcher.BeginInvoke(() => UpdateDepthFrontLayer());
+                MessageBox.Show("Foreground đã được lưu!", "Thành công", MessageBoxButton.OK);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error: " + ex.Message, "Error", MessageBoxButton.OK);
             }
         }
 
@@ -475,6 +517,16 @@ namespace HyperOS.Pages
         private void Save(string key, object val)
         {
             var s = IsolatedStorageSettings.ApplicationSettings;
+            if (s.Contains(key))
+            {
+                var existing = s[key];
+                if ((existing == null && val == null)
+                    || (existing != null && existing.Equals(val)))
+                {
+                    return;
+                }
+            }
+
             s[key] = val;
             s.Save();
             if (!isLoading) hasUnsavedChanges = true;
@@ -497,7 +549,6 @@ namespace HyperOS.Pages
                             FileMode.Open, FileAccess.Read))
                         {
                             var bmp = new BitmapImage();
-                            bmp.DecodePixelWidth = 480; // RAM: match preview width
                             bmp.SetSource(stream);
                             PreviewBgBrush.ImageSource = bmp;
                         }
@@ -508,7 +559,6 @@ namespace HyperOS.Pages
                             FileMode.Open, FileAccess.Read))
                         {
                             var bmp = new BitmapImage();
-                            bmp.DecodePixelWidth = 480; // RAM: match preview width
                             bmp.SetSource(stream);
                             PreviewFgBrush.ImageSource = bmp;
                             PreviewFg.Visibility = Visibility.Visible;
@@ -2035,10 +2085,8 @@ namespace HyperOS.Pages
 
         private void EdForeground_Click(object sender, RoutedEventArgs e)
         {
-            var picker = new Windows.Storage.Pickers.FileOpenPicker();
-            picker.FileTypeFilter.Add(".png");
-            picker.SuggestedStartLocation = Windows.Storage.Pickers.PickerLocationId.PicturesLibrary;
-            picker.PickSingleFileAndContinue();
+            // WP8.1 Silverlight-compatible foreground picker.
+            foregroundChooser.Show();
         }
 
         private void EdAutoExtract_Click(object sender, RoutedEventArgs e)

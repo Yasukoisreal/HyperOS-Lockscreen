@@ -181,9 +181,12 @@ namespace HyperOS.Pages
 
             if (!isFirstLoad)
             {
+                bool isBackNavigation =
+                    e.NavigationMode == System.Windows.Navigation.NavigationMode.Back;
+
                 // Only do a full reload when user navigates BACK from EditorPage/Settings.
                 // Skip reload on OS resume (Reset) — the page is already in memory.
-                if (e.NavigationMode == System.Windows.Navigation.NavigationMode.Back)
+                if (isBackNavigation)
                 {
                     // User changed settings, reload everything
                     LoadSettings();
@@ -215,6 +218,20 @@ namespace HyperOS.Pages
                     PlayEntryAnimations();
                 }
 
+                EnsureTimersRunning();
+                if (!isBackNavigation)
+                {
+                    lastTimeText = "";
+                    UpdateTime();
+                    UpdateBattery();
+                    UpdateCountdown();
+                    if (showWeather)
+                    {
+                        LoadCachedWeather();
+                        FetchWeather();
+                    }
+                }
+
                 // Always reset swipe overlay & security grids on any resume
                 var t = (CompositeTransform)OverlayInformationPanel.RenderTransform;
                 t.TranslateY = 0;
@@ -226,6 +243,24 @@ namespace HyperOS.Pages
                 PassGrid.Visibility = Visibility.Collapsed;
                 PatternGrid.Visibility = Visibility.Collapsed;
                 RecoverGrid.Visibility = Visibility.Collapsed;
+            }
+        }
+
+        private void EnsureTimersRunning()
+        {
+            if (timer != null && !timer.IsEnabled) timer.Start();
+            if (batteryTimer != null && !batteryTimer.IsEnabled) batteryTimer.Start();
+
+            if (weatherTimer != null)
+            {
+                if (showWeather)
+                {
+                    if (!weatherTimer.IsEnabled) weatherTimer.Start();
+                }
+                else if (weatherTimer.IsEnabled)
+                {
+                    weatherTimer.Stop();
+                }
             }
         }
 
@@ -1670,8 +1705,15 @@ namespace HyperOS.Pages
                 return;
             }
 
-            // Block back on lock screen — cannot exit
-            e.Cancel = true;
+            // Block back only when app is currently acting as lock screen.
+            try
+            {
+                e.Cancel = SystemProtection.ScreenLocked;
+            }
+            catch
+            {
+                e.Cancel = true;
+            }
         }
 
         #endregion
