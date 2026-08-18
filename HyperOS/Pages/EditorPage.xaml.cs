@@ -2494,7 +2494,7 @@ namespace HyperOS.Pages
                 FilterProcessingText.Visibility = Visibility.Visible;
             }
 
-            string modelUrl = "https://api-inference.huggingface.co/models/prompthero/openjourney";
+            string modelUrl = "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0";
             string fullPrompt = prompt + ", in " + aiSelectedStyle + " style, highly detailed, 4k wallpaper, masterpiece";
 
             try
