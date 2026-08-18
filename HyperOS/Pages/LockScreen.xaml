@@ -393,7 +393,16 @@
                 </Border.Background>
             </Border>
 
-
+            <!-- Bottom gradient overlay for background (Behind clock) -->
+            <Rectangle VerticalAlignment="Bottom" Height="420" CacheMode="BitmapCache" IsHitTestVisible="False">
+                <Rectangle.Fill>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                        <GradientStop Color="#00000000" Offset="0"/>
+                        <GradientStop Color="#99000000" Offset="0.5"/>
+                        <GradientStop Color="#CC000000" Offset="1"/>
+                    </LinearGradientBrush>
+                </Rectangle.Fill>
+            </Rectangle>
 
             <!-- ═══ BEHIND FOREGROUND LAYER — clock parts behind subject ═══ -->
             <Grid x:Name="BehindForegroundGrid" IsHitTestVisible="False" Visibility="Collapsed">
@@ -466,7 +475,7 @@
             </Border>
 
             <!-- Bottom gradient overlay for text readability (Moved to front of Depth Effect) -->
-            <Rectangle VerticalAlignment="Bottom" Height="420" CacheMode="BitmapCache" IsHitTestVisible="False">
+            <Rectangle VerticalAlignment="Bottom" Height="180" CacheMode="BitmapCache" IsHitTestVisible="False">
                 <Rectangle.Fill>
                     <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
                         <GradientStop Color="#00000000" Offset="0"/>
