@@ -349,7 +349,7 @@ namespace HyperOS.Pages
                 Background = bg,
                 Tag = index,
                 RenderTransformOrigin = new Point(0.5, 0.5),
-                RenderTransform = new ScaleTransform(),
+                RenderTransform = new CompositeTransform(),
             };
 
             var inner = new Grid { Width = CARD_W, Height = CARD_H };
@@ -555,7 +555,7 @@ namespace HyperOS.Pages
                 double scale = 1.0 - 0.15 * t;   // 1.0 → 0.85
                 double opacity = 1.0 - 0.5 * t;   // 1.0 → 0.5
 
-                var ct = (ScaleTransform)cards[i].RenderTransform;
+                var ct = (CompositeTransform)cards[i].RenderTransform;
                 ct.ScaleX = scale;
                 ct.ScaleY = scale;
                 cards[i].Opacity = opacity;
@@ -685,7 +685,7 @@ namespace HyperOS.Pages
             CustomiseBtn.IsHitTestVisible = false;
 
             var activeCard = cards[currentIndex];
-            var scale = activeCard.RenderTransform as ScaleTransform;
+            var scale = activeCard.RenderTransform as CompositeTransform;
             if (scale == null) return;
 
             var sb = new System.Windows.Media.Animation.Storyboard();
@@ -712,22 +712,24 @@ namespace HyperOS.Pages
                 }
             }
 
-            // 3. Scale up active card
-            // We want it to fill the screen. It is 220 wide right now (CARD_W is 260 but scaled).
-            // Actually, we can scale it by 1.8 to fill.
-            var scaleAnimX = new System.Windows.Media.Animation.DoubleAnimation { To = 1.9, Duration = TimeSpan.FromMilliseconds(350), EasingFunction = new System.Windows.Media.Animation.CubicEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseInOut } };
-            var scaleAnimY = new System.Windows.Media.Animation.DoubleAnimation { To = 1.9, Duration = TimeSpan.FromMilliseconds(350), EasingFunction = new System.Windows.Media.Animation.CubicEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseInOut } };
+            // 3. Scale up active card to fill the screen
+            // CARD_W = 200, Screen = 480. Scale = 480 / 200 = 2.4.
+            // Screen center Y is 400. Card center Y is 150 + 30 + 180 = 360.
+            // TranslateY needs to be 40 to perfectly center it.
+            var scaleAnimX = new System.Windows.Media.Animation.DoubleAnimation { To = 2.4, Duration = TimeSpan.FromMilliseconds(450), EasingFunction = new System.Windows.Media.Animation.CubicEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseInOut } };
+            var scaleAnimY = new System.Windows.Media.Animation.DoubleAnimation { To = 2.4, Duration = TimeSpan.FromMilliseconds(450), EasingFunction = new System.Windows.Media.Animation.CubicEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseInOut } };
+            var transAnimY = new System.Windows.Media.Animation.DoubleAnimation { To = 40, Duration = TimeSpan.FromMilliseconds(450), EasingFunction = new System.Windows.Media.Animation.CubicEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseInOut } };
             
             System.Windows.Media.Animation.Storyboard.SetTarget(scaleAnimX, scale);
             System.Windows.Media.Animation.Storyboard.SetTargetProperty(scaleAnimX, new PropertyPath("ScaleX"));
             System.Windows.Media.Animation.Storyboard.SetTarget(scaleAnimY, scale);
             System.Windows.Media.Animation.Storyboard.SetTargetProperty(scaleAnimY, new PropertyPath("ScaleY"));
+            System.Windows.Media.Animation.Storyboard.SetTarget(transAnimY, scale);
+            System.Windows.Media.Animation.Storyboard.SetTargetProperty(transAnimY, new PropertyPath("TranslateY"));
 
             sb.Children.Add(scaleAnimX);
             sb.Children.Add(scaleAnimY);
-
-            // Also slide to absolute center if it's not perfectly centered
-            // The canvas Top is 30, Margin is 0,150,0,100... let's just scale it, it will look fine and cover most of the screen.
+            sb.Children.Add(transAnimY);
 
             sb.Completed += (s, ev) =>
             {
