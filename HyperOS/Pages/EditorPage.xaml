@@ -789,9 +789,34 @@
                     <TextBlock Text="AI Wallpaper" FontSize="22" FontWeight="Bold" 
                                Foreground="White" Margin="0,0,0,8"
                                FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"/>
-                    <TextBlock Text="Enter prompt for the AI to generate:"
-                               FontSize="15" Foreground="#BBFFFFFF" TextWrapping="Wrap"
-                               Margin="0,0,0,10"
+                    
+                    <TextBlock Text="STYLE" FontSize="13" Foreground="#88FFFFFF" Margin="0,0,0,4"/>
+                    <Grid Margin="0,0,0,10">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Border x:Name="AIStyleAnime" Grid.Row="0" Grid.Column="0" Tap="AIStyle_Tap" Tag="Anime" Style="{StaticResource PropOptionPill}" Background="#3A7BF2" Margin="0,0,4,4">
+                            <TextBlock Text="Anime" Style="{StaticResource PropOptionText}" HorizontalAlignment="Center" Foreground="White"/>
+                        </Border>
+                        <Border x:Name="AIStyle3D" Grid.Row="0" Grid.Column="1" Tap="AIStyle_Tap" Tag="3D Cartoon" Style="{StaticResource PropOptionPill}" Margin="4,0,0,4">
+                            <TextBlock Text="3D Cartoon" Style="{StaticResource PropOptionText}" HorizontalAlignment="Center"/>
+                        </Border>
+                        <Border x:Name="AIStyleInk" Grid.Row="1" Grid.Column="0" Tap="AIStyle_Tap" Tag="Ink Painting" Style="{StaticResource PropOptionPill}" Margin="0,4,4,0">
+                            <TextBlock Text="Ink Painting" Style="{StaticResource PropOptionText}" HorizontalAlignment="Center"/>
+                        </Border>
+                        <Border x:Name="AIStyleOil" Grid.Row="1" Grid.Column="1" Tap="AIStyle_Tap" Tag="Oil Painting" Style="{StaticResource PropOptionPill}" Margin="4,4,0,0">
+                            <TextBlock Text="Oil Painting" Style="{StaticResource PropOptionText}" HorizontalAlignment="Center"/>
+                        </Border>
+                    </Grid>
+
+                    <TextBlock Text="Custom Prompt (optional):"
+                               FontSize="13" Foreground="#BBFFFFFF" TextWrapping="Wrap"
+                               Margin="0,0,0,4"
                                FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"/>
                     <TextBox x:Name="AIPromptTextBox" Background="#22FFFFFF" Foreground="White" BorderThickness="0" Margin="0,0,0,20"/>
                     <Grid>

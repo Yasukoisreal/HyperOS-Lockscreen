@@ -2468,10 +2468,28 @@ namespace HyperOS.Pages
             AIPromptDialog.Visibility = Visibility.Collapsed;
         }
 
+        private string aiSelectedStyle = "Anime";
+
+        private void AIStyle_Tap(object sender, System.Windows.Input.GestureEventArgs e)
+        {
+            var border = sender as Border;
+            if (border != null && border.Tag != null)
+            {
+                aiSelectedStyle = border.Tag.ToString();
+                
+                AIStyleAnime.Background = new SolidColorBrush(Color.FromArgb(24, 255, 255, 255));
+                AIStyle3D.Background = new SolidColorBrush(Color.FromArgb(24, 255, 255, 255));
+                AIStyleInk.Background = new SolidColorBrush(Color.FromArgb(24, 255, 255, 255));
+                AIStyleOil.Background = new SolidColorBrush(Color.FromArgb(24, 255, 255, 255));
+
+                border.Background = new SolidColorBrush(Color.FromArgb(255, 58, 123, 242)); // #3A7BF2
+            }
+        }
+
         private void AIPromptDialog_Generate(object sender, System.Windows.Input.GestureEventArgs e)
         {
             string prompt = AIPromptTextBox.Text.Trim();
-            if (string.IsNullOrEmpty(prompt)) return;
+            if (string.IsNullOrEmpty(prompt)) prompt = aiSelectedStyle + " landscape scenery";
 
             string token = Get<string>(IsolatedStorageSettings.ApplicationSettings, "HFApiToken", "").Trim();
             if (string.IsNullOrEmpty(token))
@@ -2495,7 +2513,7 @@ namespace HyperOS.Pages
             request.Headers["Authorization"] = "Bearer " + token;
             
             // Enhance prompt for wallpaper
-            string fullPrompt = prompt + ", highly detailed, 4k wallpaper, masterpiece";
+            string fullPrompt = prompt + ", in " + aiSelectedStyle + " style, highly detailed, 4k wallpaper, masterpiece";
 
             request.BeginGetRequestStream(reqResult =>
             {
