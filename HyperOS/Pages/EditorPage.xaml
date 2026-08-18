@@ -790,6 +790,7 @@
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
@@ -806,6 +807,9 @@
                         </Border>
                         <Border x:Name="AIStyleOil" Grid.Row="1" Grid.Column="1" Tap="AIStyle_Tap" Tag="Oil Painting" Style="{StaticResource PropOptionPill}" Margin="4,4,0,0">
                             <TextBlock Text="Oil Painting" Style="{StaticResource PropOptionText}" HorizontalAlignment="Center"/>
+                        </Border>
+                        <Border x:Name="AIStyleCustom" Grid.Row="2" Grid.ColumnSpan="2" Tap="AIStyle_Tap" Tag="Custom" Style="{StaticResource PropOptionPill}" Margin="0,8,0,0">
+                            <TextBlock Text="Custom (Tự do)" Style="{StaticResource PropOptionText}" HorizontalAlignment="Center"/>
                         </Border>
                     </Grid>
 

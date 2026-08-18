@@ -2472,12 +2472,20 @@ namespace HyperOS.Pages
             {
                 aiSelectedStyle = border.Tag.ToString();
                 
-                AIStyleAnime.Background = new SolidColorBrush(Color.FromArgb(24, 255, 255, 255));
-                AIStyle3D.Background = new SolidColorBrush(Color.FromArgb(24, 255, 255, 255));
-                AIStyleInk.Background = new SolidColorBrush(Color.FromArgb(24, 255, 255, 255));
-                AIStyleOil.Background = new SolidColorBrush(Color.FromArgb(24, 255, 255, 255));
+                AIStyleAnime.Background = new SolidColorBrush(Color.FromArgb(20, 255, 255, 255));
+                AIStyle3D.Background = new SolidColorBrush(Color.FromArgb(20, 255, 255, 255));
+                AIStyleInk.Background = new SolidColorBrush(Color.FromArgb(20, 255, 255, 255));
+                AIStyleOil.Background = new SolidColorBrush(Color.FromArgb(20, 255, 255, 255));
+                AIStyleCustom.Background = new SolidColorBrush(Color.FromArgb(20, 255, 255, 255));
+
+                ((TextBlock)AIStyleAnime.Child).Foreground = new SolidColorBrush(Colors.LightGray);
+                ((TextBlock)AIStyle3D.Child).Foreground = new SolidColorBrush(Colors.LightGray);
+                ((TextBlock)AIStyleInk.Child).Foreground = new SolidColorBrush(Colors.LightGray);
+                ((TextBlock)AIStyleOil.Child).Foreground = new SolidColorBrush(Colors.LightGray);
+                ((TextBlock)AIStyleCustom.Child).Foreground = new SolidColorBrush(Colors.LightGray);
 
                 border.Background = new SolidColorBrush(Color.FromArgb(255, 58, 123, 242)); // #3A7BF2
+                ((TextBlock)border.Child).Foreground = new SolidColorBrush(Colors.White);
             }
         }
 
@@ -2485,7 +2493,7 @@ namespace HyperOS.Pages
         {
             if (isGeneratingAI) return;
             string prompt = AIPromptTextBox.Text.Trim();
-            if (string.IsNullOrEmpty(prompt)) prompt = aiSelectedStyle + " landscape scenery";
+            if (string.IsNullOrEmpty(prompt)) prompt = aiSelectedStyle == "Custom" ? "beautiful landscape scenery" : aiSelectedStyle + " landscape scenery";
 
             isGeneratingAI = true;
             AIPromptDialog.Visibility = Visibility.Collapsed;
@@ -2495,7 +2503,13 @@ namespace HyperOS.Pages
                 FilterProcessingText.Visibility = Visibility.Visible;
             }
 
-            string fullPrompt = prompt + ", in " + aiSelectedStyle + " style, highly detailed, 4k wallpaper, masterpiece";
+            string fullPrompt = prompt;
+            if (aiSelectedStyle != "Custom")
+            {
+                fullPrompt += ", in " + aiSelectedStyle + " style";
+            }
+            fullPrompt += ", highly detailed, 4k wallpaper, masterpiece";
+            
             string encodedPrompt = System.Uri.EscapeDataString(fullPrompt);
             string imageUrl = $"https://image.pollinations.ai/prompt/{encodedPrompt}?width=1024&height=1024&nologo=true&seed={new Random().Next()}";
 
