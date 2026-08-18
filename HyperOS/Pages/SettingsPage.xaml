@@ -129,13 +129,13 @@
                     Foreground="#44FFFFFF" HorizontalAlignment="Center" Margin="0,4,0,0"
                     FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"/>
 
-                <!-- DEEPAI API TOKEN -->
-                <TextBlock Text="DEEPAI API KEY" FontSize="13" Foreground="#55FFFFFF"
+                <!-- TOGETHER AI API TOKEN -->
+                <TextBlock Text="TOGETHER AI API KEY" FontSize="13" Foreground="#55FFFFFF"
                     FontFamily="/Assets/Fonts/MiSans-Demibold.ttf#MiSans" Margin="0,24,0,8"/>
-                <TextBox x:Name="DeepAIApiKeyBox" Background="#14FFFFFF" Foreground="White"
+                <TextBox x:Name="TogetherApiKeyBox" Background="#14FFFFFF" Foreground="White"
                     FontSize="14" FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"
-                    LostFocus="DeepAIApiKey_LostFocus" InputScope="Default" BorderThickness="0"/>
-                <TextBlock Text="Free: deepai.org/dashboard/profile" FontSize="11"
+                    LostFocus="TogetherApiKey_LostFocus" InputScope="Default" BorderThickness="0"/>
+                <TextBlock Text="Free: together.ai/settings/api-keys" FontSize="11"
                     Foreground="#44FFFFFF" HorizontalAlignment="Center" Margin="0,4,0,0"
                     FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"/>
 

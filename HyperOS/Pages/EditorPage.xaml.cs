@@ -2479,10 +2479,10 @@ namespace HyperOS.Pages
             string prompt = AIPromptTextBox.Text.Trim();
             if (string.IsNullOrEmpty(prompt)) prompt = aiSelectedStyle + " landscape scenery";
 
-            string token = Get<string>(IsolatedStorageSettings.ApplicationSettings, "DeepAIApiKey", "").Trim();
+            string token = Get<string>(IsolatedStorageSettings.ApplicationSettings, "TogetherApiKey", "").Trim();
             if (string.IsNullOrEmpty(token))
             {
-                MessageBox.Show("Vui lòng nhập DeepAI API Key trong mục Settings.", "Thiếu API Key", MessageBoxButton.OK);
+                MessageBox.Show("Vui lòng nhập Together AI API Key trong mục Settings.", "Thiếu API Key", MessageBoxButton.OK);
                 AIPromptDialog.Visibility = Visibility.Collapsed;
                 return;
             }
@@ -2490,21 +2490,21 @@ namespace HyperOS.Pages
             AIPromptDialog.Visibility = Visibility.Collapsed;
             if (FilterProcessingText != null)
             {
-                FilterProcessingText.Text = "Đang tạo ảnh AI qua DeepAI...";
+                FilterProcessingText.Text = "Đang tạo ảnh qua Together AI...";
                 FilterProcessingText.Visibility = Visibility.Visible;
             }
 
-            string modelUrl = "https://api.deepai.org/api/text2img";
+            string modelUrl = "https://api.together.xyz/v1/images/generations";
             string fullPrompt = prompt + ", in " + aiSelectedStyle + " style, highly detailed, 4k wallpaper, masterpiece";
 
             try
             {
                 using (var client = new System.Net.Http.HttpClient())
                 {
-                    client.DefaultRequestHeaders.Add("api-key", token);
+                    client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
                     
-                    var content = new System.Net.Http.MultipartFormDataContent();
-                    content.Add(new System.Net.Http.StringContent(fullPrompt), "text");
+                    string json = "{\"model\":\"black-forest-labs/FLUX.1-schnell-Free\",\"prompt\":\"" + fullPrompt.Replace("\"", "\\\"").Replace("\n", " ") + "\",\"width\":1024,\"height\":1024,\"steps\":4,\"n\":1,\"response_format\":\"url\"}";
+                    var content = new System.Net.Http.StringContent(json, System.Text.Encoding.UTF8, "application/json");
 
                     var response = await client.PostAsync(modelUrl, content);
                     
@@ -2512,7 +2512,7 @@ namespace HyperOS.Pages
                     {
                         string responseBody = await response.Content.ReadAsStringAsync();
                         string outputUrl = "";
-                        var match = System.Text.RegularExpressions.Regex.Match(responseBody, "\"output_url\"\\s*:\\s*\"([^\"]+)\"");
+                        var match = System.Text.RegularExpressions.Regex.Match(responseBody, "\"url\"\\s*:\\s*\"([^\"]+)\"");
                         if (match.Success) {
                             outputUrl = match.Groups[1].Value;
                         }
@@ -2554,14 +2554,14 @@ namespace HyperOS.Pages
                         else
                         {
                             if (FilterProcessingText != null) FilterProcessingText.Visibility = Visibility.Collapsed;
-                            MessageBox.Show("Không tìm thấy link ảnh trả về từ DeepAI.", "Lỗi", MessageBoxButton.OK);
+                            MessageBox.Show("Không tìm thấy link ảnh trả về từ Together AI.", "Lỗi", MessageBoxButton.OK);
                         }
                     }
                     else
                     {
                         string errBody = await response.Content.ReadAsStringAsync();
                         if (FilterProcessingText != null) FilterProcessingText.Visibility = Visibility.Collapsed;
-                        MessageBox.Show($"Lỗi từ DeepAI ({(int)response.StatusCode}): {errBody}", "Lỗi API", MessageBoxButton.OK);
+                        MessageBox.Show($"Lỗi từ Together AI ({(int)response.StatusCode}): {errBody}", "Lỗi API", MessageBoxButton.OK);
                     }
                 }
             }
