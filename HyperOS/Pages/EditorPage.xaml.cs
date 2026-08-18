@@ -2474,7 +2474,7 @@ namespace HyperOS.Pages
             }
         }
 
-        private void AIPromptDialog_Generate(object sender, System.Windows.Input.GestureEventArgs e)
+        private async void AIPromptDialog_Generate(object sender, System.Windows.Input.GestureEventArgs e)
         {
             string prompt = AIPromptTextBox.Text.Trim();
             if (string.IsNullOrEmpty(prompt)) prompt = aiSelectedStyle + " landscape scenery";
@@ -2494,106 +2494,59 @@ namespace HyperOS.Pages
                 FilterProcessingText.Visibility = Visibility.Visible;
             }
 
-            // Use a smaller, more reliable model for the Free API tier
-            string modelUrl = "https://api-inference.huggingface.co/models/runwayml/stable-diffusion-v1-5";
-            var request = (System.Net.HttpWebRequest)System.Net.WebRequest.Create(modelUrl);
-            request.Method = "POST";
-            request.ContentType = "application/json";
-            request.Headers["Authorization"] = "Bearer " + token;
-            
-            // Enhance prompt for wallpaper
+            string modelUrl = "https://api-inference.huggingface.co/models/prompthero/openjourney";
             string fullPrompt = prompt + ", in " + aiSelectedStyle + " style, highly detailed, 4k wallpaper, masterpiece";
 
-            request.BeginGetRequestStream(reqResult =>
+            try
             {
-                try
+                using (var client = new System.Net.Http.HttpClient())
                 {
-                    using (var reqStream = request.EndGetRequestStream(reqResult))
-                    {
-                        // JSON payload
-                        string json = "{\"inputs\":\"" + fullPrompt.Replace("\"", "\\\"").Replace("\n", " ") + "\"}";
-                        byte[] body = System.Text.Encoding.UTF8.GetBytes(json);
-                        reqStream.Write(body, 0, body.Length);
-                    }
+                    client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+                    
+                    string json = "{\"inputs\":\"" + fullPrompt.Replace("\"", "\\\"").Replace("\n", " ") + "\"}";
+                    var content = new System.Net.Http.StringContent(json, System.Text.Encoding.UTF8, "application/json");
 
-                    request.BeginGetResponse(resResult =>
+                    var response = await client.PostAsync(modelUrl, content);
+                    
+                    if (response.IsSuccessStatusCode)
                     {
-                        try
+                        byte[] imgBytes = await response.Content.ReadAsByteArrayAsync();
+
+                        using (var store = IsolatedStorageFile.GetUserStoreForApplication())
                         {
-                            using (var response = request.EndGetResponse(resResult))
-                            using (var resStream = response.GetResponseStream())
-                            using (var ms = new MemoryStream())
+                            if (store.FileExists("Background_AI.jpg")) store.DeleteFile("Background_AI.jpg");
+                            using (var file = store.CreateFile("Background_AI.jpg"))
                             {
-                                resStream.CopyTo(ms);
-                                byte[] imgBytes = ms.ToArray();
-
-                                using (var store = IsolatedStorageFile.GetUserStoreForApplication())
-                                {
-                                    if (store.FileExists("Background_AI.jpg")) store.DeleteFile("Background_AI.jpg");
-                                    using (var file = store.CreateFile("Background_AI.jpg"))
-                                    {
-                                        file.Write(imgBytes, 0, imgBytes.Length);
-                                    }
-                                }
-
-                                Dispatcher.BeginInvoke(() =>
-                                {
-                                    if (FilterProcessingText != null) FilterProcessingText.Visibility = Visibility.Collapsed;
-                                    MessageBox.Show("Tạo ảnh AI thành công!", "Thành công", MessageBoxButton.OK);
-                                    
-                                    // Use the new AI image as background
-                                    using (var store = IsolatedStorageFile.GetUserStoreForApplication())
-                                    {
-                                        if (store.FileExists("Background.jpg")) store.DeleteFile("Background.jpg");
-                                        store.CopyFile("Background_AI.jpg", "Background.jpg");
-                                    }
-                                    
-                                    hasUnsavedChanges = true;
-                                    LoadPreviewImages();
-                                });
+                                file.Write(imgBytes, 0, imgBytes.Length);
                             }
                         }
-                        catch (System.Net.WebException ex)
-                        {
-                            string errStr = ex.Message;
-                            if (ex.Response != null)
-                            {
-                                try
-                                {
-                                    using (var errStream = ex.Response.GetResponseStream())
-                                    using (var reader = new System.IO.StreamReader(errStream))
-                                    {
-                                        string errBody = reader.ReadToEnd();
-                                        if (!string.IsNullOrEmpty(errBody)) errStr = errBody;
-                                    }
-                                }
-                                catch { }
-                            }
-                            Dispatcher.BeginInvoke(() =>
-                            {
-                                if (FilterProcessingText != null) FilterProcessingText.Visibility = Visibility.Collapsed;
-                                MessageBox.Show("Lỗi khi tải ảnh: " + errStr + "\n(Nếu model đang ngủ, vui lòng thử lại sau 30s)", "Lỗi API", MessageBoxButton.OK);
-                            });
-                        }
-                        catch (Exception ex)
-                        {
-                            Dispatcher.BeginInvoke(() =>
-                            {
-                                if (FilterProcessingText != null) FilterProcessingText.Visibility = Visibility.Collapsed;
-                                MessageBox.Show("Lỗi: " + ex.Message, "Lỗi", MessageBoxButton.OK);
-                            });
-                        }
-                    }, null);
-                }
-                catch (Exception ex)
-                {
-                    Dispatcher.BeginInvoke(() =>
-                    {
+
                         if (FilterProcessingText != null) FilterProcessingText.Visibility = Visibility.Collapsed;
-                        MessageBox.Show("Lỗi kết nối: " + ex.Message, "Lỗi", MessageBoxButton.OK);
-                    });
+                        MessageBox.Show("Tạo ảnh AI thành công!", "Thành công", MessageBoxButton.OK);
+
+                        // Use the new AI image as background
+                        using (var store = IsolatedStorageFile.GetUserStoreForApplication())
+                        {
+                            if (store.FileExists("Background.jpg")) store.DeleteFile("Background.jpg");
+                            store.CopyFile("Background_AI.jpg", "Background.jpg");
+                        }
+
+                        hasUnsavedChanges = true;
+                        LoadPreviewImages();
+                    }
+                    else
+                    {
+                        string errBody = await response.Content.ReadAsStringAsync();
+                        if (FilterProcessingText != null) FilterProcessingText.Visibility = Visibility.Collapsed;
+                        MessageBox.Show($"Lỗi từ server ({(int)response.StatusCode}): {errBody}\n\n(Nếu model đang ngủ, thử lại sau 30s)", "Lỗi API", MessageBoxButton.OK);
+                    }
                 }
-            }, null);
+            }
+            catch (Exception ex)
+            {
+                if (FilterProcessingText != null) FilterProcessingText.Visibility = Visibility.Collapsed;
+                MessageBox.Show("Lỗi kết nối: " + ex.Message, "Lỗi", MessageBoxButton.OK);
+            }
         }
 
         #endregion
