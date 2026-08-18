@@ -134,6 +134,7 @@ These are WinRT/UWP-only and will cause build failures on WP8.1 Silverlight:
 |---|---|---|
 | **View** | `Pages/*.xaml`, `Controls/*.xaml` | UI layout only, no business logic |
 | **Controller** | `Pages/*.xaml.cs`, `Helpers/` | Event handling, navigation, state management |
+| **Rendering** | `Helpers/ClockRenderer.cs` | Centralized logic for drawing clocks and dates across LockScreen, Editor, and MySets |
 
 ### Key Files — DO NOT DELETE OR BREAK
 
@@ -141,9 +142,17 @@ These are WinRT/UWP-only and will cause build failures on WP8.1 Silverlight:
 |---|---|
 | `LockScreenPage.xaml / .cs` | Live Lock Screen routing gateway — CRITICAL |
 | `MainPage.xaml / .cs` | Currently unused. Entry point is LockScreenPage |
+| `Pages/MySetsPage.xaml / .cs` | The preset carousel and entry point for unlocked device state |
+| `Pages/EditorPage.xaml / .cs` | The customization editor |
 | `Extensions/LockAppExtension.xml` | OS lock screen registration descriptor |
 | `Properties/WMAppManifest.xml` | App manifest with capabilities & extensions |
 | `App.xaml.cs` | ContractActivated handler for FileOpenPicker |
+
+### AI Integration (Pollinations AI)
+
+- The project uses **Pollinations AI** (API-less) for the `CustomMode` background generation.
+- **Resolution Limit:** Always enforce `width=1024&height=1024` in the prompt URL. Do NOT request higher resolutions (e.g., 1080x1920) as they cause aspect ratio stretching issues and risk Out-of-Memory (OOM) crashes on 512MB RAM devices.
+- **Concurrency:** Ensure `isGeneratingAI` boolean flags are used to prevent multiple concurrent HTTP requests when the user taps "Apply" or "Generate" multiple times rapidly.
 
 ### Fonts Available in Project
 
