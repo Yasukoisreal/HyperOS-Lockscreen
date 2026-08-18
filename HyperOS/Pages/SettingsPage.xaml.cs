@@ -43,7 +43,6 @@ namespace HyperOS.Pages
 
             // API Key
             ApiKeyBox.Text = Get<string>(s, "RemoveBgApiKey", "");
-            TogetherApiKeyBox.Text = Get<string>(s, "TogetherApiKey", "");
 
             isLoading = false;
         }
@@ -213,10 +212,7 @@ namespace HyperOS.Pages
             Save("RemoveBgApiKey", ApiKeyBox.Text.Trim());
         }
 
-        private void TogetherApiKey_LostFocus(object sender, RoutedEventArgs e)
-        {
-            Save("TogetherApiKey", TogetherApiKeyBox.Text.Trim());
-        }
+
 
         private void About_Click(object sender, RoutedEventArgs e)
         {
