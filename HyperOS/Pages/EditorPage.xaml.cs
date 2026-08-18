@@ -2440,8 +2440,15 @@ namespace HyperOS.Pages
 
         #region AI Wallpaper & Settings Keys
 
+        private bool isGeneratingAI = false;
+
         private void EdAIWallpaper_Click(object sender, RoutedEventArgs e)
         {
+            if (isGeneratingAI)
+            {
+                MessageBox.Show("Vui lòng đợi ảnh trước tạo xong!", "Đang xử lý", MessageBoxButton.OK);
+                return;
+            }
             AIPromptTextBox.Text = "";
             AIPromptDialog.Visibility = Visibility.Visible;
         }
@@ -2476,9 +2483,11 @@ namespace HyperOS.Pages
 
         private async void AIPromptDialog_Generate(object sender, System.Windows.Input.GestureEventArgs e)
         {
+            if (isGeneratingAI) return;
             string prompt = AIPromptTextBox.Text.Trim();
             if (string.IsNullOrEmpty(prompt)) prompt = aiSelectedStyle + " landscape scenery";
 
+            isGeneratingAI = true;
             AIPromptDialog.Visibility = Visibility.Collapsed;
             if (FilterProcessingText != null)
             {
@@ -2509,6 +2518,7 @@ namespace HyperOS.Pages
                         }
 
                         if (FilterProcessingText != null) FilterProcessingText.Visibility = Visibility.Collapsed;
+                        isGeneratingAI = false;
                         MessageBox.Show("Tạo ảnh AI thành công!", "Thành công", MessageBoxButton.OK);
 
                         using (var store = IsolatedStorageFile.GetUserStoreForApplication())
@@ -2523,6 +2533,7 @@ namespace HyperOS.Pages
                     else
                     {
                         if (FilterProcessingText != null) FilterProcessingText.Visibility = Visibility.Collapsed;
+                        isGeneratingAI = false;
                         MessageBox.Show($"Lỗi từ server Pollinations ({(int)imgResponse.StatusCode}).", "Lỗi API", MessageBoxButton.OK);
                     }
                 }
@@ -2530,6 +2541,7 @@ namespace HyperOS.Pages
             catch (Exception ex)
             {
                 if (FilterProcessingText != null) FilterProcessingText.Visibility = Visibility.Collapsed;
+                isGeneratingAI = false;
                 MessageBox.Show("Lỗi kết nối: " + ex.Message, "Lỗi", MessageBoxButton.OK);
             }
         }
