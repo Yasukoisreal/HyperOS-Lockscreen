@@ -1910,16 +1910,7 @@ namespace HyperOS.Pages
             };
             card.Child = inner;
 
-            // Gradient
-            inner.Children.Add(new System.Windows.Shapes.Rectangle
-            {
-                VerticalAlignment = VerticalAlignment.Bottom, Height = 160, IsHitTestVisible = false,
-                Fill = new LinearGradientBrush
-                {
-                    StartPoint = new System.Windows.Point(0, 0), EndPoint = new System.Windows.Point(0, 1),
-                    GradientStops = { new GradientStop { Color = MC.FromArgb(0, 0, 0, 0), Offset = 0 }, new GradientStop { Color = MC.FromArgb(140, 0, 0, 0), Offset = 1 } }
-                }
-            });
+
 
             // Clock setup
             var brush = new SolidColorBrush(preset.PreviewClockColor);

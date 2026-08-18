@@ -360,22 +360,7 @@ namespace HyperOS.Pages
             };
             card.Child = inner;
 
-            // Gradient overlay
-            inner.Children.Add(new Rectangle
-            {
-                VerticalAlignment = VerticalAlignment.Bottom,
-                Height = 160,
-                IsHitTestVisible = false,
-                Fill = new LinearGradientBrush
-                {
-                    StartPoint = new Point(0, 0),
-                    EndPoint = new Point(0, 1),
-                    GradientStops = {
-                        new GradientStop { Color = Color.FromArgb(0, 0, 0, 0), Offset = 0 },
-                        new GradientStop { Color = Color.FromArgb(140, 0, 0, 0), Offset = 1 }
-                    }
-                }
-            });
+
 
             // Clock setup
             var brush = new SolidColorBrush(preset.PreviewClockColor);
