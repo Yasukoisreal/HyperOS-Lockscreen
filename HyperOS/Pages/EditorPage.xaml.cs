@@ -2497,7 +2497,7 @@ namespace HyperOS.Pages
 
             string fullPrompt = prompt + ", in " + aiSelectedStyle + " style, highly detailed, 4k wallpaper, masterpiece";
             string encodedPrompt = System.Uri.EscapeDataString(fullPrompt);
-            string imageUrl = $"https://image.pollinations.ai/prompt/{encodedPrompt}?width=1080&height=1920&nologo=true&seed={new Random().Next()}";
+            string imageUrl = $"https://image.pollinations.ai/prompt/{encodedPrompt}?width=1024&height=1024&nologo=true&seed={new Random().Next()}";
 
             try
             {

@@ -606,7 +606,7 @@
                         <StackPanel x:Name="DisplayProps" Visibility="Collapsed">
                             <Button Content="▣ Change Wallpaper" Click="EdWallpaper_Click"
                                 Style="{StaticResource EditorActionBtn}" Margin="0,8,0,0"/>
-                            <Button Content="✨ AI Wallpaper (Img2Img)" Click="EdAIWallpaper_Click"
+                            <Button Content="✨ AI Wallpaper (Text2Img)" Click="EdAIWallpaper_Click"
                                 Style="{StaticResource EditorActionBtn}" Margin="0,8,0,0"/>
 
                         </StackPanel>
