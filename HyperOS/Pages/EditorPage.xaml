@@ -609,11 +609,6 @@
                             <Button Content="✨ AI Wallpaper (Img2Img)" Click="EdAIWallpaper_Click"
                                 Style="{StaticResource EditorActionBtn}" Margin="0,8,0,0"/>
 
-                            <TextBlock Text="API KEYS (SETTINGS)" Style="{StaticResource PropLabel}" Margin="0,24,0,6"/>
-                            <TextBlock Text="Remove.bg API Key:" Foreground="#88FFFFFF" FontSize="12" FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"/>
-                            <TextBox x:Name="EdRemoveBgKey" Background="#22FFFFFF" Foreground="White" BorderThickness="0" Margin="0,4,0,8" LostFocus="EdRemoveBgKey_LostFocus"/>
-                            <TextBlock Text="Hugging Face Token:" Foreground="#88FFFFFF" FontSize="12" FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"/>
-                            <TextBox x:Name="EdHFKey" Background="#22FFFFFF" Foreground="White" BorderThickness="0" Margin="0,4,0,0" LostFocus="EdHFKey_LostFocus"/>
                         </StackPanel>
 
                             <!-- ══ COLOR PROPERTIES ══ -->

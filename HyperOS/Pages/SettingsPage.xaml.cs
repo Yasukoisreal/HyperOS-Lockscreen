@@ -43,6 +43,7 @@ namespace HyperOS.Pages
 
             // API Key
             ApiKeyBox.Text = Get<string>(s, "RemoveBgApiKey", "");
+            HFApiKeyBox.Text = Get<string>(s, "HFApiToken", "");
 
             isLoading = false;
         }
@@ -210,6 +211,11 @@ namespace HyperOS.Pages
         private void ApiKey_LostFocus(object sender, RoutedEventArgs e)
         {
             Save("RemoveBgApiKey", ApiKeyBox.Text.Trim());
+        }
+
+        private void HFApiKey_LostFocus(object sender, RoutedEventArgs e)
+        {
+            Save("HFApiToken", HFApiKeyBox.Text.Trim());
         }
 
         private void About_Click(object sender, RoutedEventArgs e)

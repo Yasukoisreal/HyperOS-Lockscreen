@@ -445,8 +445,6 @@ namespace HyperOS.Pages
             if (MatteToggle != null) MatteToggle.IsChecked = useMatte;
             if (RibbedToggle != null) RibbedToggle.IsChecked = useRibbed;
 
-            if (EdRemoveBgKey != null) EdRemoveBgKey.Text = Get<string>(s, "RemoveBgApiKey", "");
-            if (EdHFKey != null) EdHFKey.Text = Get<string>(s, "HFApiToken", "");
         }
 
         private void ComputeDefaultClockPos(IsolatedStorageSettings s, out double x, out double y)
@@ -2441,16 +2439,6 @@ namespace HyperOS.Pages
         #endregion
 
         #region AI Wallpaper & Settings Keys
-
-        private void EdRemoveBgKey_LostFocus(object sender, RoutedEventArgs e)
-        {
-            Save("RemoveBgApiKey", EdRemoveBgKey.Text.Trim());
-        }
-
-        private void EdHFKey_LostFocus(object sender, RoutedEventArgs e)
-        {
-            Save("HFApiToken", EdHFKey.Text.Trim());
-        }
 
         private void EdAIWallpaper_Click(object sender, RoutedEventArgs e)
         {
