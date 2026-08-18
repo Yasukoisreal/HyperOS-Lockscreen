@@ -325,6 +325,47 @@ namespace HyperOS.Helpers
                         containerGrid.Children.Add(sigBlock);
                     }
                 }
+
+                // Weather Widget Preview
+
+                    bool showWeather = s.Contains(pfx + "ShowWeather") && (bool)s[pfx + "ShowWeather"];
+                    if (showWeather)
+                    {
+                        double wX = s.Contains(pfx + "WeatherX") ? (double)s[pfx + "WeatherX"] : 30;
+                        double wY = s.Contains(pfx + "WeatherY") ? (double)s[pfx + "WeatherY"] : 300;
+                        
+                        var wBlock = new TextBlock
+                        {
+                            Text = "☀ 28°C",
+                            FontFamily = new FontFamily("/Assets/Fonts/MiSans-Regular.ttf#MiSans"),
+                            FontSize = Math.Max(10, 18 * scale),
+                            Foreground = new SolidColorBrush(MC.FromArgb(187, 255, 255, 255)),
+                            HorizontalAlignment = HorizontalAlignment.Left,
+                            VerticalAlignment = VerticalAlignment.Top,
+                            Margin = new Thickness(wX * scale, wY * (cardH / 800.0), 0, 0)
+                        };
+                        containerGrid.Children.Add(wBlock);
+                    }
+
+                    // Countdown Widget Preview
+                    bool showCountdown = s.Contains(pfx + "ShowCountdown") && (bool)s[pfx + "ShowCountdown"];
+                    if (showCountdown)
+                    {
+                        double cX = s.Contains(pfx + "CountdownX") ? (double)s[pfx + "CountdownX"] : 30;
+                        double cY = s.Contains(pfx + "CountdownY") ? (double)s[pfx + "CountdownY"] : 340;
+                        
+                        var cBlock = new TextBlock
+                        {
+                            Text = "2 Days Left",
+                            FontFamily = new FontFamily("/Assets/Fonts/MiSans-Regular.ttf#MiSans"),
+                            FontSize = Math.Max(10, 16 * scale),
+                            Foreground = new SolidColorBrush(MC.FromArgb(153, 255, 255, 255)),
+                            HorizontalAlignment = HorizontalAlignment.Left,
+                            VerticalAlignment = VerticalAlignment.Top,
+                            Margin = new Thickness(cX * scale, cY * (cardH / 800.0), 0, 0)
+                        };
+                        containerGrid.Children.Add(cBlock);
+                    }
             }
 
             // Date alignment from preset

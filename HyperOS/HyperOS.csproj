@@ -97,6 +97,7 @@
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
     <Compile Include="Helpers\ClockRenderer.cs" />
+    <Compile Include="Helpers\FilterHelper.cs" />
     <Compile Include="LocalizedStrings.cs" />
     <Compile Include="LockScreenPage.xaml.cs">
       <DependentUpon>LockScreenPage.xaml</DependentUpon>

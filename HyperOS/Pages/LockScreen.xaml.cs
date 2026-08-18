@@ -79,6 +79,10 @@ namespace HyperOS.Pages
         private bool depthColonBehind = true;
         private bool depthMinuteBehind = true;
 
+        // Background filters
+        private bool useMatte = false;
+        private bool useRibbed = false;
+
         // Free positions (from Editor)
         private bool hasFreeLayout = false;
         private double clockFreeX, clockFreeY;
@@ -280,6 +284,8 @@ namespace HyperOS.Pages
                     sb.Begin();
 
                     ((Storyboard)Resources["DayAnim"]).Begin();
+                    if (Resources.Contains("ParallaxAnim"))
+                        ((Storyboard)Resources["ParallaxAnim"]).Begin();
                 }
                 catch { }
             }
@@ -796,6 +802,12 @@ namespace HyperOS.Pages
             // Countdown
             if (s.Contains("ShowCountdown"))
                 showCountdown = (bool)s["ShowCountdown"];
+
+            // Background filters
+            if (s.Contains("UseMatte"))
+                useMatte = (bool)s["UseMatte"];
+            if (s.Contains("UseRibbed"))
+                useRibbed = (bool)s["UseRibbed"];
             if (s.Contains("CountdownTarget"))
                 countdownTarget = (DateTime)s["CountdownTarget"];
             if (s.Contains("CountdownName"))
@@ -1405,9 +1417,10 @@ namespace HyperOS.Pages
             {
                 using (var store = IsolatedStorageFile.GetUserStoreForApplication())
                 {
-                    if (store.FileExists("Background.jpg"))
+                    string bgToLoad = (useMatte || useRibbed) && store.FileExists("Background_Filtered.jpg") ? "Background_Filtered.jpg" : "Background.jpg";
+                    if (store.FileExists(bgToLoad))
                     {
-                        using (var stream = store.OpenFile("Background.jpg",
+                        using (var stream = store.OpenFile(bgToLoad,
                             System.IO.FileMode.Open, System.IO.FileAccess.Read))
                         {
                             var bitmap = new BitmapImage();

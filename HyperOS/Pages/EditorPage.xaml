@@ -528,9 +528,15 @@
 
                         <!-- ══ FILTER PROPERTIES ══ -->
                         <StackPanel x:Name="FilterProps" Visibility="Collapsed">
-                            <TextBlock Text="FILTERS (COMING SOON)" Style="{StaticResource PropLabel}"/>
-                            <TextBlock Text="Filters will be available in Phase 4." FontSize="14" Foreground="#88FFFFFF"
-                                FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"/>
+                            <TextBlock Text="FILTERS" Style="{StaticResource PropLabel}"/>
+                            <toolkit:ToggleSwitch x:Name="MatteToggle" Header="Matte Effect (Blur)" Foreground="White"
+                                                  Checked="MatteToggle_Checked" Unchecked="MatteToggle_Unchecked"/>
+                            <toolkit:ToggleSwitch x:Name="RibbedToggle" Header="Ribbed Effect" Foreground="White"
+                                                  Checked="RibbedToggle_Checked" Unchecked="RibbedToggle_Unchecked"/>
+                            
+                            <TextBlock x:Name="FilterProcessingText" Text="Processing filter..." Visibility="Collapsed"
+                                       Foreground="#FFDC3232" FontSize="14" Margin="12,0,0,10"
+                                       FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"/>
                         </StackPanel>
 
                         <!-- ══ DEPTH PROPERTIES ══ -->
@@ -600,6 +606,14 @@
                         <StackPanel x:Name="DisplayProps" Visibility="Collapsed">
                             <Button Content="▣ Change Wallpaper" Click="EdWallpaper_Click"
                                 Style="{StaticResource EditorActionBtn}" Margin="0,8,0,0"/>
+                            <Button Content="✨ AI Wallpaper (Img2Img)" Click="EdAIWallpaper_Click"
+                                Style="{StaticResource EditorActionBtn}" Margin="0,8,0,0"/>
+
+                            <TextBlock Text="API KEYS (SETTINGS)" Style="{StaticResource PropLabel}" Margin="0,24,0,6"/>
+                            <TextBlock Text="Remove.bg API Key:" Foreground="#88FFFFFF" FontSize="12" FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"/>
+                            <TextBox x:Name="EdRemoveBgKey" Background="#22FFFFFF" Foreground="White" BorderThickness="0" Margin="0,4,0,8" LostFocus="EdRemoveBgKey_LostFocus"/>
+                            <TextBlock Text="Hugging Face Token:" Foreground="#88FFFFFF" FontSize="12" FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"/>
+                            <TextBox x:Name="EdHFKey" Background="#22FFFFFF" Foreground="White" BorderThickness="0" Margin="0,4,0,0" LostFocus="EdHFKey_LostFocus"/>
                         </StackPanel>
 
                             <!-- ══ COLOR PROPERTIES ══ -->
@@ -756,6 +770,45 @@
                         <!-- Cancel -->
                         <Border Grid.Column="2" Background="#33FFFFFF" CornerRadius="8"
                                 Tap="UnsavedDialog_Cancel" Margin="4,0,0,0" Padding="0,12">
+                            <TextBlock Text="Cancel" HorizontalAlignment="Center"
+                                       FontSize="15" Foreground="#DDFFFFFF"
+                                       FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"/>
+                        </Border>
+                    </Grid>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!-- ═══ AI WALLPAPER DIALOG ═══ -->
+        <Grid x:Name="AIPromptDialog" Visibility="Collapsed">
+            <Rectangle Fill="#99000000" Tap="AIPromptDialog_Cancel_Tap"/>
+            <Border Background="#FF1E1E2E" CornerRadius="16" 
+                    VerticalAlignment="Center" HorizontalAlignment="Center"
+                    Width="400" Padding="24,20,24,16">
+                <StackPanel>
+                    <TextBlock Text="AI Wallpaper" FontSize="22" FontWeight="Bold" 
+                               Foreground="White" Margin="0,0,0,8"
+                               FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"/>
+                    <TextBlock Text="Enter prompt for the AI to generate:"
+                               FontSize="15" Foreground="#BBFFFFFF" TextWrapping="Wrap"
+                               Margin="0,0,0,10"
+                               FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"/>
+                    <TextBox x:Name="AIPromptTextBox" Background="#22FFFFFF" Foreground="White" BorderThickness="0" Margin="0,0,0,20"/>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <!-- Generate -->
+                        <Border Grid.Column="0" Background="#3A7BF2" CornerRadius="8"
+                                Tap="AIPromptDialog_Generate" Margin="0,0,4,0" Padding="0,12">
+                            <TextBlock Text="Generate" HorizontalAlignment="Center"
+                                       FontSize="15" Foreground="White" FontWeight="Bold"
+                                       FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"/>
+                        </Border>
+                        <!-- Cancel -->
+                        <Border Grid.Column="1" Background="#33FFFFFF" CornerRadius="8"
+                                Tap="AIPromptDialog_Cancel" Margin="4,0,0,0" Padding="0,12">
                             <TextBlock Text="Cancel" HorizontalAlignment="Center"
                                        FontSize="15" Foreground="#DDFFFFFF"
                                        FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"/>

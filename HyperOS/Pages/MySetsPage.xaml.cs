@@ -36,6 +36,8 @@ namespace HyperOS.Pages
             public bool DepthColonBehind { get; set; }
             public bool DepthMinuteBehind { get; set; }
             public int ClockLayout { get; set; } // 0=Horiz, 1=Vert, 2=Minimal, 3=Classic, 4=Swiss, 5=Rhombus, 6=Giant
+            public bool UseMatte { get; set; }
+            public bool UseRibbed { get; set; }
             public string BackgroundImage { get; set; } // e.g. "Assets/Pictures/classic02.jpg"
 
             // Signature
@@ -49,7 +51,7 @@ namespace HyperOS.Pages
             public double SignatureX { get; set; }
             public double SignatureY { get; set; }
 
-            public Preset() { ClockX = -1; ClockY = -1; DepthHourBehind = true; DepthColonBehind = true; DepthMinuteBehind = true; SignatureX = -1; SignatureY = -1; }
+            public Preset() { ClockX = -1; ClockY = -1; DepthHourBehind = true; DepthColonBehind = true; DepthMinuteBehind = true; SignatureX = -1; SignatureY = -1; UseMatte = false; UseRibbed = false; }
         }
 
         private static readonly List<Preset> Presets = new List<Preset>
@@ -179,6 +181,8 @@ namespace HyperOS.Pages
                     DepthHourBehind = src.DepthHourBehind,
                     DepthColonBehind = src.DepthColonBehind,
                     DepthMinuteBehind = src.DepthMinuteBehind,
+                    UseMatte = src.UseMatte,
+                    UseRibbed = src.UseRibbed,
                     PreviewBg = src.PreviewBg,
                     PreviewClockColor = src.PreviewClockColor,
                     BackgroundImage = src.BackgroundImage
@@ -210,6 +214,8 @@ namespace HyperOS.Pages
                 p.DepthHourBehind = orig.DepthHourBehind;
                 p.DepthColonBehind = orig.DepthColonBehind;
                 p.DepthMinuteBehind = orig.DepthMinuteBehind;
+                p.UseMatte = orig.UseMatte;
+                p.UseRibbed = orig.UseRibbed;
                 p.PreviewClockColor = orig.PreviewClockColor;
                 p.ShowSignature = orig.ShowSignature;
                 p.SignatureText = orig.SignatureText;
@@ -240,6 +246,8 @@ namespace HyperOS.Pages
                     p.DepthHourBehind = GetSetting(s, prefix + "DepthHourBehind", true);
                     p.DepthColonBehind = GetSetting(s, prefix + "DepthColonBehind", true);
                     p.DepthMinuteBehind = GetSetting(s, prefix + "DepthMinuteBehind", true);
+                    p.UseMatte = GetSetting(s, prefix + "UseMatte", false);
+                    p.UseRibbed = GetSetting(s, prefix + "UseRibbed", false);
                     p.ClockLayout = GetSetting(s, prefix + "ClockLayout", p.ClockLayout);
                     p.PreviewClockColor = ClockRenderer.ResolveClockColor(p.ClockColor, p.ClockBlend);
                     
@@ -307,10 +315,13 @@ namespace HyperOS.Pages
             {
                 using (var store = IsolatedStorageFile.GetUserStoreForApplication())
                 {
-                    string savedFile = "Background_" + index + ".jpg";
-                    if (store.FileExists(savedFile))
+                    string bgToLoad = (preset.UseMatte || preset.UseRibbed) && store.FileExists("Background_Filtered_" + index + ".jpg") 
+                                      ? "Background_Filtered_" + index + ".jpg" 
+                                      : "Background_" + index + ".jpg";
+
+                    if (store.FileExists(bgToLoad))
                     {
-                        using (var stream = store.OpenFile(savedFile,
+                        using (var stream = store.OpenFile(bgToLoad,
                             System.IO.FileMode.Open, System.IO.FileAccess.Read))
                         {
                             var bmp = new BitmapImage();
@@ -599,6 +610,7 @@ namespace HyperOS.Pages
             // Sync ALL Set{n}_ keys to global keys so EditorPage and LockScreen read correctly
             string[] keys = { "ClockStyle", "ClockSize", "ClockColor", "ClockBlend", "DateAlign", "ClockLayout",
                 "ClockX", "ClockY", "UseDepthEffect", "DepthHourBehind", "DepthColonBehind", "DepthMinuteBehind",
+                "UseMatte", "UseRibbed",
                 "ShowWeather", "ShowCountdown", "WeatherX", "WeatherY", "CountdownX", "CountdownY",
                 "ShowSignature", "SignatureText", "SignatureFont", "SignatureSpacing", "SignatureAlign", "SignatureColor", "SignatureBlend", "SignatureX", "SignatureY" };
             foreach (var key in keys)
@@ -624,6 +636,13 @@ namespace HyperOS.Pages
                             store.DeleteFile("Background.jpg");
                         store.CopyFile(presetBg, "Background.jpg");
                         
+                        // Also copy filtered background if it exists
+                        string presetFilteredBg = "Background_Filtered_" + index + ".jpg";
+                        if (store.FileExists("Background_Filtered.jpg"))
+                            store.DeleteFile("Background_Filtered.jpg");
+                        if (store.FileExists(presetFilteredBg))
+                            store.CopyFile(presetFilteredBg, "Background_Filtered.jpg");
+
                         s[px + "BackgroundImage"] = null; // Clear fallback string
                         if (s.Contains("BackgroundImage")) s.Remove("BackgroundImage");
                     }
@@ -653,6 +672,10 @@ namespace HyperOS.Pages
                             // Also save the string for Editor fallback
                             s[px + "BackgroundImage"] = preset.BackgroundImage;
                             s["BackgroundImage"] = preset.BackgroundImage;
+
+                            // Built-in preset means no custom filters
+                            if (store.FileExists("Background_Filtered.jpg"))
+                                store.DeleteFile("Background_Filtered.jpg");
                         }
                         else
                         {

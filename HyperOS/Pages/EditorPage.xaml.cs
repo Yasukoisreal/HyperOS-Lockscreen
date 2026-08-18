@@ -64,6 +64,10 @@ namespace HyperOS.Pages
         private bool depthColonBehind = true;
         private bool depthMinuteBehind = true;
 
+        // Filters
+        private bool useMatte = false;
+        private bool useRibbed = false;
+
         // Font & size arrays — redirect to ClockRenderer shared data (RAM: avoids duplicate static arrays)
         private static string[] FontNames { get { return ClockRenderer.FontNames; } }
         private static FontFamily[] Fonts { get { return ClockRenderer.Fonts; } }
@@ -343,11 +347,12 @@ namespace HyperOS.Pages
             SaveAndBack_Tap(null, null);
         }
 
-        private void UnsavedDialog_DontSave(object sender, System.Windows.Input.GestureEventArgs e)
+        private async void UnsavedDialog_DontSave(object sender, System.Windows.Input.GestureEventArgs e)
         {
             UnsavedDialog.Visibility = Visibility.Collapsed;
             hasUnsavedChanges = false;
             RestoreSettingsSnapshot();
+            await RestoreOriginalBackgroundAsync(true);
             if (NavigationService.CanGoBack)
                 NavigationService.GoBack();
         }
@@ -435,6 +440,13 @@ namespace HyperOS.Pages
             EdDepthLayers.Visibility = useDepthEffect ? Visibility.Visible : Visibility.Collapsed;
             UpdateDepthRowVisibility();
 
+            useMatte = Get(s, "UseMatte", false);
+            useRibbed = Get(s, "UseRibbed", false);
+            if (MatteToggle != null) MatteToggle.IsChecked = useMatte;
+            if (RibbedToggle != null) RibbedToggle.IsChecked = useRibbed;
+
+            if (EdRemoveBgKey != null) EdRemoveBgKey.Text = Get<string>(s, "RemoveBgApiKey", "");
+            if (EdHFKey != null) EdHFKey.Text = Get<string>(s, "HFApiToken", "");
         }
 
         private void ComputeDefaultClockPos(IsolatedStorageSettings s, out double x, out double y)
@@ -480,9 +492,10 @@ namespace HyperOS.Pages
             {
                 using (var store = IsolatedStorageFile.GetUserStoreForApplication())
                 {
-                    if (store.FileExists("Background.jpg"))
+                    string bgToLoad = (useMatte || useRibbed) && store.FileExists("Background_Filtered.jpg") ? "Background_Filtered.jpg" : "Background.jpg";
+                    if (store.FileExists(bgToLoad))
                     {
-                        using (var stream = store.OpenFile("Background.jpg",
+                        using (var stream = store.OpenFile(bgToLoad,
                             FileMode.Open, FileAccess.Read))
                         {
                             var bmp = new BitmapImage();
@@ -1242,6 +1255,14 @@ namespace HyperOS.Pages
                             if (store.FileExists(presetBg))
                                 store.DeleteFile(presetBg);
                             store.CopyFile("Background.jpg", presetBg);
+                        }
+                        
+                        if (store.FileExists("Background_Filtered.jpg"))
+                        {
+                            string presetFilteredBg = "Background_Filtered_" + editingPreset + ".jpg";
+                            if (store.FileExists(presetFilteredBg))
+                                store.DeleteFile(presetFilteredBg);
+                            store.CopyFile("Background_Filtered.jpg", presetFilteredBg);
                         }
                     }
                 }
@@ -2233,6 +2254,7 @@ namespace HyperOS.Pages
             "ClockColor", "ClockBlend", "ClockOpacity", "ClockHue", "ClockSize", "ClockLayout",
             "ShowWeather", "ShowCountdown", "UseDepthEffect",
             "DepthHourBehind", "DepthColonBehind", "DepthMinuteBehind",
+            "UseMatte", "UseRibbed",
             "ClockX", "ClockY", "WeatherX", "WeatherY", "CountdownX", "CountdownY",
             "bIsAnimOn", "DateAlign", "CountdownName", "CountdownTarget", "OwnerInfo",
             "ShowSignature", "SignatureX", "SignatureY", "SignatureText", "SignatureFont",
@@ -2300,15 +2322,249 @@ namespace HyperOS.Pages
 
         #region Navigation
 
-        private void Back_Tap(object sender, System.Windows.Input.GestureEventArgs e)
+        private async void Back_Tap(object sender, System.Windows.Input.GestureEventArgs e)
         {
             if (hasUnsavedChanges)
             {
                 UnsavedDialog.Visibility = Visibility.Visible;
                 return;
             }
+            await RestoreOriginalBackgroundAsync(true);
             if (NavigationService.CanGoBack)
                 NavigationService.GoBack();
+        }
+
+        #endregion
+
+        #region Filters
+
+        private async void MatteToggle_Checked(object sender, RoutedEventArgs e)
+        {
+            await ApplyFilterAsync();
+        }
+
+        private async void MatteToggle_Unchecked(object sender, RoutedEventArgs e)
+        {
+            await ApplyFilterAsync();
+        }
+
+        private async void RibbedToggle_Checked(object sender, RoutedEventArgs e)
+        {
+            await ApplyFilterAsync();
+        }
+
+        private async void RibbedToggle_Unchecked(object sender, RoutedEventArgs e)
+        {
+            await ApplyFilterAsync();
+        }
+
+        private async System.Threading.Tasks.Task ApplyFilterAsync()
+        {
+            useMatte = MatteToggle?.IsChecked == true;
+            useRibbed = RibbedToggle?.IsChecked == true;
+            
+            Save("UseMatte", useMatte);
+            Save("UseRibbed", useRibbed);
+
+            if (!useMatte && !useRibbed)
+            {
+                // Delete filtered background when disabled
+                using (var store = System.IO.IsolatedStorage.IsolatedStorageFile.GetUserStoreForApplication())
+                {
+                    if (store.FileExists("Background_Filtered.jpg"))
+                        store.DeleteFile("Background_Filtered.jpg");
+                }
+                LoadPreviewImages();
+                return;
+            }
+
+            if (FilterProcessingText != null) FilterProcessingText.Visibility = Visibility.Visible;
+            
+            try
+            {
+                using (var store = System.IO.IsolatedStorage.IsolatedStorageFile.GetUserStoreForApplication())
+                {
+                    if (!store.FileExists("Background.jpg")) return;
+
+                    // Load original
+                    WriteableBitmap wb = null;
+                    using (var stream = store.OpenFile("Background.jpg", System.IO.FileMode.Open, System.IO.FileAccess.Read))
+                    {
+                        var bmp = new BitmapImage();
+                        bmp.SetSource(stream);
+                        wb = new WriteableBitmap(bmp);
+                    }
+
+                    int w = wb.PixelWidth;
+                    int h = wb.PixelHeight;
+                    int[] srcPixels = wb.Pixels;
+                    int[] destPixels = new int[srcPixels.Length];
+                    Array.Copy(srcPixels, destPixels, srcPixels.Length);
+
+                    // Process filter off UI thread
+                    await System.Threading.Tasks.Task.Run(() =>
+                    {
+                        if (useMatte)
+                            destPixels = HyperOS.Helpers.FilterHelper.ApplyBoxBlur(destPixels, w, h, 15, 2);
+                        if (useRibbed)
+                            destPixels = HyperOS.Helpers.FilterHelper.ApplyRibbedFilter(destPixels, w, h, 0);
+                    });
+
+                    if (destPixels != null)
+                    {
+                        WriteableBitmap filtered = new WriteableBitmap(w, h);
+                        Array.Copy(destPixels, filtered.Pixels, destPixels.Length);
+
+                        // Save back to Background_Filtered.jpg
+                        if (store.FileExists("Background_Filtered.jpg")) store.DeleteFile("Background_Filtered.jpg");
+                        using (var stream = store.OpenFile("Background_Filtered.jpg", System.IO.FileMode.Create, System.IO.FileAccess.Write))
+                        {
+                            filtered.SaveJpeg(stream, w, h, 0, 95);
+                        }
+
+                        // Reload Preview
+                        LoadPreviewImages();
+                    }
+                }
+            }
+            catch { }
+            
+            if (FilterProcessingText != null) FilterProcessingText.Visibility = Visibility.Collapsed;
+        }
+
+        private async System.Threading.Tasks.Task RestoreOriginalBackgroundAsync(bool force = false)
+        {
+            await System.Threading.Tasks.Task.Yield();
+            // Deprecated: No longer manipulating original file
+        }
+
+        #endregion
+
+        #region AI Wallpaper & Settings Keys
+
+        private void EdRemoveBgKey_LostFocus(object sender, RoutedEventArgs e)
+        {
+            Save("RemoveBgApiKey", EdRemoveBgKey.Text.Trim());
+        }
+
+        private void EdHFKey_LostFocus(object sender, RoutedEventArgs e)
+        {
+            Save("HFApiToken", EdHFKey.Text.Trim());
+        }
+
+        private void EdAIWallpaper_Click(object sender, RoutedEventArgs e)
+        {
+            AIPromptTextBox.Text = "";
+            AIPromptDialog.Visibility = Visibility.Visible;
+        }
+
+        private void AIPromptDialog_Cancel_Tap(object sender, System.Windows.Input.GestureEventArgs e)
+        {
+            AIPromptDialog.Visibility = Visibility.Collapsed;
+        }
+
+        private void AIPromptDialog_Cancel(object sender, System.Windows.Input.GestureEventArgs e)
+        {
+            AIPromptDialog.Visibility = Visibility.Collapsed;
+        }
+
+        private void AIPromptDialog_Generate(object sender, System.Windows.Input.GestureEventArgs e)
+        {
+            string prompt = AIPromptTextBox.Text.Trim();
+            if (string.IsNullOrEmpty(prompt)) return;
+
+            string token = Get<string>(IsolatedStorageSettings.ApplicationSettings, "HFApiToken", "").Trim();
+            if (string.IsNullOrEmpty(token))
+            {
+                MessageBox.Show("Vui lòng nhập Hugging Face Token trong mục Settings (API KEYS).", "Thiếu Token", MessageBoxButton.OK);
+                AIPromptDialog.Visibility = Visibility.Collapsed;
+                return;
+            }
+
+            AIPromptDialog.Visibility = Visibility.Collapsed;
+            if (FilterProcessingText != null)
+            {
+                FilterProcessingText.Text = "Đang tạo ảnh AI (có thể mất 15-60s)...";
+                FilterProcessingText.Visibility = Visibility.Visible;
+            }
+
+            string modelUrl = "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0";
+            var request = (System.Net.HttpWebRequest)System.Net.WebRequest.Create(modelUrl);
+            request.Method = "POST";
+            request.ContentType = "application/json";
+            request.Headers["Authorization"] = "Bearer " + token;
+            
+            // Enhance prompt for wallpaper
+            string fullPrompt = prompt + ", highly detailed, 4k wallpaper, masterpiece";
+
+            request.BeginGetRequestStream(reqResult =>
+            {
+                try
+                {
+                    using (var reqStream = request.EndGetRequestStream(reqResult))
+                    {
+                        // JSON payload
+                        string json = "{\"inputs\":\"" + fullPrompt.Replace("\"", "\\\"").Replace("\n", " ") + "\"}";
+                        byte[] body = System.Text.Encoding.UTF8.GetBytes(json);
+                        reqStream.Write(body, 0, body.Length);
+                    }
+
+                    request.BeginGetResponse(resResult =>
+                    {
+                        try
+                        {
+                            using (var response = request.EndGetResponse(resResult))
+                            using (var resStream = response.GetResponseStream())
+                            using (var ms = new MemoryStream())
+                            {
+                                resStream.CopyTo(ms);
+                                byte[] imgBytes = ms.ToArray();
+
+                                using (var store = IsolatedStorageFile.GetUserStoreForApplication())
+                                {
+                                    if (store.FileExists("Background_AI.jpg")) store.DeleteFile("Background_AI.jpg");
+                                    using (var file = store.CreateFile("Background_AI.jpg"))
+                                    {
+                                        file.Write(imgBytes, 0, imgBytes.Length);
+                                    }
+                                }
+
+                                Dispatcher.BeginInvoke(() =>
+                                {
+                                    if (FilterProcessingText != null) FilterProcessingText.Visibility = Visibility.Collapsed;
+                                    MessageBox.Show("Tạo ảnh AI thành công!", "Thành công", MessageBoxButton.OK);
+                                    
+                                    // Use the new AI image as background
+                                    using (var store = IsolatedStorageFile.GetUserStoreForApplication())
+                                    {
+                                        if (store.FileExists("Background.jpg")) store.DeleteFile("Background.jpg");
+                                        store.CopyFile("Background_AI.jpg", "Background.jpg");
+                                    }
+                                    
+                                    hasUnsavedChanges = true;
+                                    LoadPreviewImages();
+                                });
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Dispatcher.BeginInvoke(() =>
+                            {
+                                if (FilterProcessingText != null) FilterProcessingText.Visibility = Visibility.Collapsed;
+                                MessageBox.Show("Lỗi khi tải ảnh: " + ex.Message + "\n(Model có thể đang ngủ, thử lại sau 30s)", "Lỗi", MessageBoxButton.OK);
+                            });
+                        }
+                    }, null);
+                }
+                catch (Exception ex)
+                {
+                    Dispatcher.BeginInvoke(() =>
+                    {
+                        if (FilterProcessingText != null) FilterProcessingText.Visibility = Visibility.Collapsed;
+                        MessageBox.Show("Lỗi kết nối: " + ex.Message, "Lỗi", MessageBoxButton.OK);
+                    });
+                }
+            }, null);
         }
 
         #endregion
