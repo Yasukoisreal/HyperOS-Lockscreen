@@ -116,16 +116,6 @@ namespace HyperOS.Pages
         {
             if (!isFirstLoad) return; // Guard: Loaded can fire multiple times
 
-            LoadSettings();
-            LoadBackground();
-            ApplyClockStyle();
-            ApplyClockPosition();
-            ApplyClockHAlign();
-            ApplyClockColor();
-            ApplyFreePositions();
-            ApplySignatureStyle();
-            UpdateTime();
-
             // Cache battery reference once
             try { cachedBattery = Windows.Phone.Devices.Power.Battery.GetDefault(); } catch { }
 
@@ -149,11 +139,6 @@ namespace HyperOS.Pages
                 LoadCachedWeather(); // Show cached data immediately
                 FetchWeather(true);  // Then refresh from API
             }
-
-            // Load depth effect BEFORE animations so animation knows which parts to skip
-            LoadForeground();
-            ApplyDepthLayers();
-            UpdateCountdown();
 
             // Play animations on first load (must be after ApplyDepthLayers)
             PlayEntryAnimations();
@@ -183,7 +168,25 @@ namespace HyperOS.Pages
         {
             base.OnNavigatedTo(e);
 
-            if (!isFirstLoad)
+            if (isFirstLoad)
+            {
+                // Run visual setup synchronously here to guarantee they are drawn on the first frame
+                // Prevents a blank/white screen flash before the lock screen shows.
+                LoadSettings();
+                LoadBackground();
+                ApplyClockStyle();
+                ApplyClockPosition();
+                ApplyClockHAlign();
+                ApplyClockColor();
+                ApplyFreePositions();
+                ApplySignatureStyle();
+                UpdateTime();
+                
+                LoadForeground();
+                ApplyDepthLayers();
+                UpdateCountdown();
+            }
+            else
             {
                 bool isBackNavigation =
                     e.NavigationMode == System.Windows.Navigation.NavigationMode.Back;
