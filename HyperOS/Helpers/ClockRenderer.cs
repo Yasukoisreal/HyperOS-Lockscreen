@@ -257,14 +257,16 @@ namespace HyperOS.Helpers
             }
             stack.IsHitTestVisible = false;
 
+            var s = System.IO.IsolatedStorage.IsolatedStorageSettings.ApplicationSettings;
+            string pfx = presetIndex >= 0 ? ("Set" + presetIndex + "_") : "";
+            double clockOpacity = s.Contains(pfx + "ClockOpacity") ? (double)s[pfx + "ClockOpacity"] : 1.0;
+            stack.Opacity = clockOpacity;
+
             // Draw Signature (Behind layer only, which means when we're drawing the date/hour that are behind)
             // To simplify, we draw it if dateBrush is not transparent
             var scb = dateBrush as SolidColorBrush;
             if (scb != null && scb.Color.A > 0)
             {
-                var s = System.IO.IsolatedStorage.IsolatedStorageSettings.ApplicationSettings;
-                string pfx = presetIndex >= 0 ? ("Set" + presetIndex + "_") : "";
-                
                 bool showSig = s.Contains(pfx + "ShowSignature") && (bool)s[pfx + "ShowSignature"];
                 if (showSig)
                 {
@@ -279,6 +281,7 @@ namespace HyperOS.Helpers
                         double sigY = s.Contains(pfx + "SignatureY") ? (double)s[pfx + "SignatureY"] : -1;
                         int sigColorIdx = s.Contains(pfx + "SignatureColor") ? (int)s[pfx + "SignatureColor"] : 0;
                         int sigBlend = s.Contains(pfx + "SignatureBlend") ? (int)s[pfx + "SignatureBlend"] : 0;
+                        double sigOpacity = s.Contains(pfx + "SignatureOpacity") ? (double)s[pfx + "SignatureOpacity"] : 1.0;
 
                         var sigFont = GetFont(fontIdx);
                         MC sigColor = ResolveClockColor(sigColorIdx, sigBlend);
@@ -290,7 +293,8 @@ namespace HyperOS.Helpers
                             FontFamily = sigFont,
                             FontSize = Math.Max(10, 48 * scale),
                             Foreground = sigBrush,
-                            CharacterSpacing = (int)sigSpacing
+                            CharacterSpacing = (int)sigSpacing,
+                            Opacity = sigOpacity
                         };
                         if (sigLayout == 1)
                         {

@@ -593,11 +593,11 @@ namespace HyperOS.Pages
             }
 
             // Sync ALL Set{n}_ keys to global keys so EditorPage and LockScreen read correctly
-            string[] keys = { "ClockStyle", "ClockSize", "ClockColor", "ClockBlend", "DateAlign", "ClockLayout",
+            string[] keys = { "ClockStyle", "ClockSize", "ClockColor", "ClockBlend", "ClockOpacity", "DateAlign", "ClockLayout",
                 "ClockX", "ClockY", "UseDepthEffect", "DepthHourBehind", "DepthColonBehind", "DepthMinuteBehind",
                 "UseMatte", "UseRibbed",
                 "ShowWeather", "ShowCountdown", "WeatherX", "WeatherY", "CountdownX", "CountdownY",
-                "ShowSignature", "SignatureText", "SignatureFont", "SignatureSpacing", "SignatureAlign", "SignatureColor", "SignatureBlend", "SignatureX", "SignatureY" };
+                "ShowSignature", "SignatureText", "SignatureFont", "SignatureSpacing", "SignatureAlign", "SignatureColor", "SignatureBlend", "SignatureOpacity", "SignatureX", "SignatureY" };
             foreach (var key in keys)
             {
                 if (s.Contains(px + key))

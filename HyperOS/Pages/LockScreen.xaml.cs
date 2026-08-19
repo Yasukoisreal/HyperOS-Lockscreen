@@ -37,6 +37,7 @@ namespace HyperOS.Pages
         private int clockColor = 0;     // 0=White, 1=Gold, 2=SkyBlue, 3=Pink, 4=Red
         private int clockBlend = 0;     // 0=None, 1=Sunset, 2=Ocean, 3=Aurora, 4=Neon
         private int clockSize = 2;      // 0=S..4=XXL (default 2=L)
+        private double clockOpacity = 1.0;
         private int dateAlign = 1;      // 0=Left, 1=Center, 2=Right
         private int clockLayout = 0;    // 0=Horiz, 1=Vert, 2=Analog Minimal, 3=Classic, 4=Swiss
 
@@ -102,6 +103,7 @@ namespace HyperOS.Pages
         private int sigLayout = 0; // 0=Horizontal, 1=Vertical
         private int sigColorIdx = 0;
         private int sigBlend = 0;
+        private double sigOpacity = 1.0;
         private double signatureX = 0;
         private double signatureY = 0;
 
@@ -115,6 +117,16 @@ namespace HyperOS.Pages
         private void PhoneApplicationPage_Loaded(object sender, RoutedEventArgs e)
         {
             if (!isFirstLoad) return; // Guard: Loaded can fire multiple times
+
+            LoadSettings();
+            LoadBackground();
+            ApplyClockStyle();
+            ApplyClockPosition();
+            ApplyClockHAlign();
+            ApplyClockColor();
+            ApplyFreePositions();
+            ApplySignatureStyle();
+            UpdateTime();
 
             // Cache battery reference once
             try { cachedBattery = Windows.Phone.Devices.Power.Battery.GetDefault(); } catch { }
@@ -139,6 +151,11 @@ namespace HyperOS.Pages
                 LoadCachedWeather(); // Show cached data immediately
                 FetchWeather(true);  // Then refresh from API
             }
+
+            // Load depth effect BEFORE animations so animation knows which parts to skip
+            LoadForeground();
+            ApplyDepthLayers();
+            UpdateCountdown();
 
             // Play animations on first load (must be after ApplyDepthLayers)
             PlayEntryAnimations();
@@ -168,25 +185,7 @@ namespace HyperOS.Pages
         {
             base.OnNavigatedTo(e);
 
-            if (isFirstLoad)
-            {
-                // Run visual setup synchronously here to guarantee they are drawn on the first frame
-                // Prevents a blank/white screen flash before the lock screen shows.
-                LoadSettings();
-                LoadBackground();
-                ApplyClockStyle();
-                ApplyClockPosition();
-                ApplyClockHAlign();
-                ApplyClockColor();
-                ApplyFreePositions();
-                ApplySignatureStyle();
-                UpdateTime();
-                
-                LoadForeground();
-                ApplyDepthLayers();
-                UpdateCountdown();
-            }
-            else
+            if (!isFirstLoad)
             {
                 bool isBackNavigation =
                     e.NavigationMode == System.Windows.Navigation.NavigationMode.Back;
@@ -817,6 +816,8 @@ namespace HyperOS.Pages
                 dateAlign = (int)s["DateAlign"];
             if (s.Contains("ClockLayout"))
                 clockLayout = (int)s["ClockLayout"];
+            if (s.Contains("ClockOpacity"))
+                clockOpacity = (double)s["ClockOpacity"];
 
             // Owner info
             if (s.Contains("OwnerInfo"))
@@ -895,6 +896,8 @@ namespace HyperOS.Pages
                 sigColorIdx = (int)s["SignatureColor"];
             if (s.Contains("SignatureBlend"))
                 sigBlend = (int)s["SignatureBlend"];
+            if (s.Contains("SignatureOpacity"))
+                sigOpacity = (double)s["SignatureOpacity"];
             if (s.Contains("SignatureX"))
                 signatureX = (double)s["SignatureX"];
             if (s.Contains("SignatureY"))
@@ -1173,6 +1176,10 @@ namespace HyperOS.Pages
             RhombusM1.Foreground = brush; RhombusM2.Foreground = brush;
             RhombusH1Behind.Foreground = brush; RhombusH2Behind.Foreground = brush;
             RhombusM1Behind.Foreground = brush; RhombusM2Behind.Foreground = brush;
+
+            // Apply clock opacity from Editor settings
+            ClockPanel.Opacity = clockOpacity;
+            BehindClockPanel.Opacity = clockOpacity;
         }
 
         private LinearGradientBrush MakeGradient(System.Windows.Media.Color from, System.Windows.Media.Color to)
@@ -1399,6 +1406,7 @@ namespace HyperOS.Pages
             }
             MainSignatureText.Foreground = brush;
 
+            MainSignatureText.Opacity = sigOpacity;
             MainSignatureText.Margin = new Thickness(signatureX + 5.5, signatureY + 5.5, 0, 0);
         }
 
@@ -1462,10 +1470,10 @@ namespace HyperOS.Pages
                     string bgToLoad = (useMatte || useRibbed) && store.FileExists("Background_Filtered.jpg") ? "Background_Filtered.jpg" : "Background.jpg";
                     if (store.FileExists(bgToLoad))
                     {
-                        using (var stream = store.OpenFile(bgToLoad, FileMode.Open, FileAccess.Read))
+                        using (var stream = store.OpenFile(bgToLoad,
+                            System.IO.FileMode.Open, System.IO.FileAccess.Read))
                         {
                             var bitmap = new BitmapImage();
-                            bitmap.CreateOptions = BitmapCreateOptions.None;
                             bitmap.SetSource(stream);
                             BackgroundBrush.ImageSource = bitmap;
                         }
@@ -1473,9 +1481,8 @@ namespace HyperOS.Pages
                     else
                     {
                         // No custom wallpaper — use default
-                        var defaultBitmap = new BitmapImage(new Uri("/Assets/BlurBackground.jpg", UriKind.Relative));
-                        defaultBitmap.CreateOptions = BitmapCreateOptions.None;
-                        BackgroundBrush.ImageSource = defaultBitmap;
+                        BackgroundBrush.ImageSource = new BitmapImage(
+                            new Uri("/Assets/BlurBackground.jpg", UriKind.Relative));
                     }
                 }
                 backgroundLoaded = true;
