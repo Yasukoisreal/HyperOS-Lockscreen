@@ -1459,10 +1459,10 @@ namespace HyperOS.Pages
                     string bgToLoad = (useMatte || useRibbed) && store.FileExists("Background_Filtered.jpg") ? "Background_Filtered.jpg" : "Background.jpg";
                     if (store.FileExists(bgToLoad))
                     {
-                        using (var stream = store.OpenFile(bgToLoad,
-                            System.IO.FileMode.Open, System.IO.FileAccess.Read))
+                        using (var stream = store.OpenFile(bgToLoad, FileMode.Open, FileAccess.Read))
                         {
                             var bitmap = new BitmapImage();
+                            bitmap.CreateOptions = BitmapCreateOptions.None;
                             bitmap.SetSource(stream);
                             BackgroundBrush.ImageSource = bitmap;
                         }
@@ -1470,8 +1470,9 @@ namespace HyperOS.Pages
                     else
                     {
                         // No custom wallpaper — use default
-                        BackgroundBrush.ImageSource = new BitmapImage(
-                            new Uri("/Assets/BlurBackground.jpg", UriKind.Relative));
+                        var defaultBitmap = new BitmapImage(new Uri("/Assets/BlurBackground.jpg", UriKind.Relative));
+                        defaultBitmap.CreateOptions = BitmapCreateOptions.None;
+                        BackgroundBrush.ImageSource = defaultBitmap;
                     }
                 }
                 backgroundLoaded = true;
