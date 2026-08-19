@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.IsolatedStorage;
-using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -63,7 +62,6 @@ namespace HyperOS.Pages
         private string lastTimeText = "";
         private bool isFirstLoad = true;
         private bool backgroundLoaded = false;
-        private bool backgroundLoadInProgress = false;
 
         // Weather
         private DispatcherTimer weatherTimer;
@@ -1453,66 +1451,32 @@ namespace HyperOS.Pages
 
         private void LoadBackground()
         {
-            if (backgroundLoaded || backgroundLoadInProgress) return;
-
-            // Keep first render fast: show default immediately, then hydrate custom wallpaper.
-            ApplyDefaultBackground();
-            backgroundLoadInProgress = true;
-
-            ThreadPool.QueueUserWorkItem(_ =>
+            if (backgroundLoaded) return;
+            try
             {
-                byte[] bgBytes = null;
-
-                try
+                using (var store = IsolatedStorageFile.GetUserStoreForApplication())
                 {
-                    using (var store = IsolatedStorageFile.GetUserStoreForApplication())
+                    string bgToLoad = (useMatte || useRibbed) && store.FileExists("Background_Filtered.jpg") ? "Background_Filtered.jpg" : "Background.jpg";
+                    if (store.FileExists(bgToLoad))
                     {
-                        string bgToLoad = (useMatte || useRibbed) && store.FileExists("Background_Filtered.jpg")
-                            ? "Background_Filtered.jpg"
-                            : "Background.jpg";
-
-                        if (store.FileExists(bgToLoad))
-                        {
-                            using (var stream = store.OpenFile(bgToLoad,
-                                System.IO.FileMode.Open, System.IO.FileAccess.Read))
-                            {
-                                bgBytes = new byte[stream.Length];
-                                stream.Read(bgBytes, 0, bgBytes.Length);
-                            }
-                        }
-                    }
-                }
-                catch { }
-
-                Deployment.Current.Dispatcher.BeginInvoke(() =>
-                {
-                    try
-                    {
-                        if (bgBytes != null && bgBytes.Length > 0)
+                        using (var stream = store.OpenFile(bgToLoad,
+                            System.IO.FileMode.Open, System.IO.FileAccess.Read))
                         {
                             var bitmap = new BitmapImage();
-                            using (var ms = new MemoryStream(bgBytes))
-                            {
-                                bitmap.SetSource(ms);
-                            }
+                            bitmap.SetSource(stream);
                             BackgroundBrush.ImageSource = bitmap;
                         }
                     }
-                    catch
+                    else
                     {
-                        ApplyDefaultBackground();
+                        // No custom wallpaper — use default
+                        BackgroundBrush.ImageSource = new BitmapImage(
+                            new Uri("/Assets/BlurBackground.jpg", UriKind.Relative));
                     }
-
-                    backgroundLoaded = true;
-                    backgroundLoadInProgress = false;
-                });
-            });
-        }
-
-        private void ApplyDefaultBackground()
-        {
-            BackgroundBrush.ImageSource = new BitmapImage(
-                new Uri("/Assets/BlurBackground.jpg", UriKind.Relative));
+                }
+                backgroundLoaded = true;
+            }
+            catch { }
         }
 
         #endregion
