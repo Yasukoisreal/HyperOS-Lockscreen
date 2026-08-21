@@ -118,6 +118,23 @@
                         <TextBlock x:Name="PRhombusM2" Grid.Row="2" Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center" Text="7" FontFamily="/Assets/Fonts/MiSans-Demibold.ttf#MiSans" Foreground="White" FontSize="105"/>
                         <Ellipse x:Name="PRhombusCenterDot" Grid.Row="1" Grid.Column="1" Width="12" Height="12" Fill="#FFDC3232" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Grid>
+                    
+                    <Grid x:Name="PStackedGrid" Visibility="Collapsed" HorizontalAlignment="Left" Margin="12,0,0,0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <TextBlock x:Name="PStackedCarrier" Grid.Row="0" Text="Mi Mobile" FontSize="18" Foreground="#BBFFFFFF" FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"/>
+                        <TextBlock x:Name="PStackedTime" Grid.Row="1" Text="5:36" FontSize="100" Foreground="White" FontFamily="/Assets/Fonts/MiSans-Light.ttf#MiSans" Margin="-4,-12,0,-12"/>
+                        <StackPanel Grid.Row="2" Orientation="Horizontal">
+                            <TextBlock x:Name="PStackedDate" Text="4/6" FontSize="44" Foreground="White" FontFamily="/Assets/Fonts/MiSans-Light.ttf#MiSans"/>
+                            <TextBlock x:Name="PStackedDay" Text="THU" FontSize="18" Foreground="#99FFFFFF" FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans" VerticalAlignment="Top" Margin="8,8,0,0"/>
+                        </StackPanel>
+                        <TextBlock x:Name="PStackedWeather" Grid.Row="3" Text="28° ☁" FontSize="44" Foreground="White" FontFamily="/Assets/Fonts/MiSans-Light.ttf#MiSans" Margin="0,-4,0,0"/>
+                    </Grid>
+
                     <!-- Analog Clock Preview (Collapsed by default) -->
                     <Canvas x:Name="PAnalogClock" Width="200" Height="200"
                             HorizontalAlignment="Center" Visibility="Collapsed"/>
@@ -314,6 +331,9 @@
                                 </Border>
                                 <Border x:Name="LayoutGiant" Tap="Layout_Tap" Tag="6" Style="{StaticResource PropOptionPill}">
                                     <TextBlock Text="Giant" Style="{StaticResource PropOptionText}"/>
+                                </Border>
+                                <Border x:Name="LayoutStacked" Tap="Layout_Tap" Tag="7" Style="{StaticResource PropOptionPill}">
+                                    <TextBlock Text="Stacked" Style="{StaticResource PropOptionText}"/>
                                 </Border>
                             </StackPanel>
                             </ScrollViewer>

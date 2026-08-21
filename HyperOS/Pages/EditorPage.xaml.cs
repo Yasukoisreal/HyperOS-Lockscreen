@@ -565,35 +565,59 @@ namespace HyperOS.Pages
             bool isVertical = clockLayout == 1;
             bool isRhombus = clockLayout == 5;
             bool isGiant = clockLayout == 6;
+            bool isStacked = clockLayout == 7;
 
             // Update Rhombus digits
             PRhombusH1.Text = hStr[0].ToString();
             PRhombusH2.Text = hStr[1].ToString();
             PRhombusM1.Text = mStr[0].ToString();
             PRhombusM2.Text = mStr[1].ToString();
+            
+            // Update Stacked text
+            if (isStacked)
+            {
+                PStackedTime.Text = hStr + ":" + mStr;
+                PStackedDate.Text = now.Day + "/" + now.Month;
+                PStackedDay.Text = now.ToString("ddd").ToUpper();
+                string cached = Get<string>(IsolatedStorageSettings.ApplicationSettings, "CachedWeather", "");
+                PStackedWeather.Text = string.IsNullOrEmpty(cached) ? "28° ☁" : cached;
+            }
 
-            // Show/hide digital vs analog vs rhombus
+            // Show/hide digital vs analog vs rhombus vs stacked
             if (isAnalog)
             {
                 PTimePanel.Visibility = Visibility.Collapsed;
                 PRhombusGrid.Visibility = Visibility.Collapsed;
+                PStackedGrid.Visibility = Visibility.Collapsed;
                 PAnalogClock.Visibility = Visibility.Visible;
             }
             else if (isRhombus)
             {
                 PTimePanel.Visibility = Visibility.Collapsed;
                 PAnalogClock.Visibility = Visibility.Collapsed;
+                PStackedGrid.Visibility = Visibility.Collapsed;
                 PRhombusGrid.Visibility = Visibility.Visible;
+            }
+            else if (isStacked)
+            {
+                PTimePanel.Visibility = Visibility.Collapsed;
+                PAnalogClock.Visibility = Visibility.Collapsed;
+                PRhombusGrid.Visibility = Visibility.Collapsed;
+                PStackedGrid.Visibility = Visibility.Visible;
             }
             else
             {
                 PTimePanel.Visibility = Visibility.Visible;
                 PRhombusGrid.Visibility = Visibility.Collapsed;
                 PAnalogClock.Visibility = Visibility.Collapsed;
+                PStackedGrid.Visibility = Visibility.Collapsed;
             }
 
             // Vertical / Giant: stack vertically, hide colon
             PColon.Visibility = (isVertical || isGiant) ? Visibility.Collapsed : Visibility.Visible;
+            
+            // Stacked: hide separate date panel because it's built-in
+            PDatePanel.Visibility = isStacked ? Visibility.Collapsed : Visibility.Visible;
 
             if (isVertical)
             {
@@ -618,6 +642,9 @@ namespace HyperOS.Pages
             PRhombusH2.FontFamily = font;
             PRhombusM1.FontFamily = font;
             PRhombusM2.FontFamily = font;
+            PStackedTime.FontFamily = font;
+            PStackedDate.FontFamily = font;
+            PStackedWeather.FontFamily = font;
 
             // Size
             int si = Math.Max(0, Math.Min(clockSize, SizeValues.Length - 1));
@@ -660,6 +687,18 @@ namespace HyperOS.Pages
                 PRhombusH2.Margin = new Thickness(0, 0, -rhombSz * 0.05, 0);
                 PRhombusM1.Margin = new Thickness(-rhombSz * 0.05, 0, 0, 0);
                 PRhombusM2.Margin = new Thickness(0, -rhombSz * 0.1, 0, 0);
+            }
+            
+            if (isStacked)
+            {
+                PStackedTime.FontSize = sz * 0.95;
+                PStackedDate.FontSize = sz * 0.42;
+                PStackedWeather.FontSize = sz * 0.42;
+                PStackedCarrier.FontSize = sz * 0.18;
+                PStackedDay.FontSize = sz * 0.18;
+                
+                PStackedTime.Margin = new Thickness(-4, -sz * 0.11, 0, -sz * 0.11);
+                PStackedWeather.Margin = new Thickness(0, -sz * 0.04, 0, 0);
             }
 
             // Color
@@ -793,15 +832,17 @@ namespace HyperOS.Pages
                 PRhombusM1.Opacity = 1;
                 PRhombusM2.Opacity = 1;
                 PRhombusCenterDot.Opacity = 1;
+                PStackedGrid.Opacity = 1;
                 return;
             }
 
             bool isAnalog = clockLayout >= 2 && clockLayout <= 4;
             bool isRhombus = clockLayout == 5;
+            bool isStacked = clockLayout == 7;
 
-            if (isAnalog)
+            if (isAnalog || isStacked)
             {
-                // Analog: entire clock behind foreground
+                // Analog/Stacked: entire clock behind foreground
                 FrontHour.Visibility = Visibility.Collapsed;
                 FrontColon.Visibility = Visibility.Collapsed;
                 FrontMinute.Visibility = Visibility.Collapsed;
@@ -813,8 +854,9 @@ namespace HyperOS.Pages
                 PHour.Opacity = 1;
                 PColon.Opacity = 1;
                 PMinute.Opacity = 1;
-                PAnalogClock.Opacity = 1; // analog stays behind foreground naturally
-                PDatePanel.Opacity = 0; // Date always in front
+                PAnalogClock.Opacity = 1; 
+                PStackedGrid.Opacity = 1;
+                PDatePanel.Opacity = isStacked ? 1 : 0; // Stacked doesn't use DatePanel, so leave it alone.
             }
             else
             {
@@ -987,6 +1029,9 @@ namespace HyperOS.Pages
             PRhombusH2.Foreground = brush;
             PRhombusM1.Foreground = brush;
             PRhombusM2.Foreground = brush;
+            PStackedTime.Foreground = brush;
+            PStackedDate.Foreground = brush;
+            PStackedWeather.Foreground = brush;
         }
 
         private LinearGradientBrush MakeGrad(Color from, Color to)
@@ -1484,7 +1529,7 @@ namespace HyperOS.Pages
 
         private void UpdateLayoutSelection()
         {
-            Border[] pills = { LayoutHoriz, LayoutVert, LayoutAnalog1, LayoutAnalog2, LayoutAnalog3, LayoutRhombus, LayoutGiant };
+            Border[] pills = { LayoutHoriz, LayoutVert, LayoutAnalog1, LayoutAnalog2, LayoutAnalog3, LayoutRhombus, LayoutGiant, LayoutStacked };
             for (int i = 0; i < pills.Length; i++)
                 pills[i].Background = (i == clockLayout) ? AccentBrush : InactiveTabBg;
         }

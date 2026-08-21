@@ -298,6 +298,14 @@ namespace HyperOS.Pages
                         if (useDepthEffect)
                             AddFadeSlide(sb, RhombusGridBehind, 0, 450);
                     }
+                    else if (clockLayout == 7)
+                    {
+                        // Stacked layout
+                        if (useDepthEffect)
+                            AddFadeSlide(sb, StackedGridBehind, 0, 450);
+                        else
+                            AddFadeSlide(sb, StackedGrid, 0, 450);
+                    }
                     else
                     {
                         int delayMs = 0;
@@ -405,6 +413,12 @@ namespace HyperOS.Pages
                     RhombusM1.Text = m[0].ToString(); RhombusM1Behind.Text = m[0].ToString();
                     RhombusM2.Text = m.Length > 1 ? m[1].ToString() : ""; RhombusM2Behind.Text = RhombusM2.Text;
                 }
+                
+                // Update Stacked time
+                if (clockLayout == 7)
+                {
+                    StackedTime.Text = newTime; StackedTimeBehind.Text = newTime;
+                }
 
                 string newDay = DateTime.Now.ToString("dddd");
                 string newDate = DateTime.Now.ToString("MMMM d");
@@ -412,6 +426,16 @@ namespace HyperOS.Pages
                 {
                     DayPanel.Text = newDay;
                     DatePanel.Text = newDate;
+                    
+                    if (clockLayout == 7)
+                    {
+                        var now = DateTime.Now;
+                        StackedDate.Text = now.Day + "/" + now.Month;
+                        StackedDateBehind.Text = StackedDate.Text;
+                        StackedDay.Text = now.ToString("ddd").ToUpper();
+                        StackedDayBehind.Text = StackedDay.Text;
+                    }
+                    
                     UpdateCountdown(); // Refresh once per day
                 }
             }
@@ -931,19 +955,25 @@ namespace HyperOS.Pages
             RhombusM1.FontFamily = ff; RhombusM2.FontFamily = ff;
             RhombusH1Behind.FontFamily = ff; RhombusH2Behind.FontFamily = ff;
             RhombusM1Behind.FontFamily = ff; RhombusM2Behind.FontFamily = ff;
+            StackedTime.FontFamily = ff; StackedTimeBehind.FontFamily = ff;
+            StackedDate.FontFamily = ff; StackedDateBehind.FontFamily = ff;
+            StackedWeather.FontFamily = ff; StackedWeatherBehind.FontFamily = ff;
 
             bool isAnalog = clockLayout >= 2 && clockLayout <= 4;
             bool isVertical = clockLayout == 1;
             bool isRhombus = clockLayout == 5;
             bool isGiant = clockLayout == 6;
+            bool isStacked = clockLayout == 7;
 
-            // Show/hide digital vs analog vs rhombus
+            // Show/hide digital vs analog vs rhombus vs stacked
             if (isAnalog)
             {
                 TimePanel.Visibility = Visibility.Collapsed;
                 BehindTimePanel.Visibility = Visibility.Collapsed;
                 RhombusGrid.Visibility = Visibility.Collapsed;
                 RhombusGridBehind.Visibility = Visibility.Collapsed;
+                StackedGrid.Visibility = Visibility.Collapsed;
+                StackedGridBehind.Visibility = Visibility.Collapsed;
                 AnalogClockCanvas.Visibility = Visibility.Visible;
                 // AnalogClockCanvasBehind is managed by ApplyDepthLayers
             }
@@ -953,8 +983,21 @@ namespace HyperOS.Pages
                 BehindTimePanel.Visibility = Visibility.Collapsed;
                 AnalogClockCanvas.Visibility = Visibility.Collapsed;
                 AnalogClockCanvasBehind.Visibility = Visibility.Collapsed;
+                StackedGrid.Visibility = Visibility.Collapsed;
+                StackedGridBehind.Visibility = Visibility.Collapsed;
                 RhombusGrid.Visibility = Visibility.Visible;
                 RhombusGridBehind.Visibility = Visibility.Visible;
+            }
+            else if (isStacked)
+            {
+                TimePanel.Visibility = Visibility.Collapsed;
+                BehindTimePanel.Visibility = Visibility.Collapsed;
+                AnalogClockCanvas.Visibility = Visibility.Collapsed;
+                AnalogClockCanvasBehind.Visibility = Visibility.Collapsed;
+                RhombusGrid.Visibility = Visibility.Collapsed;
+                RhombusGridBehind.Visibility = Visibility.Collapsed;
+                StackedGrid.Visibility = Visibility.Visible;
+                // StackedGridBehind is managed by ApplyDepthLayers
             }
             else
             {
@@ -962,6 +1005,8 @@ namespace HyperOS.Pages
                 BehindTimePanel.Visibility = Visibility.Visible;
                 RhombusGrid.Visibility = Visibility.Collapsed;
                 RhombusGridBehind.Visibility = Visibility.Collapsed;
+                StackedGrid.Visibility = Visibility.Collapsed;
+                StackedGridBehind.Visibility = Visibility.Collapsed;
                 AnalogClockCanvas.Visibility = Visibility.Collapsed;
                 AnalogClockCanvasBehind.Visibility = Visibility.Collapsed;
             }
@@ -969,6 +1014,9 @@ namespace HyperOS.Pages
             // Vertical / Giant: stack vertically, hide colon
             ColonPart.Visibility = (isVertical || isGiant) ? Visibility.Collapsed : Visibility.Visible;
             ColonPartBehind.Visibility = (isVertical || isGiant) ? Visibility.Collapsed : Visibility.Visible;
+            
+            // Date info panel hidden if stacked (it has its own)
+            DateInfoPanel.Visibility = isStacked ? Visibility.Collapsed : Visibility.Visible;
 
             if (isVertical)
             {
@@ -1062,6 +1110,21 @@ namespace HyperOS.Pages
                 RhombusH2.Margin = h2M; RhombusH2Behind.Margin = h2M;
                 RhombusM1.Margin = m1M; RhombusM1Behind.Margin = m1M;
                 RhombusM2.Margin = m2M; RhombusM2Behind.Margin = m2M;
+            }
+            
+            if (isStacked)
+            {
+                double stackSz = baseSize;
+                StackedTime.FontSize = stackSz * 0.95; StackedTimeBehind.FontSize = stackSz * 0.95;
+                StackedDate.FontSize = stackSz * 0.42; StackedDateBehind.FontSize = stackSz * 0.42;
+                StackedWeather.FontSize = stackSz * 0.42; StackedWeatherBehind.FontSize = stackSz * 0.42;
+                StackedCarrier.FontSize = stackSz * 0.18; StackedCarrierBehind.FontSize = stackSz * 0.18;
+                StackedDay.FontSize = stackSz * 0.18; StackedDayBehind.FontSize = stackSz * 0.18;
+                
+                var timeMargin = new Thickness(-4, -stackSz * 0.11, 0, -stackSz * 0.11);
+                StackedTime.Margin = timeMargin; StackedTimeBehind.Margin = timeMargin;
+                var weatherMargin = new Thickness(0, -stackSz * 0.04, 0, 0);
+                StackedWeather.Margin = weatherMargin; StackedWeatherBehind.Margin = weatherMargin;
             }
 
             // Time & Date format
@@ -1188,6 +1251,10 @@ namespace HyperOS.Pages
             RhombusM1.Foreground = brush; RhombusM2.Foreground = brush;
             RhombusH1Behind.Foreground = brush; RhombusH2Behind.Foreground = brush;
             RhombusM1Behind.Foreground = brush; RhombusM2Behind.Foreground = brush;
+            
+            StackedTime.Foreground = brush; StackedTimeBehind.Foreground = brush;
+            StackedDate.Foreground = brush; StackedDateBehind.Foreground = brush;
+            StackedWeather.Foreground = brush; StackedWeatherBehind.Foreground = brush;
 
             // Apply clock opacity from Editor settings
             ClockPanel.Opacity = clockOpacity;
@@ -1237,6 +1304,8 @@ namespace HyperOS.Pages
                 RhombusM1.Opacity = 1;
                 RhombusM2.Opacity = 1;
                 RhombusDot.Opacity = 1;
+                StackedGrid.Opacity = 1;
+                StackedGridBehind.Visibility = Visibility.Collapsed;
                 return;
             }
 
@@ -1245,15 +1314,19 @@ namespace HyperOS.Pages
             BehindClockPanel.Margin = ClockPanel.Margin;
             BehindClockPanel.HorizontalAlignment = ClockPanel.HorizontalAlignment;
 
-            if (isAnalog)
+            bool isStacked = clockLayout == 7;
+
+            if (isAnalog || isStacked)
             {
-                // Analog: treat entire clock as behind
+                // Analog/Stacked: treat entire clock as behind
                 BehindForegroundGrid.Visibility = Visibility.Visible;
                 AnalogClockCanvas.Opacity = 0;
                 AnalogClockCanvasBehind.Visibility = Visibility.Visible;
                 HourPart.Opacity = 0;
                 ColonPart.Opacity = 0;
                 MinutePart.Opacity = 0;
+                StackedGrid.Opacity = 0;
+                StackedGridBehind.Visibility = Visibility.Visible;
             }
             else
             {
@@ -1261,6 +1334,8 @@ namespace HyperOS.Pages
                 BehindForegroundGrid.Visibility = anyBehind ? Visibility.Visible : Visibility.Collapsed;
                 AnalogClockCanvasBehind.Visibility = Visibility.Collapsed;
                 AnalogClockCanvas.Opacity = 1;
+                StackedGridBehind.Visibility = Visibility.Collapsed;
+                StackedGrid.Opacity = 1;
 
                 double hOp = depthHourBehind ? 0 : 1;
                 double hOpB = depthHourBehind ? 1 : 0;
@@ -1570,6 +1645,12 @@ namespace HyperOS.Pages
                             {
                                 WeatherText.Text = icon + " " + temp.ToString("0") + "°C";
                                 WeatherText.Visibility = Visibility.Visible;
+                                
+                                if (clockLayout == 7)
+                                {
+                                    StackedWeather.Text = WeatherText.Text;
+                                    StackedWeatherBehind.Text = WeatherText.Text;
+                                }
 
                                 // Cache to storage
                                 var s = IsolatedStorageSettings.ApplicationSettings;
@@ -1604,6 +1685,12 @@ namespace HyperOS.Pages
                 {
                     WeatherText.Text = (string)s["CachedWeather"];
                     WeatherText.Visibility = Visibility.Visible;
+                    
+                    if (clockLayout == 7)
+                    {
+                        StackedWeather.Text = WeatherText.Text;
+                        StackedWeatherBehind.Text = WeatherText.Text;
+                    }
                 }
             }
             catch { }

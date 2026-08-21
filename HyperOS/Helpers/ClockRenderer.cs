@@ -381,15 +381,18 @@ namespace HyperOS.Helpers
                 case 2: dateHAlign = HorizontalAlignment.Right; break;
                 default: dateHAlign = HorizontalAlignment.Center; break;
             }
-            stack.Children.Add(new TextBlock
+            if (clockLayout != 7)
             {
-                Text = DateTime.Now.DayOfWeek.ToString() + " \u00b7 " + DateTime.Now.ToString("MMMM d"),
-                FontFamily = new FontFamily("/Assets/Fonts/MiSans-Regular.ttf#MiSans"),
-                FontSize = Math.Max(8, 20 * scale),
-                Foreground = dateBrush,
-                HorizontalAlignment = dateHAlign,
-                Margin = new Thickness(0, 0, 0, 2)
-            });
+                stack.Children.Add(new TextBlock
+                {
+                    Text = DateTime.Now.DayOfWeek.ToString() + " \u00b7 " + DateTime.Now.ToString("MMMM d"),
+                    FontFamily = new FontFamily("/Assets/Fonts/MiSans-Regular.ttf#MiSans"),
+                    FontSize = Math.Max(8, 20 * scale),
+                    Foreground = dateBrush,
+                    HorizontalAlignment = dateHAlign,
+                    Margin = new Thickness(0, 0, 0, 2)
+                });
+            }
 
             // Time
             if (clockLayout >= 2 && clockLayout <= 4)
@@ -458,6 +461,45 @@ namespace HyperOS.Helpers
                 };
                 timeP.Children.Add(new TextBlock { Text = DateTime.Now.ToString("HH"), FontFamily = Fonts[fi], FontSize = sz * 1.6, Foreground = hourBrush });
                 timeP.Children.Add(new TextBlock { Text = DateTime.Now.ToString("mm"), FontFamily = Fonts[fi], FontSize = sz * 1.6, Foreground = minuteBrush, Margin = new Thickness(sz * 0.1, 0, 0, 0) });
+                stack.Children.Add(timeP);
+            }
+            else if (clockLayout == 7)
+            {
+                // Stacked layout
+                var timeP = new Grid
+                {
+                    HorizontalAlignment = dateHAlign,
+                    Margin = new Thickness(12, 0, 0, 0)
+                };
+                timeP.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+                timeP.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+                timeP.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+                timeP.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+                var carrier = new TextBlock { Text = "Mi Mobile", FontSize = sz * 0.18, Foreground = new SolidColorBrush(MC.FromArgb(187, 255, 255, 255)), FontFamily = new FontFamily("/Assets/Fonts/MiSans-Regular.ttf#MiSans") };
+                Grid.SetRow(carrier, 0);
+
+                var timeStr = DateTime.Now.ToString("HH:mm");
+                var time = new TextBlock { Text = timeStr, FontSize = sz * 0.95, Foreground = hourBrush, FontFamily = new FontFamily("/Assets/Fonts/MiSans-Light.ttf#MiSans"), Margin = new Thickness(-4, -sz * 0.11, 0, -sz * 0.11) };
+                Grid.SetRow(time, 1);
+
+                var dateP = new StackPanel { Orientation = Orientation.Horizontal };
+                Grid.SetRow(dateP, 2);
+                var date = new TextBlock { Text = DateTime.Now.Day + "/" + DateTime.Now.Month, FontSize = sz * 0.42, Foreground = dateBrush, FontFamily = new FontFamily("/Assets/Fonts/MiSans-Light.ttf#MiSans") };
+                var day = new TextBlock { Text = DateTime.Now.ToString("ddd").ToUpper(), FontSize = sz * 0.18, Foreground = new SolidColorBrush(MC.FromArgb(153, 255, 255, 255)), FontFamily = new FontFamily("/Assets/Fonts/MiSans-Regular.ttf#MiSans"), VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(8, 8, 0, 0) };
+                dateP.Children.Add(date);
+                dateP.Children.Add(day);
+
+                var s2 = System.IO.IsolatedStorage.IsolatedStorageSettings.ApplicationSettings;
+                string cached = s2.Contains("CachedWeather") ? (string)s2["CachedWeather"] : "28° ☁";
+                var weather = new TextBlock { Text = cached, FontSize = sz * 0.42, Foreground = dateBrush, FontFamily = new FontFamily("/Assets/Fonts/MiSans-Light.ttf#MiSans"), Margin = new Thickness(0, -sz * 0.04, 0, 0) };
+                Grid.SetRow(weather, 3);
+
+                timeP.Children.Add(carrier);
+                timeP.Children.Add(time);
+                timeP.Children.Add(dateP);
+                timeP.Children.Add(weather);
+
                 stack.Children.Add(timeP);
             }
             else if (clockLayout == 1)

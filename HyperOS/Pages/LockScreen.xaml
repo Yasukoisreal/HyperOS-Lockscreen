@@ -442,6 +442,24 @@
                         <TextBlock x:Name="RhombusM2Behind" Grid.Row="2" Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center" Text="7" FontFamily="/Assets/Fonts/MiSans-Demibold.ttf#MiSans" Foreground="White" FontSize="105"/>
                         <Ellipse x:Name="RhombusDotBehind" Grid.Row="1" Grid.Column="1" Width="12" Height="12" Fill="#FFDC3232" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Grid>
+                    
+                    <!-- Stacked Grid Behind -->
+                    <Grid x:Name="StackedGridBehind" Visibility="Collapsed" HorizontalAlignment="Left" Margin="12,0,0,0">
+                        <Grid.RenderTransform><CompositeTransform/></Grid.RenderTransform>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <TextBlock x:Name="StackedCarrierBehind" Grid.Row="0" Text="Mi Mobile" FontSize="18" Foreground="#BBFFFFFF" FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"/>
+                        <TextBlock x:Name="StackedTimeBehind" Grid.Row="1" Text="5:36" FontSize="100" Foreground="White" FontFamily="/Assets/Fonts/MiSans-Light.ttf#MiSans" Margin="-4,-12,0,-12"/>
+                        <StackPanel Grid.Row="2" Orientation="Horizontal">
+                            <TextBlock x:Name="StackedDateBehind" Text="4/6" FontSize="44" Foreground="White" FontFamily="/Assets/Fonts/MiSans-Light.ttf#MiSans"/>
+                            <TextBlock x:Name="StackedDayBehind" Text="THU" FontSize="18" Foreground="#99FFFFFF" FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans" VerticalAlignment="Top" Margin="8,8,0,0"/>
+                        </StackPanel>
+                        <TextBlock x:Name="StackedWeatherBehind" Grid.Row="3" Text="28° ☁" FontSize="44" Foreground="White" FontFamily="/Assets/Fonts/MiSans-Light.ttf#MiSans" Margin="0,-4,0,0"/>
+                    </Grid>
                     <!-- Analog Clock Behind (Collapsed by default) -->
                     <Canvas x:Name="AnalogClockCanvasBehind" Width="200" Height="200"
                             HorizontalAlignment="Center" Visibility="Collapsed">
@@ -527,6 +545,24 @@
                         <TextBlock x:Name="RhombusM1" Grid.Row="1" Grid.Column="2" HorizontalAlignment="Center" VerticalAlignment="Center" Text="5" FontFamily="/Assets/Fonts/MiSans-Demibold.ttf#MiSans" Foreground="White" FontSize="105"/>
                         <TextBlock x:Name="RhombusM2" Grid.Row="2" Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center" Text="7" FontFamily="/Assets/Fonts/MiSans-Demibold.ttf#MiSans" Foreground="White" FontSize="105"/>
                         <Ellipse x:Name="RhombusDot" Grid.Row="1" Grid.Column="1" Width="12" Height="12" Fill="#FFDC3232" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Grid>
+                    
+                    <!-- Stacked Grid Front -->
+                    <Grid x:Name="StackedGrid" Visibility="Collapsed" HorizontalAlignment="Left" Margin="12,0,0,0">
+                        <Grid.RenderTransform><CompositeTransform/></Grid.RenderTransform>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <TextBlock x:Name="StackedCarrier" Grid.Row="0" Text="Mi Mobile" FontSize="18" Foreground="#BBFFFFFF" FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"/>
+                        <TextBlock x:Name="StackedTime" Grid.Row="1" Text="5:36" FontSize="100" Foreground="White" FontFamily="/Assets/Fonts/MiSans-Light.ttf#MiSans" Margin="-4,-12,0,-12"/>
+                        <StackPanel Grid.Row="2" Orientation="Horizontal">
+                            <TextBlock x:Name="StackedDate" Text="4/6" FontSize="44" Foreground="White" FontFamily="/Assets/Fonts/MiSans-Light.ttf#MiSans"/>
+                            <TextBlock x:Name="StackedDay" Text="THU" FontSize="18" Foreground="#99FFFFFF" FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans" VerticalAlignment="Top" Margin="8,8,0,0"/>
+                        </StackPanel>
+                        <TextBlock x:Name="StackedWeather" Grid.Row="3" Text="28° ☁" FontSize="44" Foreground="White" FontFamily="/Assets/Fonts/MiSans-Light.ttf#MiSans" Margin="0,-4,0,0"/>
                     </Grid>
                     <!-- Analog Clock (Collapsed by default) -->
                     <Canvas x:Name="AnalogClockCanvas" Width="200" Height="200"
