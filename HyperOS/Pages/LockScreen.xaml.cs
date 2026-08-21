@@ -1126,15 +1126,15 @@ namespace HyperOS.Pages
             if (isStacked)
             {
                 double stackSz = baseSize;
-                StackedTime.FontSize = stackSz * 0.72; StackedTimeBehind.FontSize = stackSz * 0.72;
-                StackedDate.FontSize = stackSz * 0.45; StackedDateBehind.FontSize = stackSz * 0.45;
-                StackedWeather.FontSize = stackSz * 0.45; StackedWeatherBehind.FontSize = stackSz * 0.45;
+                StackedTime.FontSize = stackSz * 0.60; StackedTimeBehind.FontSize = stackSz * 0.60;
+                StackedDate.FontSize = stackSz * 0.60; StackedDateBehind.FontSize = stackSz * 0.60;
+                StackedWeather.FontSize = stackSz * 0.60; StackedWeatherBehind.FontSize = stackSz * 0.60;
                 StackedCarrier.FontSize = stackSz * 0.20; StackedCarrierBehind.FontSize = stackSz * 0.20;
                 StackedDay.FontSize = stackSz * 0.20; StackedDayBehind.FontSize = stackSz * 0.20;
                 
-                var timeMargin = new Thickness(-4, -stackSz * 0.08, 0, -stackSz * 0.08);
+                var timeMargin = new Thickness(-4, -stackSz * 0.25, 0, -stackSz * 0.25);
                 StackedTime.Margin = timeMargin; StackedTimeBehind.Margin = timeMargin;
-                var weatherMargin = new Thickness(0, -stackSz * 0.02, 0, 0);
+                var weatherMargin = new Thickness(0, -stackSz * 0.15, 0, 0);
                 StackedWeather.Margin = weatherMargin; StackedWeatherBehind.Margin = weatherMargin;
             }
 
@@ -1175,35 +1175,40 @@ namespace HyperOS.Pages
 
         private void ApplyClockHAlign()
         {
+            HorizontalAlignment ha = HorizontalAlignment.Center;
             switch (clockHAlign)
             {
                 case 0: // Left
-                    ClockPanel.HorizontalAlignment = HorizontalAlignment.Left;
+                    ha = HorizontalAlignment.Left;
+                    ClockPanel.HorizontalAlignment = ha;
                     ClockPanel.Margin = new Thickness(24, ClockPanel.Margin.Top, 0, ClockPanel.Margin.Bottom);
-                    DateInfoPanel.HorizontalAlignment = HorizontalAlignment.Left;
-                    TimePanel.HorizontalAlignment = HorizontalAlignment.Left;
-                    BehindTimePanel.HorizontalAlignment = HorizontalAlignment.Left;
-                    StackedGrid.HorizontalAlignment = HorizontalAlignment.Left;
-                    StackedGridBehind.HorizontalAlignment = HorizontalAlignment.Left;
                     break;
                 case 2: // Right
-                    ClockPanel.HorizontalAlignment = HorizontalAlignment.Right;
+                    ha = HorizontalAlignment.Right;
+                    ClockPanel.HorizontalAlignment = ha;
                     ClockPanel.Margin = new Thickness(0, ClockPanel.Margin.Top, 24, ClockPanel.Margin.Bottom);
-                    DateInfoPanel.HorizontalAlignment = HorizontalAlignment.Right;
-                    TimePanel.HorizontalAlignment = HorizontalAlignment.Right;
-                    BehindTimePanel.HorizontalAlignment = HorizontalAlignment.Right;
-                    StackedGrid.HorizontalAlignment = HorizontalAlignment.Right;
-                    StackedGridBehind.HorizontalAlignment = HorizontalAlignment.Right;
                     break;
                 default: // Center
-                    ClockPanel.HorizontalAlignment = HorizontalAlignment.Center;
-                    DateInfoPanel.HorizontalAlignment = HorizontalAlignment.Center;
-                    TimePanel.HorizontalAlignment = HorizontalAlignment.Center;
-                    BehindTimePanel.HorizontalAlignment = HorizontalAlignment.Center;
-                    StackedGrid.HorizontalAlignment = HorizontalAlignment.Center;
-                    StackedGridBehind.HorizontalAlignment = HorizontalAlignment.Center;
+                    ha = HorizontalAlignment.Center;
+                    ClockPanel.HorizontalAlignment = ha;
                     break;
             }
+            
+            DateInfoPanel.HorizontalAlignment = ha;
+            TimePanel.HorizontalAlignment = ha;
+            BehindTimePanel.HorizontalAlignment = ha;
+            StackedGrid.HorizontalAlignment = ha;
+            StackedGridBehind.HorizontalAlignment = ha;
+            
+            StackedCarrier.HorizontalAlignment = ha;
+            StackedTime.HorizontalAlignment = ha;
+            StackedDatePanel.HorizontalAlignment = ha;
+            StackedWeather.HorizontalAlignment = ha;
+            
+            StackedCarrierBehind.HorizontalAlignment = ha;
+            StackedTimeBehind.HorizontalAlignment = ha;
+            StackedDatePanelBehind.HorizontalAlignment = ha;
+            StackedWeatherBehind.HorizontalAlignment = ha;
         }
 
         // Helper to avoid XNA vs Media.Color ambiguity
@@ -1412,6 +1417,16 @@ namespace HyperOS.Pages
                 DateInfoPanel.HorizontalAlignment = childAlign;
                 StackedGrid.HorizontalAlignment = childAlign;
                 StackedGridBehind.HorizontalAlignment = childAlign;
+                
+                StackedCarrier.HorizontalAlignment = childAlign;
+                StackedTime.HorizontalAlignment = childAlign;
+                StackedDatePanel.HorizontalAlignment = childAlign;
+                StackedWeather.HorizontalAlignment = childAlign;
+                
+                StackedCarrierBehind.HorizontalAlignment = childAlign;
+                StackedTimeBehind.HorizontalAlignment = childAlign;
+                StackedDatePanelBehind.HorizontalAlignment = childAlign;
+                StackedWeatherBehind.HorizontalAlignment = childAlign;
 
                 BehindClockPanel.VerticalAlignment = VerticalAlignment.Top;
                 BehindClockPanel.HorizontalAlignment = HorizontalAlignment.Left;

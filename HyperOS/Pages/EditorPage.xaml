@@ -128,7 +128,7 @@
                         </Grid.RowDefinitions>
                         <TextBlock x:Name="PStackedCarrier" Grid.Row="0" Text="Mi Mobile" FontSize="18" Foreground="#BBFFFFFF" FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"/>
                         <TextBlock x:Name="PStackedTime" Grid.Row="1" Text="5:36" FontSize="100" Foreground="White" FontFamily="/Assets/Fonts/MiSans-Light.ttf#MiSans" Margin="-4,-12,0,-12"/>
-                        <StackPanel Grid.Row="2" Orientation="Horizontal">
+                        <StackPanel x:Name="PStackedDatePanel" Grid.Row="2" Orientation="Horizontal">
                             <TextBlock x:Name="PStackedDate" Text="4/6" FontSize="44" Foreground="White" FontFamily="/Assets/Fonts/MiSans-Light.ttf#MiSans"/>
                             <TextBlock x:Name="PStackedDay" Text="THU" FontSize="18" Foreground="#99FFFFFF" FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans" VerticalAlignment="Top" Margin="8,8,0,0"/>
                         </StackPanel>

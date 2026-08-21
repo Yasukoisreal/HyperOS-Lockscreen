@@ -701,14 +701,14 @@ namespace HyperOS.Pages
             
             if (isStacked)
             {
-                PStackedTime.FontSize = sz * 0.72;
-                PStackedDate.FontSize = sz * 0.45;
-                PStackedWeather.FontSize = sz * 0.45;
+                PStackedTime.FontSize = sz * 0.60;
+                PStackedDate.FontSize = sz * 0.60;
+                PStackedWeather.FontSize = sz * 0.60;
                 PStackedCarrier.FontSize = sz * 0.20;
                 PStackedDay.FontSize = sz * 0.20;
                 
-                PStackedTime.Margin = new Thickness(-4, -sz * 0.08, 0, -sz * 0.08);
-                PStackedWeather.Margin = new Thickness(0, -sz * 0.02, 0, 0);
+                PStackedTime.Margin = new Thickness(-4, -sz * 0.25, 0, -sz * 0.25);
+                PStackedWeather.Margin = new Thickness(0, -sz * 0.15, 0, 0);
             }
 
             // Color
@@ -1759,6 +1759,11 @@ namespace HyperOS.Pages
             PAnalogClock.HorizontalAlignment = ha;
             PRhombusGrid.HorizontalAlignment = ha;
             PStackedGrid.HorizontalAlignment = ha;
+            
+            PStackedCarrier.HorizontalAlignment = ha;
+            PStackedTime.HorizontalAlignment = ha;
+            PStackedDatePanel.HorizontalAlignment = ha;
+            PStackedWeather.HorizontalAlignment = ha;
         }
 
         /// <summary>
