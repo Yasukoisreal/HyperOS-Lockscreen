@@ -581,6 +581,16 @@ namespace HyperOS.Pages
                 PStackedDay.Text = now.ToString("ddd").ToUpper();
                 string cached = Get<string>(IsolatedStorageSettings.ApplicationSettings, "CachedWeather", "");
                 PStackedWeather.Text = string.IsNullOrEmpty(cached) ? "28° ☁" : cached;
+                
+                string carrier = "";
+                try
+                {
+                    carrier = Microsoft.Phone.Net.NetworkInformation.DeviceNetworkInformation.CellularMobileOperator;
+                }
+                catch { }
+                if (string.IsNullOrWhiteSpace(carrier))
+                    carrier = "No Service";
+                PStackedCarrier.Text = carrier;
             }
 
             // Show/hide digital vs analog vs rhombus vs stacked
@@ -691,14 +701,14 @@ namespace HyperOS.Pages
             
             if (isStacked)
             {
-                PStackedTime.FontSize = sz * 0.95;
-                PStackedDate.FontSize = sz * 0.42;
-                PStackedWeather.FontSize = sz * 0.42;
-                PStackedCarrier.FontSize = sz * 0.18;
-                PStackedDay.FontSize = sz * 0.18;
+                PStackedTime.FontSize = sz * 0.72;
+                PStackedDate.FontSize = sz * 0.45;
+                PStackedWeather.FontSize = sz * 0.45;
+                PStackedCarrier.FontSize = sz * 0.20;
+                PStackedDay.FontSize = sz * 0.20;
                 
-                PStackedTime.Margin = new Thickness(-4, -sz * 0.11, 0, -sz * 0.11);
-                PStackedWeather.Margin = new Thickness(0, -sz * 0.04, 0, 0);
+                PStackedTime.Margin = new Thickness(-4, -sz * 0.08, 0, -sz * 0.08);
+                PStackedWeather.Margin = new Thickness(0, -sz * 0.02, 0, 0);
             }
 
             // Color

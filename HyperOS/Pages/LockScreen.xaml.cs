@@ -434,6 +434,17 @@ namespace HyperOS.Pages
                         StackedDateBehind.Text = StackedDate.Text;
                         StackedDay.Text = now.ToString("ddd").ToUpper();
                         StackedDayBehind.Text = StackedDay.Text;
+                        
+                        string carrier = "";
+                        try
+                        {
+                            carrier = Microsoft.Phone.Net.NetworkInformation.DeviceNetworkInformation.CellularMobileOperator;
+                        }
+                        catch { }
+                        if (string.IsNullOrWhiteSpace(carrier))
+                            carrier = "No Service";
+                        StackedCarrier.Text = carrier;
+                        StackedCarrierBehind.Text = carrier;
                     }
                     
                     UpdateCountdown(); // Refresh once per day
@@ -1115,15 +1126,15 @@ namespace HyperOS.Pages
             if (isStacked)
             {
                 double stackSz = baseSize;
-                StackedTime.FontSize = stackSz * 0.95; StackedTimeBehind.FontSize = stackSz * 0.95;
-                StackedDate.FontSize = stackSz * 0.42; StackedDateBehind.FontSize = stackSz * 0.42;
-                StackedWeather.FontSize = stackSz * 0.42; StackedWeatherBehind.FontSize = stackSz * 0.42;
-                StackedCarrier.FontSize = stackSz * 0.18; StackedCarrierBehind.FontSize = stackSz * 0.18;
-                StackedDay.FontSize = stackSz * 0.18; StackedDayBehind.FontSize = stackSz * 0.18;
+                StackedTime.FontSize = stackSz * 0.72; StackedTimeBehind.FontSize = stackSz * 0.72;
+                StackedDate.FontSize = stackSz * 0.45; StackedDateBehind.FontSize = stackSz * 0.45;
+                StackedWeather.FontSize = stackSz * 0.45; StackedWeatherBehind.FontSize = stackSz * 0.45;
+                StackedCarrier.FontSize = stackSz * 0.20; StackedCarrierBehind.FontSize = stackSz * 0.20;
+                StackedDay.FontSize = stackSz * 0.20; StackedDayBehind.FontSize = stackSz * 0.20;
                 
-                var timeMargin = new Thickness(-4, -stackSz * 0.11, 0, -stackSz * 0.11);
+                var timeMargin = new Thickness(-4, -stackSz * 0.08, 0, -stackSz * 0.08);
                 StackedTime.Margin = timeMargin; StackedTimeBehind.Margin = timeMargin;
-                var weatherMargin = new Thickness(0, -stackSz * 0.04, 0, 0);
+                var weatherMargin = new Thickness(0, -stackSz * 0.02, 0, 0);
                 StackedWeather.Margin = weatherMargin; StackedWeatherBehind.Margin = weatherMargin;
             }
 
