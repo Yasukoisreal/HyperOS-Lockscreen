@@ -26,6 +26,7 @@ namespace HyperOS.Pages
             public int ClockSize { get; set; }
             public int ClockColor { get; set; }
             public int ClockBlend { get; set; }
+            public int ClockHue { get; set; }
             public int DateAlign { get; set; }
             public Color PreviewBg { get; set; }
             public Color PreviewClockColor { get; set; }
@@ -48,10 +49,11 @@ namespace HyperOS.Pages
             public int SignatureAlign { get; set; }
             public int SignatureColor { get; set; }
             public int SignatureBlend { get; set; }
+            public int SignatureHue { get; set; }
             public double SignatureX { get; set; }
             public double SignatureY { get; set; }
 
-            public Preset() { ClockX = -1; ClockY = -1; DepthHourBehind = true; DepthColonBehind = true; DepthMinuteBehind = true; SignatureX = -1; SignatureY = -1; UseMatte = false; UseRibbed = false; }
+            public Preset() { ClockX = -1; ClockY = -1; ClockHue = -1; SignatureHue = -1; DepthHourBehind = true; DepthColonBehind = true; DepthMinuteBehind = true; SignatureX = -1; SignatureY = -1; UseMatte = false; UseRibbed = false; }
         }
 
         private static readonly List<Preset> Presets = new List<Preset>
@@ -175,6 +177,7 @@ namespace HyperOS.Pages
                     Name = src.Name, Subtitle = src.Subtitle,
                     ClockStyle = src.ClockStyle, ClockSize = src.ClockSize,
                     ClockColor = src.ClockColor, ClockBlend = src.ClockBlend,
+                    ClockHue = src.ClockHue, SignatureHue = src.SignatureHue,
                     DateAlign = src.DateAlign, ClockLayout = src.ClockLayout,
                     ClockX = src.ClockX, ClockY = src.ClockY,
                     UseDepthEffect = src.UseDepthEffect,
@@ -208,6 +211,7 @@ namespace HyperOS.Pages
                 var p = Presets[i];
                 p.ClockStyle = orig.ClockStyle; p.ClockSize = orig.ClockSize;
                 p.ClockColor = orig.ClockColor; p.ClockBlend = orig.ClockBlend;
+                p.ClockHue = orig.ClockHue; p.SignatureHue = orig.SignatureHue;
                 p.DateAlign = orig.DateAlign; p.ClockLayout = orig.ClockLayout;
                 p.ClockX = orig.ClockX; p.ClockY = orig.ClockY;
                 p.UseDepthEffect = orig.UseDepthEffect;
@@ -239,6 +243,7 @@ namespace HyperOS.Pages
                     p.ClockSize = GetSetting(s, prefix + "ClockSize", p.ClockSize);
                     p.ClockColor = GetSetting(s, prefix + "ClockColor", p.ClockColor);
                     p.ClockBlend = GetSetting(s, prefix + "ClockBlend", p.ClockBlend);
+                    p.ClockHue = GetSetting(s, prefix + "ClockHue", p.ClockHue);
                     p.DateAlign = GetSetting(s, prefix + "DateAlign", p.DateAlign);
                     p.ClockX = GetSetting(s, prefix + "ClockX", p.ClockX);
                     p.ClockY = GetSetting(s, prefix + "ClockY", p.ClockY);
@@ -249,7 +254,7 @@ namespace HyperOS.Pages
                     p.UseMatte = GetSetting(s, prefix + "UseMatte", false);
                     p.UseRibbed = GetSetting(s, prefix + "UseRibbed", false);
                     p.ClockLayout = GetSetting(s, prefix + "ClockLayout", p.ClockLayout);
-                    p.PreviewClockColor = ClockRenderer.ResolveClockColor(p.ClockColor, p.ClockBlend);
+                    p.PreviewClockColor = ClockRenderer.ResolveClockColor(p.ClockColor, p.ClockBlend, p.ClockHue);
                     
                     p.ShowSignature = GetSetting(s, prefix + "ShowSignature", p.ShowSignature);
                     p.SignatureText = GetSetting(s, prefix + "SignatureText", p.SignatureText);
@@ -258,6 +263,7 @@ namespace HyperOS.Pages
                     p.SignatureAlign = GetSetting(s, prefix + "SignatureAlign", p.SignatureAlign);
                     p.SignatureColor = GetSetting(s, prefix + "SignatureColor", p.SignatureColor);
                     p.SignatureBlend = GetSetting(s, prefix + "SignatureBlend", p.SignatureBlend);
+                    p.SignatureHue = GetSetting(s, prefix + "SignatureHue", p.SignatureHue);
                     p.SignatureX = GetSetting(s, prefix + "SignatureX", p.SignatureX);
                     p.SignatureY = GetSetting(s, prefix + "SignatureY", p.SignatureY);
                 }
@@ -581,6 +587,8 @@ namespace HyperOS.Pages
                 s[px + "ClockSize"] = preset.ClockSize;
                 s[px + "ClockColor"] = preset.ClockColor;
                 s[px + "ClockBlend"] = preset.ClockBlend;
+                s[px + "ClockHue"] = preset.ClockHue;
+                s[px + "SignatureHue"] = preset.SignatureHue;
                 s[px + "DateAlign"] = preset.DateAlign;
                 s[px + "ClockLayout"] = preset.ClockLayout;
                 // Include position and depth keys (BUG 1 fix)
@@ -593,11 +601,11 @@ namespace HyperOS.Pages
             }
 
             // Sync ALL Set{n}_ keys to global keys so EditorPage and LockScreen read correctly
-            string[] keys = { "ClockStyle", "ClockSize", "ClockColor", "ClockBlend", "ClockOpacity", "DateAlign", "ClockLayout",
+            string[] keys = { "ClockStyle", "ClockSize", "ClockColor", "ClockBlend", "ClockOpacity", "ClockHue", "DateAlign", "ClockLayout",
                 "ClockX", "ClockY", "UseDepthEffect", "DepthHourBehind", "DepthColonBehind", "DepthMinuteBehind",
                 "UseMatte", "UseRibbed",
                 "ShowWeather", "ShowCountdown", "WeatherX", "WeatherY", "CountdownX", "CountdownY",
-                "ShowSignature", "SignatureText", "SignatureFont", "SignatureSpacing", "SignatureAlign", "SignatureColor", "SignatureBlend", "SignatureOpacity", "SignatureX", "SignatureY" };
+                "ShowSignature", "SignatureText", "SignatureFont", "SignatureSpacing", "SignatureAlign", "SignatureColor", "SignatureBlend", "SignatureOpacity", "SignatureHue", "SignatureX", "SignatureY" };
             foreach (var key in keys)
             {
                 if (s.Contains(px + key))

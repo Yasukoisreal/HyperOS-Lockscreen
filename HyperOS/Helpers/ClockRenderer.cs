@@ -282,9 +282,10 @@ namespace HyperOS.Helpers
                         int sigColorIdx = s.Contains(pfx + "SignatureColor") ? (int)s[pfx + "SignatureColor"] : 0;
                         int sigBlend = s.Contains(pfx + "SignatureBlend") ? (int)s[pfx + "SignatureBlend"] : 0;
                         double sigOpacity = s.Contains(pfx + "SignatureOpacity") ? (double)s[pfx + "SignatureOpacity"] : 1.0;
+                        int sigHue = s.Contains(pfx + "SignatureHue") ? (int)s[pfx + "SignatureHue"] : -1;
 
                         var sigFont = GetFont(fontIdx);
-                        MC sigColor = ResolveClockColor(sigColorIdx, sigBlend);
+                        MC sigColor = ResolveClockColor(sigColorIdx, sigBlend, sigHue);
                         var sigBrush = new SolidColorBrush(sigColor);
 
                         var sigBlock = new TextBlock
@@ -512,8 +513,11 @@ namespace HyperOS.Helpers
         /// <summary>
         /// Resolves clock color from color index and blend index.
         /// </summary>
-        public static MC ResolveClockColor(int colorIdx, int blendIdx)
+        public static MC ResolveClockColor(int colorIdx, int blendIdx, int hue = -1)
         {
+            if (hue >= 0)
+                return ColorFromHSV(hue, 1.0, 1.0);
+
             if (blendIdx > 0)
             {
                 switch (blendIdx)
@@ -543,6 +547,24 @@ namespace HyperOS.Helpers
                 case 9: return MC.FromArgb(255, 160, 160, 176); // Silver
                 default: return Colors.White;
             }
+        }
+
+        public static MC ColorFromHSV(double hue, double saturation, double value)
+        {
+            int hi = Convert.ToInt32(Math.Floor(hue / 60)) % 6;
+            double f = hue / 60 - Math.Floor(hue / 60);
+            value = value * 255;
+            byte v = Convert.ToByte(value);
+            byte p = Convert.ToByte(value * (1 - saturation));
+            byte q = Convert.ToByte(value * (1 - f * saturation));
+            byte t = Convert.ToByte(value * (1 - (1 - f) * saturation));
+
+            if (hi == 0) return MC.FromArgb(255, v, t, p);
+            else if (hi == 1) return MC.FromArgb(255, q, v, p);
+            else if (hi == 2) return MC.FromArgb(255, p, v, t);
+            else if (hi == 3) return MC.FromArgb(255, p, q, v);
+            else if (hi == 4) return MC.FromArgb(255, t, p, v);
+            else return MC.FromArgb(255, v, p, q);
         }
 
         #endregion

@@ -38,6 +38,7 @@ namespace HyperOS.Pages
         private int clockBlend = 0;     // 0=None, 1=Sunset, 2=Ocean, 3=Aurora, 4=Neon
         private int clockSize = 2;      // 0=S..4=XXL (default 2=L)
         private double clockOpacity = 1.0;
+        private int clockHue = -1;
         private int dateAlign = 1;      // 0=Left, 1=Center, 2=Right
         private int clockLayout = 0;    // 0=Horiz, 1=Vert, 2=Analog Minimal, 3=Classic, 4=Swiss
 
@@ -104,6 +105,7 @@ namespace HyperOS.Pages
         private int sigColorIdx = 0;
         private int sigBlend = 0;
         private double sigOpacity = 1.0;
+        private int sigHue = -1;
         private double signatureX = 0;
         private double signatureY = 0;
 
@@ -818,6 +820,8 @@ namespace HyperOS.Pages
                 clockLayout = (int)s["ClockLayout"];
             if (s.Contains("ClockOpacity"))
                 clockOpacity = (double)s["ClockOpacity"];
+            if (s.Contains("ClockHue"))
+                clockHue = (int)s["ClockHue"];
 
             // Owner info
             if (s.Contains("OwnerInfo"))
@@ -898,6 +902,8 @@ namespace HyperOS.Pages
                 sigBlend = (int)s["SignatureBlend"];
             if (s.Contains("SignatureOpacity"))
                 sigOpacity = (double)s["SignatureOpacity"];
+            if (s.Contains("SignatureHue"))
+                sigHue = (int)s["SignatureHue"];
             if (s.Contains("SignatureX"))
                 signatureX = (double)s["SignatureX"];
             if (s.Contains("SignatureY"))
@@ -1132,6 +1138,10 @@ namespace HyperOS.Pages
             if (isAnalog)
             {
                 brush = new SolidColorBrush(Colors.White);
+            }
+            else if (clockHue >= 0)
+            {
+                brush = new SolidColorBrush(ClockRenderer.ColorFromHSV(clockHue, 1.0, 1.0));
             }
             else if (clockBlend > 0)
             {
@@ -1372,7 +1382,11 @@ namespace HyperOS.Pages
             }
             
             Brush brush;
-            if (sigBlend > 0)
+            if (sigHue >= 0)
+            {
+                brush = new SolidColorBrush(ClockRenderer.ColorFromHSV(sigHue, 1.0, 1.0));
+            }
+            else if (sigBlend > 0)
             {
                 switch (sigBlend)
                 {
