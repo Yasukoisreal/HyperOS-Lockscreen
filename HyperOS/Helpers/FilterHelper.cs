@@ -105,35 +105,41 @@ namespace HyperOS.Helpers
         /// <summary>
         /// Simulates fluted (ribbed) glass using cylindrical refraction and 3D edge lighting.
         /// </summary>
-        public static int[] ApplyRibbedFilter(int[] srcPixels, int w, int h, int stripWidth = 0)
+        public static int[] ApplyRibbedFilter(int[] srcPixels, int w, int h, int numStrips = 12)
         {
-            // Auto-calculate strip width to have about 12 strips across the screen
-            if (stripWidth <= 0) stripWidth = Math.Max(20, w / 12);
+            if (numStrips <= 0) numStrips = 12;
             
             int[] d = new int[w * h];
             
-            // Precompute wave values for each column to save time
             int[] dx = new int[w];
             float[] light = new float[w];
+            
+            float stripWidth = (float)w / numStrips;
+            
             for (int x = 0; x < w; x++)
             {
-                int stripIndex = x / stripWidth;
-                int localX = x % stripWidth;
+                int stripIndex = (int)(x / stripWidth);
+                if (stripIndex >= numStrips) stripIndex = numStrips - 1; // Clamp to prevent index out of bounds
+                
+                float localX = x - (stripIndex * stripWidth);
                 
                 // Normalized position within the strip: -1.0 to 1.0
                 float nx = (localX - (stripWidth - 1) / 2.0f) / ((stripWidth - 1) / 2.0f);
+                if (nx < -1.0f) nx = -1.0f;
+                if (nx > 1.0f) nx = 1.0f;
                 
                 // Medium Refraction: simulate a standard cylindrical lens
                 float center = stripIndex * stripWidth + stripWidth / 2.0f;
-                float sampleOffset = Math.Sign(nx) * (float)Math.Pow(Math.Abs(nx), 0.8) * (stripWidth * 0.85f);
+                float sampleOffset = Math.Sign(nx) * (float)Math.Pow(Math.Abs(nx), 0.85) * (stripWidth * 0.65f);
                 dx[x] = (int)(center + sampleOffset) - x;
                 
-                // 3D Lighting (Highlights and Shadows)
-                if (localX == 0) light[x] = 1.4f;
-                else if (localX == 1) light[x] = 1.2f;
-                else if (localX == stripWidth - 2) light[x] = 0.8f;
-                else if (localX == stripWidth - 1) light[x] = 0.6f;
-                else light[x] = 1.0f - nx * 0.15f; // Stronger gradient across the cylinder
+                // 3D Lighting (Highlights and Shadows) - Softer for elegance
+                float rel = localX / stripWidth;
+                if (rel < 0.04f) light[x] = 1.25f;
+                else if (rel < 0.08f) light[x] = 1.10f;
+                else if (rel > 0.96f) light[x] = 0.75f;
+                else if (rel > 0.92f) light[x] = 0.85f;
+                else light[x] = 1.0f - nx * 0.10f; // Soft gradient
             }
 
             for (int y = 0; y < h; y++)
