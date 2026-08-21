@@ -791,5 +791,34 @@ namespace HyperOS.Pages
             while (NavigationService.CanGoBack)
                 NavigationService.RemoveBackEntry();
         }
+
+        protected override void OnNavigatedFrom(NavigationEventArgs e)
+        {
+            base.OnNavigatedFrom(e);
+            
+            // AGENTS.md: Aggressively free image resources when not in use
+            if (e.NavigationMode != NavigationMode.Back)
+            {
+                foreach (var card in cards)
+                {
+                    card.Background = null;
+                    var inner = card.Child as Grid;
+                    if (inner != null)
+                    {
+                        foreach (var el in inner.Children)
+                        {
+                            var b = el as Border;
+                            if (b != null && b.Background is ImageBrush)
+                            {
+                                b.Background = null;
+                            }
+                        }
+                    }
+                }
+                globalForeground = null;
+                presetWallpapers.Clear();
+                GC.Collect();
+            }
+        }
     }
 }

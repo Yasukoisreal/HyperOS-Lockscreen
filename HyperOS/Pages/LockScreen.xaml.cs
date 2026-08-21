@@ -229,6 +229,8 @@ namespace HyperOS.Pages
                 EnsureTimersRunning();
                 if (!isBackNavigation)
                 {
+                    LoadBackground();
+                    LoadForeground();
                     lastTimeText = "";
                     UpdateTime();
                     UpdateBattery();
@@ -285,16 +287,16 @@ namespace HyperOS.Pages
                     {
                         // Analog clock — animate the whole canvas
                         if (useDepthEffect)
-                            AddFadeSlide(sb, AnalogClockCanvasBehind, 0, 700);
+                            AddFadeSlide(sb, AnalogClockCanvasBehind, 0, 450);
                         else
-                            AddFadeSlide(sb, AnalogClockCanvas, 0, 700);
+                            AddFadeSlide(sb, AnalogClockCanvas, 0, 450);
                     }
                     else if (clockLayout == 5)
                     {
                         // Rhombus layout
-                        AddFadeSlide(sb, RhombusGrid, 0, 700);
+                        AddFadeSlide(sb, RhombusGrid, 0, 450);
                         if (useDepthEffect)
-                            AddFadeSlide(sb, RhombusGridBehind, 0, 700);
+                            AddFadeSlide(sb, RhombusGridBehind, 0, 450);
                     }
                     else
                     {
@@ -302,26 +304,26 @@ namespace HyperOS.Pages
 
                         // Hour
                         if (useDepthEffect && depthHourBehind)
-                            AddFadeSlide(sb, HourPartBehind, delayMs, 600);
+                            AddFadeSlide(sb, HourPartBehind, delayMs, 450);
                         else
-                            AddFadeSlide(sb, HourPart, delayMs, 600);
+                            AddFadeSlide(sb, HourPart, delayMs, 450);
                         delayMs += 100;
 
                         // Colon (skip for vertical and giant)
                         if (clockLayout != 1 && clockLayout != 6)
                         {
                             if (useDepthEffect && depthColonBehind)
-                                AddFadeSlide(sb, ColonPartBehind, delayMs, 600);
+                                AddFadeSlide(sb, ColonPartBehind, delayMs, 450);
                             else
-                                AddFadeSlide(sb, ColonPart, delayMs, 600);
+                                AddFadeSlide(sb, ColonPart, delayMs, 450);
                             delayMs += 100;
                         }
 
                         // Minute
                         if (useDepthEffect && depthMinuteBehind)
-                            AddFadeSlide(sb, MinutePartBehind, delayMs, 600);
+                            AddFadeSlide(sb, MinutePartBehind, delayMs, 450);
                         else
-                            AddFadeSlide(sb, MinutePart, delayMs, 600);
+                            AddFadeSlide(sb, MinutePart, delayMs, 450);
                     }
 
                     sb.Begin();

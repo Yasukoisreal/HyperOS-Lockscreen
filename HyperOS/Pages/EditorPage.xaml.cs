@@ -172,10 +172,16 @@ namespace HyperOS.Pages
 
         #region Lifecycle
 
+        private bool isFirstLoad = true;
+
         private void EditorPage_Loaded(object sender, RoutedEventArgs e)
         {
+            if (!isFirstLoad) return;
+            isFirstLoad = false;
+
             isLoading = true;
             LoadAllSettings();
+            RestoreTransientState(); // Recover unsaved edits if returning from tombstone
             LoadPreviewImages();
             ApplyPreview();
             SelectTab("Clock");
@@ -221,47 +227,43 @@ namespace HyperOS.Pages
             }
         }
 
-        protected override void OnNavigatedTo(System.Windows.Navigation.NavigationEventArgs e)
+        private void RestoreTransientState()
         {
-            base.OnNavigatedTo(e);
-
-            // Restore unsaved positions from transient state (after tombstone)
             var state = Microsoft.Phone.Shell.PhoneApplicationService.Current.State;
-            bool restoredFromState = false;
-            double resClockX = 0, resClockY = 0;
-            double resWeatherX = 0, resWeatherY = 0;
-            double resCountdownX = 0, resCountdownY = 0;
-            int resClockStyle = 0, resClockSize = 2, resClockColor = 0, resClockBlend = 0, resDateAlign = 1;
-            bool resShowWeather = false, resShowCountdown = false;
-            bool resDepth = false, resDepthH = true, resDepthC = true, resDepthM = true;
-            int resClockLayout = 0;
             if (state.ContainsKey("EdClockX"))
             {
-                restoredFromState = true;
-                resClockX = (double)state["EdClockX"];
-                resClockY = (double)state["EdClockY"];
-                resWeatherX = (double)state["EdWeatherX"];
-                resWeatherY = (double)state["EdWeatherY"];
-                resCountdownX = (double)state["EdCountdownX"];
-                resCountdownY = (double)state["EdCountdownY"];
-                resClockStyle = (int)state["EdClockStyle"];
-                resClockSize = (int)state["EdClockSize"];
-                resClockColor = (int)state["EdClockColor"];
-                resClockBlend = (int)state["EdClockBlend"];
-                resDateAlign = (int)state["EdDateAlign"];
-                if (state.ContainsKey("EdClockLayout")) resClockLayout = (int)state["EdClockLayout"];
-                resShowWeather = (bool)state["EdShowWeather"];
-                resShowCountdown = (bool)state["EdShowCountdown"];
-                resDepth = (bool)state["EdDepth"];
-                resDepthH = (bool)state["EdDepthH"];
-                resDepthC = (bool)state["EdDepthC"];
-                resDepthM = (bool)state["EdDepthM"];
+                clockX = (double)state["EdClockX"];
+                clockY = (double)state["EdClockY"];
+                weatherX = (double)state["EdWeatherX"];
+                weatherY = (double)state["EdWeatherY"];
+                countdownX = (double)state["EdCountdownX"];
+                countdownY = (double)state["EdCountdownY"];
+                clockStyle = (int)state["EdClockStyle"];
+                clockSize = (int)state["EdClockSize"];
+                clockColor = (int)state["EdClockColor"];
+                clockBlend = (int)state["EdClockBlend"];
+                dateAlign = (int)state["EdDateAlign"];
+                if (state.ContainsKey("EdClockLayout")) clockLayout = (int)state["EdClockLayout"];
+                showWeather = (bool)state["EdShowWeather"];
+                showCountdown = (bool)state["EdShowCountdown"];
+                useDepthEffect = (bool)state["EdDepth"];
+                depthHourBehind = (bool)state["EdDepthH"];
+                depthColonBehind = (bool)state["EdDepthC"];
+                depthMinuteBehind = (bool)state["EdDepthM"];
+                hasSavedPositions = true;
+                hasUnsavedChanges = true;
+
                 // Clean up
                 string[] stateKeys = { "EdClockX","EdClockY","EdWeatherX","EdWeatherY","EdCountdownX","EdCountdownY",
                     "EdClockStyle","EdClockSize","EdClockColor","EdClockBlend","EdDateAlign","EdClockLayout",
                     "EdShowWeather","EdShowCountdown","EdDepth","EdDepthH","EdDepthC","EdDepthM" };
                 foreach (var k in stateKeys) state.Remove(k);
             }
+        }
+
+        protected override void OnNavigatedTo(System.Windows.Navigation.NavigationEventArgs e)
+        {
+            base.OnNavigatedTo(e);
 
             // Check if we're editing a specific preset (always, even on first load)
             string presetStr;
@@ -273,7 +275,7 @@ namespace HyperOS.Pages
             }
 
             // Load preset wallpaper to Background.jpg BEFORE Loaded fires LoadPreviewImages
-            if (e.NavigationMode == System.Windows.Navigation.NavigationMode.New && editingPreset >= 0)
+            if (e.NavigationMode == System.Windows.Navigation.NavigationMode.New && editingPreset >= 0 && isFirstLoad)
             {
                 var s = IsolatedStorageSettings.ApplicationSettings;
 
@@ -332,35 +334,10 @@ namespace HyperOS.Pages
                 catch { }
             }
 
-            if (!isLoading)
+            if (!isFirstLoad)
             {
-                isLoading = true;
-
-                LoadAllSettings();
+                // Resuming from tombstone or normal suspension
                 LoadPreviewImages();
-
-                // Override with restored state if returning from photo picker
-                if (restoredFromState)
-                {
-                    clockX = resClockX; clockY = resClockY;
-                    weatherX = resWeatherX; weatherY = resWeatherY;
-                    countdownX = resCountdownX; countdownY = resCountdownY;
-                    clockStyle = resClockStyle; clockSize = resClockSize;
-                    clockColor = resClockColor; clockBlend = resClockBlend;
-                    dateAlign = resDateAlign; clockLayout = resClockLayout;
-                    showWeather = resShowWeather; showCountdown = resShowCountdown;
-                    useDepthEffect = resDepth;
-                    depthHourBehind = resDepthH; depthColonBehind = resDepthC; depthMinuteBehind = resDepthM;
-                    hasSavedPositions = true;
-                }
-
-                ApplyPreview();
-                isLoading = false;
-
-                if (!hasSavedPositions && ClockHandle.ActualWidth > 0)
-                {
-                    CenterElements();
-                }
             }
         }
 
@@ -2056,9 +2033,8 @@ namespace HyperOS.Pages
 
         #region Display Handlers
 
-        private void EdWallpaper_Click(object sender, RoutedEventArgs e)
+        private void SaveTransientState()
         {
-            // Save ALL current editor state to transient state before tombstoning
             var state = Microsoft.Phone.Shell.PhoneApplicationService.Current.State;
             state["EdClockX"] = clockX; state["EdClockY"] = clockY;
             state["EdWeatherX"] = weatherX; state["EdWeatherY"] = weatherY;
@@ -2069,7 +2045,11 @@ namespace HyperOS.Pages
             state["EdShowWeather"] = showWeather; state["EdShowCountdown"] = showCountdown;
             state["EdDepth"] = useDepthEffect;
             state["EdDepthH"] = depthHourBehind; state["EdDepthC"] = depthColonBehind; state["EdDepthM"] = depthMinuteBehind;
+        }
 
+        private void EdWallpaper_Click(object sender, RoutedEventArgs e)
+        {
+            SaveTransientState();
             photoChooser.Show();
         }
 
@@ -2085,7 +2065,7 @@ namespace HyperOS.Pages
 
         private void EdForeground_Click(object sender, RoutedEventArgs e)
         {
-            // WP8.1 Silverlight-compatible foreground picker.
+            SaveTransientState();
             foregroundChooser.Show();
         }
 
@@ -2609,6 +2589,15 @@ namespace HyperOS.Pages
         }
 
         #endregion
+
+        protected override void OnNavigatedFrom(System.Windows.Navigation.NavigationEventArgs e)
+        {
+            base.OnNavigatedFrom(e);
+            // AGENTS.md: Aggressively free image resources when not in use
+            PreviewBgBrush.ImageSource = null;
+            PreviewFgBrush.ImageSource = null;
+            GC.Collect();
+        }
 
     }
 }
