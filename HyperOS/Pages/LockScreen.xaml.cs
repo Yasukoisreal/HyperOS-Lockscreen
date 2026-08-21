@@ -1183,6 +1183,8 @@ namespace HyperOS.Pages
                     DateInfoPanel.HorizontalAlignment = HorizontalAlignment.Left;
                     TimePanel.HorizontalAlignment = HorizontalAlignment.Left;
                     BehindTimePanel.HorizontalAlignment = HorizontalAlignment.Left;
+                    StackedGrid.HorizontalAlignment = HorizontalAlignment.Left;
+                    StackedGridBehind.HorizontalAlignment = HorizontalAlignment.Left;
                     break;
                 case 2: // Right
                     ClockPanel.HorizontalAlignment = HorizontalAlignment.Right;
@@ -1190,12 +1192,16 @@ namespace HyperOS.Pages
                     DateInfoPanel.HorizontalAlignment = HorizontalAlignment.Right;
                     TimePanel.HorizontalAlignment = HorizontalAlignment.Right;
                     BehindTimePanel.HorizontalAlignment = HorizontalAlignment.Right;
+                    StackedGrid.HorizontalAlignment = HorizontalAlignment.Right;
+                    StackedGridBehind.HorizontalAlignment = HorizontalAlignment.Right;
                     break;
                 default: // Center
                     ClockPanel.HorizontalAlignment = HorizontalAlignment.Center;
                     DateInfoPanel.HorizontalAlignment = HorizontalAlignment.Center;
                     TimePanel.HorizontalAlignment = HorizontalAlignment.Center;
                     BehindTimePanel.HorizontalAlignment = HorizontalAlignment.Center;
+                    StackedGrid.HorizontalAlignment = HorizontalAlignment.Center;
+                    StackedGridBehind.HorizontalAlignment = HorizontalAlignment.Center;
                     break;
             }
         }
@@ -1404,6 +1410,8 @@ namespace HyperOS.Pages
                 TimePanel.HorizontalAlignment = childAlign;
                 BehindTimePanel.HorizontalAlignment = childAlign;
                 DateInfoPanel.HorizontalAlignment = childAlign;
+                StackedGrid.HorizontalAlignment = childAlign;
+                StackedGridBehind.HorizontalAlignment = childAlign;
 
                 BehindClockPanel.VerticalAlignment = VerticalAlignment.Top;
                 BehindClockPanel.HorizontalAlignment = HorizontalAlignment.Left;

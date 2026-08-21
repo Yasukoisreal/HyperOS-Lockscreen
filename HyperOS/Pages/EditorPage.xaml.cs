@@ -1758,6 +1758,7 @@ namespace HyperOS.Pages
             PTimePanel.HorizontalAlignment = ha;
             PAnalogClock.HorizontalAlignment = ha;
             PRhombusGrid.HorizontalAlignment = ha;
+            PStackedGrid.HorizontalAlignment = ha;
         }
 
         /// <summary>
