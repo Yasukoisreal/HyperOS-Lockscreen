@@ -701,14 +701,14 @@ namespace HyperOS.Pages
             
             if (isStacked)
             {
-                PStackedTime.FontSize = sz * 0.60;
-                PStackedDate.FontSize = sz * 0.60;
-                PStackedWeather.FontSize = sz * 0.60;
+                PStackedTime.FontSize = sz * 0.90;
+                PStackedDate.FontSize = sz * 0.45;
+                PStackedWeather.FontSize = sz * 0.45;
                 PStackedCarrier.FontSize = sz * 0.20;
                 PStackedDay.FontSize = sz * 0.20;
                 
-                PStackedTime.Margin = new Thickness(-4, -sz * 0.25, 0, -sz * 0.25);
-                PStackedWeather.Margin = new Thickness(0, -sz * 0.15, 0, 0);
+                PStackedTime.Margin = new Thickness(-4, -sz * 0.1, 0, -sz * 0.1);
+                PStackedWeather.Margin = new Thickness(0, 0, 0, 0);
             }
 
             // Color
@@ -1759,11 +1759,18 @@ namespace HyperOS.Pages
             PAnalogClock.HorizontalAlignment = ha;
             PRhombusGrid.HorizontalAlignment = ha;
             PStackedGrid.HorizontalAlignment = ha;
+            TextAlignment ta = TextAlignment.Center;
+            if (dateAlign == 0) ta = TextAlignment.Left;
+            else if (dateAlign == 2) ta = TextAlignment.Right;
             
-            PStackedCarrier.HorizontalAlignment = ha;
-            PStackedTime.HorizontalAlignment = ha;
+            PStackedCarrier.TextAlignment = ta;
+            PStackedTime.TextAlignment = ta;
+            PStackedWeather.TextAlignment = ta;
+            
+            PStackedCarrier.HorizontalAlignment = HorizontalAlignment.Stretch;
+            PStackedTime.HorizontalAlignment = HorizontalAlignment.Stretch;
             PStackedDatePanel.HorizontalAlignment = ha;
-            PStackedWeather.HorizontalAlignment = ha;
+            PStackedWeather.HorizontalAlignment = HorizontalAlignment.Stretch;
         }
 
         /// <summary>

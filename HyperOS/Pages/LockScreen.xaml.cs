@@ -1126,15 +1126,15 @@ namespace HyperOS.Pages
             if (isStacked)
             {
                 double stackSz = baseSize;
-                StackedTime.FontSize = stackSz * 0.60; StackedTimeBehind.FontSize = stackSz * 0.60;
-                StackedDate.FontSize = stackSz * 0.60; StackedDateBehind.FontSize = stackSz * 0.60;
-                StackedWeather.FontSize = stackSz * 0.60; StackedWeatherBehind.FontSize = stackSz * 0.60;
+                StackedTime.FontSize = stackSz * 0.90; StackedTimeBehind.FontSize = stackSz * 0.90;
+                StackedDate.FontSize = stackSz * 0.45; StackedDateBehind.FontSize = stackSz * 0.45;
+                StackedWeather.FontSize = stackSz * 0.45; StackedWeatherBehind.FontSize = stackSz * 0.45;
                 StackedCarrier.FontSize = stackSz * 0.20; StackedCarrierBehind.FontSize = stackSz * 0.20;
                 StackedDay.FontSize = stackSz * 0.20; StackedDayBehind.FontSize = stackSz * 0.20;
                 
-                var timeMargin = new Thickness(-4, -stackSz * 0.25, 0, -stackSz * 0.25);
+                var timeMargin = new Thickness(-4, -stackSz * 0.1, 0, -stackSz * 0.1);
                 StackedTime.Margin = timeMargin; StackedTimeBehind.Margin = timeMargin;
-                var weatherMargin = new Thickness(0, -stackSz * 0.15, 0, 0);
+                var weatherMargin = new Thickness(0, 0, 0, 0);
                 StackedWeather.Margin = weatherMargin; StackedWeatherBehind.Margin = weatherMargin;
             }
 
@@ -1200,15 +1200,27 @@ namespace HyperOS.Pages
             StackedGrid.HorizontalAlignment = ha;
             StackedGridBehind.HorizontalAlignment = ha;
             
-            StackedCarrier.HorizontalAlignment = ha;
-            StackedTime.HorizontalAlignment = ha;
-            StackedDatePanel.HorizontalAlignment = ha;
-            StackedWeather.HorizontalAlignment = ha;
+            TextAlignment ta = TextAlignment.Center;
+            if (clockHAlign == 0) ta = TextAlignment.Left;
+            else if (clockHAlign == 2) ta = TextAlignment.Right;
             
-            StackedCarrierBehind.HorizontalAlignment = ha;
-            StackedTimeBehind.HorizontalAlignment = ha;
+            StackedCarrier.TextAlignment = ta;
+            StackedTime.TextAlignment = ta;
+            StackedWeather.TextAlignment = ta;
+            
+            StackedCarrierBehind.TextAlignment = ta;
+            StackedTimeBehind.TextAlignment = ta;
+            StackedWeatherBehind.TextAlignment = ta;
+            
+            StackedCarrier.HorizontalAlignment = HorizontalAlignment.Stretch;
+            StackedTime.HorizontalAlignment = HorizontalAlignment.Stretch;
+            StackedDatePanel.HorizontalAlignment = ha;
+            StackedWeather.HorizontalAlignment = HorizontalAlignment.Stretch;
+            
+            StackedCarrierBehind.HorizontalAlignment = HorizontalAlignment.Stretch;
+            StackedTimeBehind.HorizontalAlignment = HorizontalAlignment.Stretch;
             StackedDatePanelBehind.HorizontalAlignment = ha;
-            StackedWeatherBehind.HorizontalAlignment = ha;
+            StackedWeatherBehind.HorizontalAlignment = HorizontalAlignment.Stretch;
         }
 
         // Helper to avoid XNA vs Media.Color ambiguity
@@ -1418,15 +1430,27 @@ namespace HyperOS.Pages
                 StackedGrid.HorizontalAlignment = childAlign;
                 StackedGridBehind.HorizontalAlignment = childAlign;
                 
-                StackedCarrier.HorizontalAlignment = childAlign;
-                StackedTime.HorizontalAlignment = childAlign;
-                StackedDatePanel.HorizontalAlignment = childAlign;
-                StackedWeather.HorizontalAlignment = childAlign;
+                TextAlignment ta = TextAlignment.Center;
+                if (childAlign == HorizontalAlignment.Left) ta = TextAlignment.Left;
+                else if (childAlign == HorizontalAlignment.Right) ta = TextAlignment.Right;
                 
-                StackedCarrierBehind.HorizontalAlignment = childAlign;
-                StackedTimeBehind.HorizontalAlignment = childAlign;
+                StackedCarrier.TextAlignment = ta;
+                StackedTime.TextAlignment = ta;
+                StackedWeather.TextAlignment = ta;
+                
+                StackedCarrierBehind.TextAlignment = ta;
+                StackedTimeBehind.TextAlignment = ta;
+                StackedWeatherBehind.TextAlignment = ta;
+                
+                StackedCarrier.HorizontalAlignment = HorizontalAlignment.Stretch;
+                StackedTime.HorizontalAlignment = HorizontalAlignment.Stretch;
+                StackedDatePanel.HorizontalAlignment = childAlign;
+                StackedWeather.HorizontalAlignment = HorizontalAlignment.Stretch;
+                
+                StackedCarrierBehind.HorizontalAlignment = HorizontalAlignment.Stretch;
+                StackedTimeBehind.HorizontalAlignment = HorizontalAlignment.Stretch;
                 StackedDatePanelBehind.HorizontalAlignment = childAlign;
-                StackedWeatherBehind.HorizontalAlignment = childAlign;
+                StackedWeatherBehind.HorizontalAlignment = HorizontalAlignment.Stretch;
 
                 BehindClockPanel.VerticalAlignment = VerticalAlignment.Top;
                 BehindClockPanel.HorizontalAlignment = HorizontalAlignment.Left;
