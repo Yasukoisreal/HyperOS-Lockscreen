@@ -128,18 +128,18 @@ namespace HyperOS.Helpers
                 if (nx < -1.0f) nx = -1.0f;
                 if (nx > 1.0f) nx = 1.0f;
                 
-                // Medium Refraction: simulate a standard cylindrical lens
+                // Medium Refraction: simulate a standard cylindrical lens (strong refraction)
                 float center = stripIndex * stripWidth + stripWidth / 2.0f;
-                float sampleOffset = Math.Sign(nx) * (float)Math.Pow(Math.Abs(nx), 0.85) * (stripWidth * 0.65f);
+                float sampleOffset = Math.Sign(nx) * (float)Math.Pow(Math.Abs(nx), 0.8) * (stripWidth * 0.85f);
                 dx[x] = (int)(center + sampleOffset) - x;
                 
-                // 3D Lighting (Highlights and Shadows) - Softer for elegance
+                // 3D Lighting (Highlights and Shadows) - Stronger contrast for 3D pop
                 float rel = localX / stripWidth;
-                if (rel < 0.04f) light[x] = 1.25f;
-                else if (rel < 0.08f) light[x] = 1.10f;
-                else if (rel > 0.96f) light[x] = 0.75f;
-                else if (rel > 0.92f) light[x] = 0.85f;
-                else light[x] = 1.0f - nx * 0.10f; // Soft gradient
+                if (rel < 0.03f) light[x] = 1.4f;
+                else if (rel < 0.06f) light[x] = 1.2f;
+                else if (rel > 0.97f) light[x] = 0.6f;
+                else if (rel > 0.94f) light[x] = 0.8f;
+                else light[x] = 1.0f - nx * 0.15f; // Stronger gradient across the cylinder
             }
 
             for (int y = 0; y < h; y++)
