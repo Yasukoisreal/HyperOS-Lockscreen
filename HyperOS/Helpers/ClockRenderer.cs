@@ -381,7 +381,7 @@ namespace HyperOS.Helpers
                 case 2: dateHAlign = HorizontalAlignment.Right; break;
                 default: dateHAlign = HorizontalAlignment.Center; break;
             }
-            if (clockLayout != 7)
+            if (clockLayout != 7 && clockLayout != 8)
             {
                 stack.Children.Add(new TextBlock
                 {
