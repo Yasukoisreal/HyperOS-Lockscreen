@@ -491,13 +491,13 @@ namespace HyperOS.Helpers
                 Grid.SetRow(carrier, 0);
 
                 var timeStr = DateTime.Now.ToString("HH:mm");
-                var time = new TextBlock { Text = timeStr, FontSize = sz * 0.72, Foreground = hourBrush, FontFamily = new FontFamily("/Assets/Fonts/MiSans-Light.ttf#MiSans"), Margin = new Thickness(-4, -sz * 0.05, 0, 0), TextAlignment = ta, HorizontalAlignment = HorizontalAlignment.Stretch };
+                var time = new TextBlock { Text = timeStr, FontSize = sz * 0.72, Foreground = hourBrush, FontFamily = new FontFamily("/Assets/Fonts/MiSans-Light.ttf#MiSans"), Margin = new Thickness(-4, 0, 0, 0), TextAlignment = ta, HorizontalAlignment = HorizontalAlignment.Stretch };
                 Grid.SetRow(time, 1);
 
                 var dateP = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = dateHAlign, Margin = new Thickness(0, -sz * 0.20, 0, 0) };
                 Grid.SetRow(dateP, 2);
                 var date = new TextBlock { Text = DateTime.Now.Day + "/" + DateTime.Now.Month, FontSize = sz * 0.72, Foreground = dateBrush, FontFamily = new FontFamily("/Assets/Fonts/MiSans-Light.ttf#MiSans") };
-                var day = new TextBlock { Text = DateTime.Now.ToString("ddd").ToUpper(), FontSize = sz * 0.22, Foreground = new SolidColorBrush(MC.FromArgb(153, 255, 255, 255)), FontFamily = new FontFamily("/Assets/Fonts/MiSans-Regular.ttf#MiSans"), VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(sz * 0.08, sz * 0.02, 0, 0) };
+                var day = new TextBlock { Text = DateTime.Now.ToString("ddd").ToUpper(), FontSize = sz * 0.22, Foreground = new SolidColorBrush(MC.FromArgb(153, 255, 255, 255)), FontFamily = new FontFamily("/Assets/Fonts/MiSans-Regular.ttf#MiSans"), VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(sz * 0.08, sz * 0.065, 0, 0) };
                 dateP.Children.Add(date);
                 dateP.Children.Add(day);
 

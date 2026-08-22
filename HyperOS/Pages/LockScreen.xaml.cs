@@ -1133,13 +1133,13 @@ namespace HyperOS.Pages
                 StackedDay.FontSize = stackSz * 0.22; StackedDayBehind.FontSize = stackSz * 0.22;
                 
                 var topMargin = new Thickness(0, -stackSz * 0.20, 0, 0);
-                StackedTime.Margin = new Thickness(-4, -stackSz * 0.05, 0, 0); 
-                StackedTimeBehind.Margin = new Thickness(-4, -stackSz * 0.05, 0, 0);
+                StackedTime.Margin = new Thickness(-4, 0, 0, 0); 
+                StackedTimeBehind.Margin = new Thickness(-4, 0, 0, 0);
                 
                 StackedDatePanel.Margin = topMargin;
                 StackedDatePanelBehind.Margin = topMargin;
                 
-                var dayMargin = new Thickness(stackSz * 0.08, stackSz * 0.02, 0, 0);
+                var dayMargin = new Thickness(stackSz * 0.08, stackSz * 0.065, 0, 0);
                 StackedDay.Margin = dayMargin; StackedDayBehind.Margin = dayMargin;
                 
                 StackedWeather.Margin = topMargin; 
