@@ -590,7 +590,6 @@ namespace HyperOS.Pages
                 catch { }
                 if (string.IsNullOrWhiteSpace(carrier))
                     carrier = "No Service";
-                PStackedCarrier.Text = carrier;
             }
 
             // Show/hide digital vs analog vs rhombus vs stacked
@@ -704,7 +703,6 @@ namespace HyperOS.Pages
                 PStackedTime.FontSize = sz * 0.72;
                 PStackedDate.FontSize = sz * 0.72;
                 PStackedWeather.FontSize = sz * 0.72;
-                PStackedCarrier.FontSize = sz * 0.20;
                 PStackedDay.FontSize = sz * 0.22;
                 
                 PStackedTime.Margin = new Thickness(-4, -sz * 0.20, 0, 0);
@@ -1765,11 +1763,9 @@ namespace HyperOS.Pages
             if (dateAlign == 0) ta = TextAlignment.Left;
             else if (dateAlign == 2) ta = TextAlignment.Right;
             
-            PStackedCarrier.TextAlignment = ta;
             PStackedTime.TextAlignment = ta;
             PStackedWeather.TextAlignment = ta;
             
-            PStackedCarrier.HorizontalAlignment = HorizontalAlignment.Stretch;
             PStackedTime.HorizontalAlignment = HorizontalAlignment.Stretch;
             PStackedDatePanel.HorizontalAlignment = ha;
             PStackedWeather.HorizontalAlignment = HorizontalAlignment.Stretch;

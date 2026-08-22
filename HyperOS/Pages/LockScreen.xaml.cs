@@ -443,8 +443,6 @@ namespace HyperOS.Pages
                         catch { }
                         if (string.IsNullOrWhiteSpace(carrier))
                             carrier = "No Service";
-                        StackedCarrier.Text = carrier;
-                        StackedCarrierBehind.Text = carrier;
                     }
                     
                     UpdateCountdown(); // Refresh once per day
@@ -1129,7 +1127,6 @@ namespace HyperOS.Pages
                 StackedTime.FontSize = stackSz * 0.72; StackedTimeBehind.FontSize = stackSz * 0.72;
                 StackedDate.FontSize = stackSz * 0.72; StackedDateBehind.FontSize = stackSz * 0.72;
                 StackedWeather.FontSize = stackSz * 0.72; StackedWeatherBehind.FontSize = stackSz * 0.72;
-                StackedCarrier.FontSize = stackSz * 0.20; StackedCarrierBehind.FontSize = stackSz * 0.20;
                 StackedDay.FontSize = stackSz * 0.22; StackedDayBehind.FontSize = stackSz * 0.22;
                 
                 var topMargin = new Thickness(0, -stackSz * 0.20, 0, 0);
@@ -1212,20 +1209,16 @@ namespace HyperOS.Pages
             if (clockHAlign == 0) ta = TextAlignment.Left;
             else if (clockHAlign == 2) ta = TextAlignment.Right;
             
-            StackedCarrier.TextAlignment = ta;
             StackedTime.TextAlignment = ta;
             StackedWeather.TextAlignment = ta;
             
-            StackedCarrierBehind.TextAlignment = ta;
             StackedTimeBehind.TextAlignment = ta;
             StackedWeatherBehind.TextAlignment = ta;
             
-            StackedCarrier.HorizontalAlignment = HorizontalAlignment.Stretch;
             StackedTime.HorizontalAlignment = HorizontalAlignment.Stretch;
             StackedDatePanel.HorizontalAlignment = ha;
             StackedWeather.HorizontalAlignment = HorizontalAlignment.Stretch;
             
-            StackedCarrierBehind.HorizontalAlignment = HorizontalAlignment.Stretch;
             StackedTimeBehind.HorizontalAlignment = HorizontalAlignment.Stretch;
             StackedDatePanelBehind.HorizontalAlignment = ha;
             StackedWeatherBehind.HorizontalAlignment = HorizontalAlignment.Stretch;
@@ -1442,20 +1435,16 @@ namespace HyperOS.Pages
                 if (childAlign == HorizontalAlignment.Left) ta = TextAlignment.Left;
                 else if (childAlign == HorizontalAlignment.Right) ta = TextAlignment.Right;
                 
-                StackedCarrier.TextAlignment = ta;
                 StackedTime.TextAlignment = ta;
                 StackedWeather.TextAlignment = ta;
                 
-                StackedCarrierBehind.TextAlignment = ta;
                 StackedTimeBehind.TextAlignment = ta;
                 StackedWeatherBehind.TextAlignment = ta;
                 
-                StackedCarrier.HorizontalAlignment = HorizontalAlignment.Stretch;
                 StackedTime.HorizontalAlignment = HorizontalAlignment.Stretch;
                 StackedDatePanel.HorizontalAlignment = childAlign;
                 StackedWeather.HorizontalAlignment = HorizontalAlignment.Stretch;
                 
-                StackedCarrierBehind.HorizontalAlignment = HorizontalAlignment.Stretch;
                 StackedTimeBehind.HorizontalAlignment = HorizontalAlignment.Stretch;
                 StackedDatePanelBehind.HorizontalAlignment = childAlign;
                 StackedWeatherBehind.HorizontalAlignment = HorizontalAlignment.Stretch;

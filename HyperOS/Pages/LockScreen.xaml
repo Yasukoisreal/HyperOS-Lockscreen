@@ -450,15 +450,13 @@
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
-                        <TextBlock x:Name="StackedCarrierBehind" Grid.Row="0" Text="Mi Mobile" FontSize="18" Foreground="#BBFFFFFF" FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"/>
-                        <TextBlock x:Name="StackedTimeBehind" Grid.Row="1" Text="5:36" FontSize="100" Foreground="White" FontFamily="/Assets/Fonts/MiSans-Light.ttf#MiSans" Margin="-4,-12,0,-12"/>
-                        <StackPanel x:Name="StackedDatePanelBehind" Grid.Row="2" Orientation="Horizontal">
+                        <TextBlock x:Name="StackedTimeBehind" Grid.Row="0" Text="5:36" FontSize="100" Foreground="White" FontFamily="/Assets/Fonts/MiSans-Light.ttf#MiSans" Margin="-4,-12,0,-12"/>
+                        <StackPanel x:Name="StackedDatePanelBehind" Grid.Row="1" Orientation="Horizontal">
                             <TextBlock x:Name="StackedDateBehind" Text="4/6" FontSize="44" Foreground="White" FontFamily="/Assets/Fonts/MiSans-Light.ttf#MiSans"/>
                             <TextBlock x:Name="StackedDayBehind" Text="THU" FontSize="18" Foreground="#99FFFFFF" FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans" VerticalAlignment="Top" Margin="8,8,0,0"/>
                         </StackPanel>
-                        <TextBlock x:Name="StackedWeatherBehind" Grid.Row="3" Text="28° ☁" FontSize="44" Foreground="White" FontFamily="/Assets/Fonts/MiSans-Light.ttf#MiSans" Margin="0,-4,0,0"/>
+                        <TextBlock x:Name="StackedWeatherBehind" Grid.Row="2" Text="28° ☁" FontSize="44" Foreground="White" FontFamily="/Assets/Fonts/MiSans-Light.ttf#MiSans" Margin="0,-4,0,0"/>
                     </Grid>
                     <!-- Analog Clock Behind (Collapsed by default) -->
                     <Canvas x:Name="AnalogClockCanvasBehind" Width="200" Height="200"
@@ -554,15 +552,13 @@
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
-                        <TextBlock x:Name="StackedCarrier" Grid.Row="0" Text="Mi Mobile" FontSize="18" Foreground="#BBFFFFFF" FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"/>
-                        <TextBlock x:Name="StackedTime" Grid.Row="1" Text="5:36" FontSize="100" Foreground="White" FontFamily="/Assets/Fonts/MiSans-Light.ttf#MiSans" Margin="-4,-12,0,-12"/>
-                        <StackPanel x:Name="StackedDatePanel" Grid.Row="2" Orientation="Horizontal">
+                        <TextBlock x:Name="StackedTime" Grid.Row="0" Text="5:36" FontSize="100" Foreground="White" FontFamily="/Assets/Fonts/MiSans-Light.ttf#MiSans" Margin="-4,-12,0,-12"/>
+                        <StackPanel x:Name="StackedDatePanel" Grid.Row="1" Orientation="Horizontal">
                             <TextBlock x:Name="StackedDate" Text="4/6" FontSize="44" Foreground="White" FontFamily="/Assets/Fonts/MiSans-Light.ttf#MiSans"/>
                             <TextBlock x:Name="StackedDay" Text="THU" FontSize="18" Foreground="#99FFFFFF" FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans" VerticalAlignment="Top" Margin="8,8,0,0"/>
                         </StackPanel>
-                        <TextBlock x:Name="StackedWeather" Grid.Row="3" Text="28° ☁" FontSize="44" Foreground="White" FontFamily="/Assets/Fonts/MiSans-Light.ttf#MiSans" Margin="0,-4,0,0"/>
+                        <TextBlock x:Name="StackedWeather" Grid.Row="2" Text="28° ☁" FontSize="44" Foreground="White" FontFamily="/Assets/Fonts/MiSans-Light.ttf#MiSans" Margin="0,-4,0,0"/>
                     </Grid>
                     <!-- Analog Clock (Collapsed by default) -->
                     <Canvas x:Name="AnalogClockCanvas" Width="200" Height="200"
