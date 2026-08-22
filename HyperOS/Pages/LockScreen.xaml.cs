@@ -306,6 +306,14 @@ namespace HyperOS.Pages
                         else
                             AddFadeSlide(sb, StackedGrid, 0, 450);
                     }
+                    else if (clockLayout == 8)
+                    {
+                        // Upward layout
+                        if (useDepthEffect)
+                            AddFadeSlide(sb, UpwardGridBehind, 0, 450);
+                        else
+                            AddFadeSlide(sb, UpwardGrid, 0, 450);
+                    }
                     else
                     {
                         int delayMs = 0;
