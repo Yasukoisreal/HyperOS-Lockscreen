@@ -140,14 +140,10 @@
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
-                        <TextBlock x:Name="PUpwardCarrier" Grid.Row="0" Text="Mi Mobile" FontSize="18" Foreground="#BBFFFFFF" FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans" HorizontalAlignment="Center"/>
-                        <TextBlock x:Name="PUpwardDate" Grid.Row="1" Text="4/6" FontSize="44" Foreground="White" FontFamily="/Assets/Fonts/MiSans-Light.ttf#MiSans" HorizontalAlignment="Center"/>
-                        <TextBlock x:Name="PUpwardTime" Grid.Row="2" Text="5:36" FontSize="100" Foreground="White" FontFamily="/Assets/Fonts/MiSans-Light.ttf#MiSans" HorizontalAlignment="Center" Margin="-4,-12,0,-12"/>
-                        <TextBlock x:Name="PUpwardDay" Grid.Row="3" Text="THU" FontSize="24" Foreground="White" FontFamily="/Assets/Fonts/MiSans-Light.ttf#MiSans" HorizontalAlignment="Center"/>
-                        <TextBlock x:Name="PUpwardWeather" Grid.Row="4" Text="28° ☁" FontSize="20" Foreground="#BBFFFFFF" FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans" HorizontalAlignment="Center" Margin="0,8,0,0"/>
+                        <TextBlock x:Name="PUpwardDate" Grid.Row="0" Text="4/6" FontSize="44" Foreground="White" FontFamily="/Assets/Fonts/MiSans-Light.ttf#MiSans" HorizontalAlignment="Center"/>
+                        <TextBlock x:Name="PUpwardTime" Grid.Row="1" Text="5:36" FontSize="100" Foreground="White" FontFamily="/Assets/Fonts/MiSans-Light.ttf#MiSans" HorizontalAlignment="Center" Margin="-4,-12,0,-12"/>
+                        <TextBlock x:Name="PUpwardDay" Grid.Row="2" Text="THU" FontSize="24" Foreground="White" FontFamily="/Assets/Fonts/MiSans-Light.ttf#MiSans" HorizontalAlignment="Center"/>
                     </Grid>
 
                     <!-- Analog Clock Preview (Collapsed by default) -->

@@ -605,8 +605,6 @@ namespace HyperOS.Pages
                     PUpwardTime.Text = timeStr;
                     PUpwardDate.Text = dateStr;
                     PUpwardDay.Text = dayStr;
-                    PUpwardWeather.Text = weatherStr;
-                    PUpwardCarrier.Text = carrier;
                 }
             }
 
@@ -764,12 +762,9 @@ namespace HyperOS.Pages
                 PUpwardTime.FontSize = sz * 1.0;
                 PUpwardDate.FontSize = sz * 0.44;
                 PUpwardDay.FontSize = sz * 0.24;
-                PUpwardWeather.FontSize = sz * 0.20;
-                PUpwardCarrier.FontSize = sz * 0.20;
                 
                 PUpwardTime.Margin = new Thickness(0, (int)(-sz * 0.25), 0, 0);
                 PUpwardDay.Margin = new Thickness(0, (int)(-sz * 0.15), 0, 0);
-                PUpwardWeather.Margin = new Thickness(0, (int)(sz * 0.08), 0, 0);
             }
 
             // Color
@@ -1110,7 +1105,6 @@ namespace HyperOS.Pages
             PUpwardTime.Foreground = brush;
             PUpwardDate.Foreground = brush;
             PUpwardDay.Foreground = brush;
-            PUpwardWeather.Foreground = brush;
         }
 
         private LinearGradientBrush MakeGrad(Color from, Color to)
@@ -1849,17 +1843,13 @@ namespace HyperOS.Pages
             PStackedWeather.HorizontalAlignment = HorizontalAlignment.Stretch;
             
             PUpwardGrid.HorizontalAlignment = ha;
-            PUpwardCarrier.TextAlignment = ta;
             PUpwardTime.TextAlignment = ta;
             PUpwardDate.TextAlignment = ta;
             PUpwardDay.TextAlignment = ta;
-            PUpwardWeather.TextAlignment = ta;
             
-            PUpwardCarrier.HorizontalAlignment = HorizontalAlignment.Stretch;
             PUpwardTime.HorizontalAlignment = HorizontalAlignment.Stretch;
             PUpwardDate.HorizontalAlignment = HorizontalAlignment.Stretch;
             PUpwardDay.HorizontalAlignment = HorizontalAlignment.Stretch;
-            PUpwardWeather.HorizontalAlignment = HorizontalAlignment.Stretch;
         }
 
         /// <summary>

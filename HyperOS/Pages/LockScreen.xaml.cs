@@ -479,11 +479,6 @@ namespace HyperOS.Pages
                             UpwardDay.Text = stackDayStr;
                             UpwardDayBehind.Text = stackDayStr;
                         }
-                        if (UpwardCarrier.Text != carrier)
-                        {
-                            UpwardCarrier.Text = carrier;
-                            UpwardCarrierBehind.Text = carrier;
-                        }
                     }
                 }
             }
@@ -1215,16 +1210,12 @@ namespace HyperOS.Pages
                 UpwardTime.FontSize = upSz * 1.0; UpwardTimeBehind.FontSize = upSz * 1.0;
                 UpwardDate.FontSize = upSz * 0.44; UpwardDateBehind.FontSize = upSz * 0.44;
                 UpwardDay.FontSize = upSz * 0.24; UpwardDayBehind.FontSize = upSz * 0.24;
-                UpwardWeather.FontSize = upSz * 0.20; UpwardWeatherBehind.FontSize = upSz * 0.20;
-                UpwardCarrier.FontSize = upSz * 0.20; UpwardCarrierBehind.FontSize = upSz * 0.20;
                 
                 var tMargin = new Thickness(0, (int)(-upSz * 0.25), 0, 0);
                 var dMargin = new Thickness(0, (int)(-upSz * 0.15), 0, 0);
-                var wMargin = new Thickness(0, (int)(upSz * 0.08), 0, 0);
                 
                 UpwardTime.Margin = tMargin; UpwardTimeBehind.Margin = tMargin;
                 UpwardDay.Margin = dMargin; UpwardDayBehind.Margin = dMargin;
-                UpwardWeather.Margin = wMargin; UpwardWeatherBehind.Margin = wMargin;
             }
 
             // Time & Date format
@@ -1273,8 +1264,6 @@ namespace HyperOS.Pages
                     UpwardTime.Text = timeStr; UpwardTimeBehind.Text = timeStr;
                     UpwardDate.Text = dateStr; UpwardDateBehind.Text = dateStr;
                     UpwardDay.Text = dayStr; UpwardDayBehind.Text = dayStr;
-                    UpwardWeather.Text = weatherStr; UpwardWeatherBehind.Text = weatherStr;
-                    UpwardCarrier.Text = carrier; UpwardCarrierBehind.Text = carrier;
                 }
             }
         }
@@ -1350,29 +1339,21 @@ namespace HyperOS.Pages
             UpwardGrid.HorizontalAlignment = ha;
             UpwardGridBehind.HorizontalAlignment = ha;
             
-            UpwardCarrier.TextAlignment = ta;
             UpwardTime.TextAlignment = ta;
             UpwardDate.TextAlignment = ta;
             UpwardDay.TextAlignment = ta;
-            UpwardWeather.TextAlignment = ta;
             
-            UpwardCarrierBehind.TextAlignment = ta;
             UpwardTimeBehind.TextAlignment = ta;
             UpwardDateBehind.TextAlignment = ta;
             UpwardDayBehind.TextAlignment = ta;
-            UpwardWeatherBehind.TextAlignment = ta;
             
-            UpwardCarrier.HorizontalAlignment = HorizontalAlignment.Stretch;
             UpwardTime.HorizontalAlignment = HorizontalAlignment.Stretch;
             UpwardDate.HorizontalAlignment = HorizontalAlignment.Stretch;
             UpwardDay.HorizontalAlignment = HorizontalAlignment.Stretch;
-            UpwardWeather.HorizontalAlignment = HorizontalAlignment.Stretch;
             
-            UpwardCarrierBehind.HorizontalAlignment = HorizontalAlignment.Stretch;
             UpwardTimeBehind.HorizontalAlignment = HorizontalAlignment.Stretch;
             UpwardDateBehind.HorizontalAlignment = HorizontalAlignment.Stretch;
             UpwardDayBehind.HorizontalAlignment = HorizontalAlignment.Stretch;
-            UpwardWeatherBehind.HorizontalAlignment = HorizontalAlignment.Stretch;
         }
 
         // Helper to avoid XNA vs Media.Color ambiguity
@@ -1445,7 +1426,6 @@ namespace HyperOS.Pages
             UpwardTime.Foreground = brush; UpwardTimeBehind.Foreground = brush;
             UpwardDate.Foreground = brush; UpwardDateBehind.Foreground = brush;
             UpwardDay.Foreground = brush; UpwardDayBehind.Foreground = brush;
-            UpwardWeather.Foreground = brush; UpwardWeatherBehind.Foreground = brush;
 
             // Apply clock opacity from Editor settings
             ClockPanel.Opacity = clockOpacity;
@@ -1866,11 +1846,7 @@ namespace HyperOS.Pages
                                     StackedWeather.Text = WeatherText.Text;
                                     StackedWeatherBehind.Text = WeatherText.Text;
                                 }
-                                else if (clockLayout == 8)
-                                {
-                                    UpwardWeather.Text = WeatherText.Text;
-                                    UpwardWeatherBehind.Text = WeatherText.Text;
-                                }
+
 
                                 // Cache to storage
                                 var s = IsolatedStorageSettings.ApplicationSettings;
@@ -1911,11 +1887,7 @@ namespace HyperOS.Pages
                         StackedWeather.Text = WeatherText.Text;
                         StackedWeatherBehind.Text = WeatherText.Text;
                     }
-                    else if (clockLayout == 8)
-                    {
-                        UpwardWeather.Text = WeatherText.Text;
-                        UpwardWeatherBehind.Text = WeatherText.Text;
-                    }
+
                 }
             }
             catch { }
