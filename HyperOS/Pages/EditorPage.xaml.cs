@@ -162,7 +162,7 @@ namespace HyperOS.Pages
                 hasUnsavedChanges = true;
                 LoadPreviewImages();
                 Dispatcher.BeginInvoke(() => UpdateDepthFrontLayer());
-                MessageBox.Show("Foreground đã được lưu!", "Thành công", MessageBoxButton.OK);
+                MessageBox.Show("Foreground saved successfully!", "Success", MessageBoxButton.OK);
             }
             catch (Exception ex)
             {
@@ -2015,10 +2015,10 @@ namespace HyperOS.Pages
             string city = EdWeatherCity.Text.Trim();
             if (string.IsNullOrEmpty(city))
             {
-                MessageBox.Show("Nhập tên thành phố.", "Thiếu thông tin", MessageBoxButton.OK);
+                MessageBox.Show("Enter city name.", "Missing information", MessageBoxButton.OK);
                 return;
             }
-            WeatherStatus.Text = "⏳ Đang tìm...";
+            WeatherStatus.Text = "⏳ Searching...";
             // Geocode city name to lat/lon using open-meteo
             string url = string.Format(
                 "https://geocoding-api.open-meteo.com/v1/search?name={0}&count=1&language=vi",
@@ -2028,7 +2028,7 @@ namespace HyperOS.Pages
             {
                 if (ev.Error != null)
                 {
-                    WeatherStatus.Text = "❌ Lỗi: " + ev.Error.Message;
+                    WeatherStatus.Text = "❌ Error: " + ev.Error.Message;
                     return;
                 }
                 try
@@ -2040,7 +2040,7 @@ namespace HyperOS.Pages
                     string name = ParseJsonString(json, "name");
                     if (lat == 0 && lon == 0)
                     {
-                        WeatherStatus.Text = "❌ Không tìm thấy: " + city;
+                        WeatherStatus.Text = "❌ Not found: " + city;
                         return;
                     }
                     Save("WeatherLat", lat);
@@ -2049,14 +2049,14 @@ namespace HyperOS.Pages
                     EdWeatherCity.Text = name;
                     WeatherStatus.Text = "✅ " + name + " (" + lat.ToString("F2") + ", " + lon.ToString("F2") + ")";
                 }
-                catch { WeatherStatus.Text = "❌ Không tìm thấy: " + city; }
+                catch { WeatherStatus.Text = "❌ Not found: " + city; }
             };
             wc.DownloadStringAsync(new Uri(url));
         }
 
         private void EdWeatherGps_Click(object sender, RoutedEventArgs e)
         {
-            WeatherStatus.Text = "📡 Đang lấy GPS...";
+            WeatherStatus.Text = "📡 Getting GPS...";
             var watcher = new System.Device.Location.GeoCoordinateWatcher(
                 System.Device.Location.GeoPositionAccuracy.Default);
             watcher.StatusChanged += (s2, ev) =>
@@ -2064,7 +2064,7 @@ namespace HyperOS.Pages
                 if (ev.Status == System.Device.Location.GeoPositionStatus.Disabled)
                 {
                     Dispatcher.BeginInvoke(() =>
-                        WeatherStatus.Text = "❌ GPS bị tắt. Bật Location trong Settings.");
+                        WeatherStatus.Text = "❌ GPS disabled. Turn on Location in Settings.");
                     watcher.Stop();
                 }
             };
@@ -2225,7 +2225,7 @@ namespace HyperOS.Pages
                 {
                     if (!store.FileExists("Background.jpg"))
                     {
-                        MessageBox.Show("Hãy chọn ảnh nền trước khi tách foreground.", "Chưa có ảnh nền", MessageBoxButton.OK);
+                        MessageBox.Show("Please select a background image first.", "No background image", MessageBoxButton.OK);
                         return;
                     }
                 }
@@ -2233,7 +2233,7 @@ namespace HyperOS.Pages
             catch { return; }
 
             EdAutoExtractBtn.IsEnabled = false;
-            ExtractStatus.Text = "⏳ Đang tách vật thể...";
+            ExtractStatus.Text = "⏳ Extracting foreground...";
 
             // Read Background.jpg bytes
             byte[] imageBytes;
@@ -2248,7 +2248,7 @@ namespace HyperOS.Pages
             }
             catch (Exception ex)
             {
-                ExtractStatus.Text = "❌ Lỗi đọc ảnh: " + ex.Message;
+                ExtractStatus.Text = "❌ Error reading image: " + ex.Message;
                 EdAutoExtractBtn.IsEnabled = true;
                 return;
             }
@@ -2260,7 +2260,7 @@ namespace HyperOS.Pages
             string apiKey = Get<string>(IsolatedStorageSettings.ApplicationSettings, "RemoveBgApiKey", "").Trim();
             if (string.IsNullOrEmpty(apiKey))
             {
-                ExtractStatus.Text = "❌ Nhập API key trước!";
+                ExtractStatus.Text = "❌ Enter API key first!";
                 EdAutoExtractBtn.IsEnabled = true;
                 return;
             }
@@ -2319,7 +2319,7 @@ namespace HyperOS.Pages
                                 // Update UI on dispatcher
                                 Dispatcher.BeginInvoke(() =>
                                 {
-                                    ExtractStatus.Text = "✅ Tách thành công!";
+                                    ExtractStatus.Text = "✅ Extraction successful!";
                                     EdAutoExtractBtn.IsEnabled = true;
                                     hasUnsavedChanges = true;
 
@@ -2338,7 +2338,7 @@ namespace HyperOS.Pages
                         }
                         catch (System.Net.WebException wex)
                         {
-                            string errMsg = "Lỗi API";
+                            string errMsg = "API Error";
                             try
                             {
                                 if (wex.Response != null)
@@ -2621,7 +2621,7 @@ namespace HyperOS.Pages
         {
             if (isGeneratingAI)
             {
-                MessageBox.Show("Vui lòng đợi ảnh trước tạo xong!", "Đang xử lý", MessageBoxButton.OK);
+                MessageBox.Show("Please wait for the current image to finish generating!", "Processing", MessageBoxButton.OK);
                 return;
             }
             AIPromptTextBox.Text = "";
@@ -2674,7 +2674,7 @@ namespace HyperOS.Pages
             AIPromptDialog.Visibility = Visibility.Collapsed;
             if (FilterProcessingText != null)
             {
-                FilterProcessingText.Text = "Đang tải ảnh từ Pollinations AI...";
+                FilterProcessingText.Text = "Downloading image from Pollinations AI...";
                 FilterProcessingText.Visibility = Visibility.Visible;
             }
 
@@ -2708,7 +2708,7 @@ namespace HyperOS.Pages
 
                         if (FilterProcessingText != null) FilterProcessingText.Visibility = Visibility.Collapsed;
                         isGeneratingAI = false;
-                        MessageBox.Show("Tạo ảnh AI thành công!", "Thành công", MessageBoxButton.OK);
+                        MessageBox.Show("AI image generated successfully!", "Success", MessageBoxButton.OK);
 
                         using (var store = IsolatedStorageFile.GetUserStoreForApplication())
                         {
@@ -2723,7 +2723,7 @@ namespace HyperOS.Pages
                     {
                         if (FilterProcessingText != null) FilterProcessingText.Visibility = Visibility.Collapsed;
                         isGeneratingAI = false;
-                        MessageBox.Show($"Lỗi từ server Pollinations ({(int)imgResponse.StatusCode}).", "Lỗi API", MessageBoxButton.OK);
+                        MessageBox.Show($"Pollinations server error ({(int)imgResponse.StatusCode}).", "API Error", MessageBoxButton.OK);
                     }
                 }
             }
@@ -2731,7 +2731,7 @@ namespace HyperOS.Pages
             {
                 if (FilterProcessingText != null) FilterProcessingText.Visibility = Visibility.Collapsed;
                 isGeneratingAI = false;
-                MessageBox.Show("Lỗi kết nối: " + ex.Message, "Lỗi", MessageBoxButton.OK);
+                MessageBox.Show("Connection error: " + ex.Message, "Error", MessageBoxButton.OK);
             }
         }
 

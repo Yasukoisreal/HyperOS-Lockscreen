@@ -772,7 +772,7 @@ namespace HyperOS.Pages
         private void Apply_Tap(object sender, System.Windows.Input.GestureEventArgs e)
         {
             SyncPresetToGlobal(currentIndex);
-            System.Windows.MessageBox.Show("Preset đã được áp dụng thành công cho màn hình khóa!", "Thành công", System.Windows.MessageBoxButton.OK);
+            System.Windows.MessageBox.Show("Preset has been successfully applied to the lock screen!", "Success", System.Windows.MessageBoxButton.OK);
         }
 
         #endregion

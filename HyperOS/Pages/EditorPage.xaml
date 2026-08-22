@@ -760,10 +760,10 @@
                     VerticalAlignment="Center" HorizontalAlignment="Center"
                     Width="400" Padding="24,20,24,16">
                 <StackPanel>
-                    <TextBlock Text="Chưa lưu" FontSize="22" FontWeight="Bold" 
+                    <TextBlock Text="Unsaved Changes" FontSize="22" FontWeight="Bold" 
                                Foreground="White" Margin="0,0,0,8"
                                FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"/>
-                    <TextBlock Text="Bạn có thay đổi chưa lưu. Bạn muốn làm gì?"
+                    <TextBlock Text="You have unsaved changes. What would you like to do?"
                                FontSize="15" Foreground="#BBFFFFFF" TextWrapping="Wrap"
                                Margin="0,0,0,20"
                                FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"/>

@@ -33,7 +33,7 @@ namespace HyperOS.Pages
             if (pinOn)
                 PinBox.Text = Get<string>(s, "sPassword", "");
             if (patternOn)
-                PatternHint.Text = "✅ Pattern đã được thiết lập trên màn hình khoá";
+                PatternHint.Text = "✅ Pattern is configured for the lock screen";
 
             // Owner info
             OwnerInfoBox.Text = Get<string>(s, "OwnerInfo", "");
@@ -165,12 +165,12 @@ namespace HyperOS.Pages
 
             if (!valid)
             {
-                MessageBox.Show("PIN phải có đúng 4 chữ số (0-9).", "Sai định dạng", MessageBoxButton.OK);
+                MessageBox.Show("PIN must be exactly 4 digits (0-9).", "Invalid format", MessageBoxButton.OK);
                 return;
             }
             Save("sPassword", pin);
             Save("bIsPasswordEnabled", true);
-            SecurityStatus.Text = "🔒 PIN đã lưu";
+            SecurityStatus.Text = "🔒 PIN saved";
         }
 
         private void PatternToggle_Changed(object sender, RoutedEventArgs e)
@@ -190,15 +190,15 @@ namespace HyperOS.Pages
                     PinPanel.Visibility = Visibility.Collapsed;
                 }
                 Save("bIsPatternOn", true);
-                PatternHint.Text = "⬆ Vẽ pattern trên màn hình khoá để thiết lập";
-                SecurityStatus.Text = "🔒 Pattern lock đã bật";
+                PatternHint.Text = "⬆ Draw pattern on lock screen to setup";
+                SecurityStatus.Text = "🔒 Pattern lock enabled";
             }
             else
             {
                 Save("bIsPatternOn", false);
                 Save("AppPatternToMatch", "");
                 PatternHint.Text = "";
-                SecurityStatus.Text = "🔓 Pattern lock đã tắt";
+                SecurityStatus.Text = "🔓 No security";
             }
         }
 

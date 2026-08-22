@@ -132,7 +132,7 @@
                 <!-- NO AI API KEY REQUIRED ANYMORE -->
                 <TextBlock Text="AI WALLPAPER (POLLINATIONS)" FontSize="13" Foreground="#55FFFFFF"
                     FontFamily="/Assets/Fonts/MiSans-Demibold.ttf#MiSans" Margin="0,24,0,8"/>
-                <TextBlock Text="Sử dụng Pollinations AI mã nguồn mở miễn phí 100%. Không yêu cầu đăng ký hay API Key." FontSize="13"
+                <TextBlock Text="Uses 100% free open-source Pollinations AI. No signup or API Key required." FontSize="13"
                     Foreground="#88FFFFFF" TextWrapping="Wrap" Margin="0,0,0,0"
                     FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"/>
 
