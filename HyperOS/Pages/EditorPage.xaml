@@ -377,7 +377,7 @@
                             </StackPanel>
 
                             <!-- Date Align (manual) -->
-                            <TextBlock Text="DATE ALIGN" Style="{StaticResource PropLabel}"/>
+                            <TextBlock x:Name="DateAlignLabel" Text="DATE ALIGN" Style="{StaticResource PropLabel}"/>
                             <StackPanel x:Name="DateAlignPanel" Orientation="Horizontal" Visibility="Visible">
                                 <Border x:Name="AlignLeft" Tap="DateAlign_Tap" Tag="0" Style="{StaticResource PropOptionPill}">
                                     <TextBlock Text="Left" Style="{StaticResource PropOptionText}"/>

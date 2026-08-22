@@ -1543,6 +1543,13 @@ namespace HyperOS.Pages
             Border[] pills = { LayoutHoriz, LayoutVert, LayoutAnalog1, LayoutAnalog2, LayoutAnalog3, LayoutRhombus, LayoutGiant, LayoutStacked };
             for (int i = 0; i < pills.Length; i++)
                 pills[i].Background = (i == clockLayout) ? AccentBrush : InactiveTabBg;
+                
+            if (DateAlignLabel != null && DateAlignPanel != null)
+            {
+                Visibility v = (clockLayout == 7) ? Visibility.Collapsed : Visibility.Visible;
+                DateAlignLabel.Visibility = v;
+                DateAlignPanel.Visibility = v;
+            }
         }
 
         private void FontPrev_Tap(object sender, System.Windows.Input.GestureEventArgs e)
