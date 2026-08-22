@@ -1126,15 +1126,15 @@ namespace HyperOS.Pages
             if (isStacked)
             {
                 double stackSz = baseSize;
-                StackedTime.FontSize = stackSz * 0.90; StackedTimeBehind.FontSize = stackSz * 0.90;
-                StackedDate.FontSize = stackSz * 0.45; StackedDateBehind.FontSize = stackSz * 0.45;
-                StackedWeather.FontSize = stackSz * 0.45; StackedWeatherBehind.FontSize = stackSz * 0.45;
+                StackedTime.FontSize = stackSz * 0.72; StackedTimeBehind.FontSize = stackSz * 0.72;
+                StackedDate.FontSize = stackSz * 0.72; StackedDateBehind.FontSize = stackSz * 0.72;
+                StackedWeather.FontSize = stackSz * 0.72; StackedWeatherBehind.FontSize = stackSz * 0.72;
                 StackedCarrier.FontSize = stackSz * 0.20; StackedCarrierBehind.FontSize = stackSz * 0.20;
-                StackedDay.FontSize = stackSz * 0.20; StackedDayBehind.FontSize = stackSz * 0.20;
+                StackedDay.FontSize = stackSz * 0.22; StackedDayBehind.FontSize = stackSz * 0.22;
                 
-                var timeMargin = new Thickness(-4, -stackSz * 0.1, 0, -stackSz * 0.1);
+                var timeMargin = new Thickness(-4, -stackSz * 0.18, 0, -stackSz * 0.18);
                 StackedTime.Margin = timeMargin; StackedTimeBehind.Margin = timeMargin;
-                var weatherMargin = new Thickness(0, 0, 0, 0);
+                var weatherMargin = new Thickness(0, -stackSz * 0.08, 0, 0);
                 StackedWeather.Margin = weatherMargin; StackedWeatherBehind.Margin = weatherMargin;
             }
 

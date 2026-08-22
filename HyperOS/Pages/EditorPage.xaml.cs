@@ -701,14 +701,14 @@ namespace HyperOS.Pages
             
             if (isStacked)
             {
-                PStackedTime.FontSize = sz * 0.90;
-                PStackedDate.FontSize = sz * 0.45;
-                PStackedWeather.FontSize = sz * 0.45;
+                PStackedTime.FontSize = sz * 0.72;
+                PStackedDate.FontSize = sz * 0.72;
+                PStackedWeather.FontSize = sz * 0.72;
                 PStackedCarrier.FontSize = sz * 0.20;
-                PStackedDay.FontSize = sz * 0.20;
+                PStackedDay.FontSize = sz * 0.22;
                 
-                PStackedTime.Margin = new Thickness(-4, -sz * 0.1, 0, -sz * 0.1);
-                PStackedWeather.Margin = new Thickness(0, 0, 0, 0);
+                PStackedTime.Margin = new Thickness(-4, -sz * 0.18, 0, -sz * 0.18);
+                PStackedWeather.Margin = new Thickness(0, -sz * 0.08, 0, 0);
             }
 
             // Color
