@@ -497,7 +497,7 @@ namespace HyperOS.Helpers
                 var dateP = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = dateHAlign, Margin = new Thickness(0, -sz * 0.20, 0, 0) };
                 Grid.SetRow(dateP, 2);
                 var date = new TextBlock { Text = DateTime.Now.Day + "/" + DateTime.Now.Month, FontSize = sz * 0.72, Foreground = dateBrush, FontFamily = new FontFamily("/Assets/Fonts/MiSans-Light.ttf#MiSans") };
-                var day = new TextBlock { Text = DateTime.Now.ToString("ddd").ToUpper(), FontSize = sz * 0.22, Foreground = new SolidColorBrush(MC.FromArgb(153, 255, 255, 255)), FontFamily = new FontFamily("/Assets/Fonts/MiSans-Regular.ttf#MiSans"), VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(sz * 0.08, sz * 0.065, 0, 0) };
+                var day = new TextBlock { Text = DateTime.Now.ToString("ddd").ToUpper(), FontSize = sz * 0.22, Foreground = new SolidColorBrush(MC.FromArgb(153, 255, 255, 255)), FontFamily = new FontFamily("/Assets/Fonts/MiSans-Regular.ttf#MiSans"), VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(sz * 0.08, sz * 0.15, 0, 0) };
                 dateP.Children.Add(date);
                 dateP.Children.Add(day);
 

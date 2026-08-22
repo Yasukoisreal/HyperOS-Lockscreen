@@ -1139,7 +1139,7 @@ namespace HyperOS.Pages
                 StackedDatePanel.Margin = topMargin;
                 StackedDatePanelBehind.Margin = topMargin;
                 
-                var dayMargin = new Thickness(stackSz * 0.08, stackSz * 0.065, 0, 0);
+                var dayMargin = new Thickness(stackSz * 0.08, stackSz * 0.15, 0, 0);
                 StackedDay.Margin = dayMargin; StackedDayBehind.Margin = dayMargin;
                 
                 StackedWeather.Margin = topMargin; 
