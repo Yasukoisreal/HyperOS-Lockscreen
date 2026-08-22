@@ -566,6 +566,7 @@ namespace HyperOS.Pages
             bool isRhombus = clockLayout == 5;
             bool isGiant = clockLayout == 6;
             bool isStacked = clockLayout == 7;
+            bool isUpward = clockLayout == 8;
 
             // Update Rhombus digits
             PRhombusH1.Text = hStr[0].ToString();
@@ -573,14 +574,14 @@ namespace HyperOS.Pages
             PRhombusM1.Text = mStr[0].ToString();
             PRhombusM2.Text = mStr[1].ToString();
             
-            // Update Stacked text
-            if (isStacked)
+            // Update Stacked/Upward text
+            if (isStacked || isUpward)
             {
-                PStackedTime.Text = hStr + ":" + mStr;
-                PStackedDate.Text = now.Day + "/" + now.Month;
-                PStackedDay.Text = now.ToString("ddd").ToUpper();
+                string timeStr = isStacked ? hStr + ":" + mStr : hStr + ":" + mStr;
+                string dateStr = now.Day + "/" + now.Month;
+                string dayStr = now.ToString("ddd").ToUpper();
                 string cached = Get<string>(IsolatedStorageSettings.ApplicationSettings, "CachedWeather", "");
-                PStackedWeather.Text = string.IsNullOrEmpty(cached) ? "28° ☁" : cached;
+                string weatherStr = string.IsNullOrEmpty(cached) ? "28° ☁" : cached;
                 
                 string carrier = "";
                 try
@@ -590,7 +591,23 @@ namespace HyperOS.Pages
                 catch { }
                 if (string.IsNullOrWhiteSpace(carrier))
                     carrier = "No Service";
-                PStackedCarrier.Text = carrier;
+                
+                if (isStacked)
+                {
+                    PStackedTime.Text = timeStr;
+                    PStackedDate.Text = dateStr;
+                    PStackedDay.Text = dayStr;
+                    PStackedWeather.Text = weatherStr;
+                    PStackedCarrier.Text = carrier;
+                }
+                else
+                {
+                    PUpwardTime.Text = timeStr;
+                    PUpwardDate.Text = dateStr;
+                    PUpwardDay.Text = dayStr;
+                    PUpwardWeather.Text = weatherStr;
+                    PUpwardCarrier.Text = carrier;
+                }
             }
 
             // Show/hide digital vs analog vs rhombus vs stacked
@@ -599,6 +616,7 @@ namespace HyperOS.Pages
                 PTimePanel.Visibility = Visibility.Collapsed;
                 PRhombusGrid.Visibility = Visibility.Collapsed;
                 PStackedGrid.Visibility = Visibility.Collapsed;
+                PUpwardGrid.Visibility = Visibility.Collapsed;
                 PAnalogClock.Visibility = Visibility.Visible;
             }
             else if (isRhombus)
@@ -606,6 +624,7 @@ namespace HyperOS.Pages
                 PTimePanel.Visibility = Visibility.Collapsed;
                 PAnalogClock.Visibility = Visibility.Collapsed;
                 PStackedGrid.Visibility = Visibility.Collapsed;
+                PUpwardGrid.Visibility = Visibility.Collapsed;
                 PRhombusGrid.Visibility = Visibility.Visible;
             }
             else if (isStacked)
@@ -613,7 +632,16 @@ namespace HyperOS.Pages
                 PTimePanel.Visibility = Visibility.Collapsed;
                 PAnalogClock.Visibility = Visibility.Collapsed;
                 PRhombusGrid.Visibility = Visibility.Collapsed;
+                PUpwardGrid.Visibility = Visibility.Collapsed;
                 PStackedGrid.Visibility = Visibility.Visible;
+            }
+            else if (isUpward)
+            {
+                PTimePanel.Visibility = Visibility.Collapsed;
+                PAnalogClock.Visibility = Visibility.Collapsed;
+                PRhombusGrid.Visibility = Visibility.Collapsed;
+                PStackedGrid.Visibility = Visibility.Collapsed;
+                PUpwardGrid.Visibility = Visibility.Visible;
             }
             else
             {
@@ -621,13 +649,29 @@ namespace HyperOS.Pages
                 PRhombusGrid.Visibility = Visibility.Collapsed;
                 PAnalogClock.Visibility = Visibility.Collapsed;
                 PStackedGrid.Visibility = Visibility.Collapsed;
+                PUpwardGrid.Visibility = Visibility.Collapsed;
             }
 
             // Vertical / Giant: stack vertically, hide colon
             PColon.Visibility = (isVertical || isGiant) ? Visibility.Collapsed : Visibility.Visible;
             
-            // Stacked: hide separate date panel because it's built-in
-            PDatePanel.Visibility = isStacked ? Visibility.Collapsed : Visibility.Visible;
+            // Stacked/Upward: hide separate date panel because it's built-in
+            PDatePanel.Visibility = (isStacked || isUpward) ? Visibility.Collapsed : Visibility.Visible;
+            
+            // Hide alignment config for Stacked layout
+            if (DateAlignLabel != null && DateAlignPanel != null)
+            {
+                var vis = isStacked ? Visibility.Collapsed : Visibility.Visible;
+                DateAlignLabel.Visibility = vis;
+                DateAlignPanel.Visibility = vis;
+                
+                // Force left align for stacked
+                if (isStacked && dateAlign != 0)
+                {
+                    dateAlign = 0;
+                    UpdateDateAlignSelection();
+                }
+            }
 
             if (isVertical)
             {
@@ -655,6 +699,10 @@ namespace HyperOS.Pages
             PStackedTime.FontFamily = font;
             PStackedDate.FontFamily = font;
             PStackedWeather.FontFamily = font;
+            
+            PUpwardTime.FontFamily = font;
+            PUpwardDate.FontFamily = font;
+            PUpwardDay.FontFamily = font;
 
             // Size
             int si = Math.Max(0, Math.Min(clockSize, SizeValues.Length - 1));
@@ -710,6 +758,18 @@ namespace HyperOS.Pages
                 PStackedDatePanel.Margin = new Thickness(0, (int)(-sz * 0.20), 0, 0);
                 PStackedDay.Margin = new Thickness((int)(sz * 0.08), (int)(sz * 0.12), 0, 0);
                 PStackedWeather.Margin = new Thickness(0, (int)(-sz * 0.20), 0, 0);
+            }
+            if (isUpward)
+            {
+                PUpwardTime.FontSize = sz * 1.0;
+                PUpwardDate.FontSize = sz * 0.44;
+                PUpwardDay.FontSize = sz * 0.24;
+                PUpwardWeather.FontSize = sz * 0.20;
+                PUpwardCarrier.FontSize = sz * 0.20;
+                
+                PUpwardTime.Margin = new Thickness(0, (int)(-sz * 0.25), 0, 0);
+                PUpwardDay.Margin = new Thickness(0, (int)(-sz * 0.15), 0, 0);
+                PUpwardWeather.Margin = new Thickness(0, (int)(sz * 0.08), 0, 0);
             }
 
             // Color
@@ -844,16 +904,18 @@ namespace HyperOS.Pages
                 PRhombusM2.Opacity = 1;
                 PRhombusCenterDot.Opacity = 1;
                 PStackedGrid.Opacity = 1;
+                PUpwardGrid.Opacity = 1;
                 return;
             }
 
             bool isAnalog = clockLayout >= 2 && clockLayout <= 4;
             bool isRhombus = clockLayout == 5;
             bool isStacked = clockLayout == 7;
+            bool isUpward = clockLayout == 8;
 
-            if (isAnalog || isStacked)
+            if (isAnalog || isStacked || isUpward)
             {
-                // Analog/Stacked: entire clock behind foreground
+                // Analog/Stacked/Upward: entire clock behind foreground
                 FrontHour.Visibility = Visibility.Collapsed;
                 FrontColon.Visibility = Visibility.Collapsed;
                 FrontMinute.Visibility = Visibility.Collapsed;
@@ -867,7 +929,8 @@ namespace HyperOS.Pages
                 PMinute.Opacity = 1;
                 PAnalogClock.Opacity = 1; 
                 PStackedGrid.Opacity = 1;
-                PDatePanel.Opacity = isStacked ? 1 : 0; // Stacked doesn't use DatePanel, so leave it alone.
+                PUpwardGrid.Opacity = 1;
+                PDatePanel.Opacity = (isStacked || isUpward) ? 1 : 0; // Stacked/Upward don't use DatePanel, so leave it alone.
             }
             else
             {
@@ -1043,6 +1106,11 @@ namespace HyperOS.Pages
             PStackedTime.Foreground = brush;
             PStackedDate.Foreground = brush;
             PStackedWeather.Foreground = brush;
+            
+            PUpwardTime.Foreground = brush;
+            PUpwardDate.Foreground = brush;
+            PUpwardDay.Foreground = brush;
+            PUpwardWeather.Foreground = brush;
         }
 
         private LinearGradientBrush MakeGrad(Color from, Color to)
@@ -1779,6 +1847,19 @@ namespace HyperOS.Pages
             PStackedTime.HorizontalAlignment = HorizontalAlignment.Stretch;
             PStackedDatePanel.HorizontalAlignment = ha;
             PStackedWeather.HorizontalAlignment = HorizontalAlignment.Stretch;
+            
+            PUpwardGrid.HorizontalAlignment = ha;
+            PUpwardCarrier.TextAlignment = ta;
+            PUpwardTime.TextAlignment = ta;
+            PUpwardDate.TextAlignment = ta;
+            PUpwardDay.TextAlignment = ta;
+            PUpwardWeather.TextAlignment = ta;
+            
+            PUpwardCarrier.HorizontalAlignment = HorizontalAlignment.Stretch;
+            PUpwardTime.HorizontalAlignment = HorizontalAlignment.Stretch;
+            PUpwardDate.HorizontalAlignment = HorizontalAlignment.Stretch;
+            PUpwardDay.HorizontalAlignment = HorizontalAlignment.Stretch;
+            PUpwardWeather.HorizontalAlignment = HorizontalAlignment.Stretch;
         }
 
         /// <summary>

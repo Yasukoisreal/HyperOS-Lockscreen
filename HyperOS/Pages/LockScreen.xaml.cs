@@ -414,10 +414,14 @@ namespace HyperOS.Pages
                     RhombusM2.Text = m.Length > 1 ? m[1].ToString() : ""; RhombusM2Behind.Text = RhombusM2.Text;
                 }
                 
-                // Update Stacked time
+                // Update Stacked/Upward time
                 if (clockLayout == 7)
                 {
                     StackedTime.Text = newTime; StackedTimeBehind.Text = newTime;
+                }
+                else if (clockLayout == 8)
+                {
+                    UpwardTime.Text = newTime; UpwardTimeBehind.Text = newTime;
                 }
 
                 string newDay = DateTime.Now.ToString("dddd");
@@ -431,22 +435,11 @@ namespace HyperOS.Pages
                 
                 // Stacked layout date/day/carrier must be updated regardless of whether DayPanel changed,
                 // to prevent initialization bugs if the day happens to match the XAML default (Saturday).
-                if (clockLayout == 7)
+                if (clockLayout == 7 || clockLayout == 8)
                 {
                     var now = DateTime.Now;
                     string stackDateStr = now.Day + "/" + now.Month;
-                    if (StackedDate.Text != stackDateStr)
-                    {
-                        StackedDate.Text = stackDateStr;
-                        StackedDateBehind.Text = stackDateStr;
-                    }
                     string stackDayStr = now.ToString("ddd").ToUpper();
-                    if (StackedDay.Text != stackDayStr)
-                    {
-                        StackedDay.Text = stackDayStr;
-                        StackedDayBehind.Text = stackDayStr;
-                    }
-                    
                     string carrier = "";
                     try
                     {
@@ -455,11 +448,42 @@ namespace HyperOS.Pages
                     catch { }
                     if (string.IsNullOrWhiteSpace(carrier))
                         carrier = "No Service";
-                        
-                    if (StackedCarrier.Text != carrier)
+
+                    if (clockLayout == 7)
                     {
-                        StackedCarrier.Text = carrier;
-                        StackedCarrierBehind.Text = carrier;
+                        if (StackedDate.Text != stackDateStr)
+                        {
+                            StackedDate.Text = stackDateStr;
+                            StackedDateBehind.Text = stackDateStr;
+                        }
+                        if (StackedDay.Text != stackDayStr)
+                        {
+                            StackedDay.Text = stackDayStr;
+                            StackedDayBehind.Text = stackDayStr;
+                        }
+                        if (StackedCarrier.Text != carrier)
+                        {
+                            StackedCarrier.Text = carrier;
+                            StackedCarrierBehind.Text = carrier;
+                        }
+                    }
+                    else
+                    {
+                        if (UpwardDate.Text != stackDateStr)
+                        {
+                            UpwardDate.Text = stackDateStr;
+                            UpwardDateBehind.Text = stackDateStr;
+                        }
+                        if (UpwardDay.Text != stackDayStr)
+                        {
+                            UpwardDay.Text = stackDayStr;
+                            UpwardDayBehind.Text = stackDayStr;
+                        }
+                        if (UpwardCarrier.Text != carrier)
+                        {
+                            UpwardCarrier.Text = carrier;
+                            UpwardCarrierBehind.Text = carrier;
+                        }
                     }
                 }
             }
@@ -988,8 +1012,13 @@ namespace HyperOS.Pages
             bool isRhombus = clockLayout == 5;
             bool isGiant = clockLayout == 6;
             bool isStacked = clockLayout == 7;
+            bool isUpward = clockLayout == 8;
+            
+            UpwardTime.FontFamily = ff; UpwardTimeBehind.FontFamily = ff;
+            UpwardDate.FontFamily = ff; UpwardDateBehind.FontFamily = ff;
+            UpwardDay.FontFamily = ff; UpwardDayBehind.FontFamily = ff;
 
-            // Show/hide digital vs analog vs rhombus vs stacked
+            // Show/hide digital vs analog vs rhombus vs stacked vs upward
             if (isAnalog)
             {
                 TimePanel.Visibility = Visibility.Collapsed;
@@ -998,6 +1027,8 @@ namespace HyperOS.Pages
                 RhombusGridBehind.Visibility = Visibility.Collapsed;
                 StackedGrid.Visibility = Visibility.Collapsed;
                 StackedGridBehind.Visibility = Visibility.Collapsed;
+                UpwardGrid.Visibility = Visibility.Collapsed;
+                UpwardGridBehind.Visibility = Visibility.Collapsed;
                 AnalogClockCanvas.Visibility = Visibility.Visible;
                 // AnalogClockCanvasBehind is managed by ApplyDepthLayers
             }
@@ -1009,6 +1040,8 @@ namespace HyperOS.Pages
                 AnalogClockCanvasBehind.Visibility = Visibility.Collapsed;
                 StackedGrid.Visibility = Visibility.Collapsed;
                 StackedGridBehind.Visibility = Visibility.Collapsed;
+                UpwardGrid.Visibility = Visibility.Collapsed;
+                UpwardGridBehind.Visibility = Visibility.Collapsed;
                 RhombusGrid.Visibility = Visibility.Visible;
                 RhombusGridBehind.Visibility = Visibility.Visible;
             }
@@ -1020,8 +1053,23 @@ namespace HyperOS.Pages
                 AnalogClockCanvasBehind.Visibility = Visibility.Collapsed;
                 RhombusGrid.Visibility = Visibility.Collapsed;
                 RhombusGridBehind.Visibility = Visibility.Collapsed;
+                UpwardGrid.Visibility = Visibility.Collapsed;
+                UpwardGridBehind.Visibility = Visibility.Collapsed;
                 StackedGrid.Visibility = Visibility.Visible;
                 // StackedGridBehind is managed by ApplyDepthLayers
+            }
+            else if (isUpward)
+            {
+                TimePanel.Visibility = Visibility.Collapsed;
+                BehindTimePanel.Visibility = Visibility.Collapsed;
+                AnalogClockCanvas.Visibility = Visibility.Collapsed;
+                AnalogClockCanvasBehind.Visibility = Visibility.Collapsed;
+                RhombusGrid.Visibility = Visibility.Collapsed;
+                RhombusGridBehind.Visibility = Visibility.Collapsed;
+                StackedGrid.Visibility = Visibility.Collapsed;
+                StackedGridBehind.Visibility = Visibility.Collapsed;
+                UpwardGrid.Visibility = Visibility.Visible;
+                // UpwardGridBehind is managed by ApplyDepthLayers
             }
             else
             {
@@ -1031,6 +1079,8 @@ namespace HyperOS.Pages
                 RhombusGridBehind.Visibility = Visibility.Collapsed;
                 StackedGrid.Visibility = Visibility.Collapsed;
                 StackedGridBehind.Visibility = Visibility.Collapsed;
+                UpwardGrid.Visibility = Visibility.Collapsed;
+                UpwardGridBehind.Visibility = Visibility.Collapsed;
                 AnalogClockCanvas.Visibility = Visibility.Collapsed;
                 AnalogClockCanvasBehind.Visibility = Visibility.Collapsed;
             }
@@ -1039,8 +1089,8 @@ namespace HyperOS.Pages
             ColonPart.Visibility = (isVertical || isGiant) ? Visibility.Collapsed : Visibility.Visible;
             ColonPartBehind.Visibility = (isVertical || isGiant) ? Visibility.Collapsed : Visibility.Visible;
             
-            // Date info panel hidden if stacked (it has its own)
-            DateInfoPanel.Visibility = isStacked ? Visibility.Collapsed : Visibility.Visible;
+            // Date info panel hidden if stacked/upward (it has its own)
+            DateInfoPanel.Visibility = (isStacked || isUpward) ? Visibility.Collapsed : Visibility.Visible;
 
             if (isVertical)
             {
@@ -1159,6 +1209,23 @@ namespace HyperOS.Pages
                 StackedWeather.Margin = topMargin; 
                 StackedWeatherBehind.Margin = topMargin;
             }
+            if (isUpward)
+            {
+                double upSz = baseSize;
+                UpwardTime.FontSize = upSz * 1.0; UpwardTimeBehind.FontSize = upSz * 1.0;
+                UpwardDate.FontSize = upSz * 0.44; UpwardDateBehind.FontSize = upSz * 0.44;
+                UpwardDay.FontSize = upSz * 0.24; UpwardDayBehind.FontSize = upSz * 0.24;
+                UpwardWeather.FontSize = upSz * 0.20; UpwardWeatherBehind.FontSize = upSz * 0.20;
+                UpwardCarrier.FontSize = upSz * 0.20; UpwardCarrierBehind.FontSize = upSz * 0.20;
+                
+                var tMargin = new Thickness(0, (int)(-upSz * 0.25), 0, 0);
+                var dMargin = new Thickness(0, (int)(-upSz * 0.15), 0, 0);
+                var wMargin = new Thickness(0, (int)(upSz * 0.08), 0, 0);
+                
+                UpwardTime.Margin = tMargin; UpwardTimeBehind.Margin = tMargin;
+                UpwardDay.Margin = dMargin; UpwardDayBehind.Margin = dMargin;
+                UpwardWeather.Margin = wMargin; UpwardWeatherBehind.Margin = wMargin;
+            }
 
             // Time & Date format
             var dt = DateTime.Now;
@@ -1174,6 +1241,42 @@ namespace HyperOS.Pages
             RhombusH2.Text = hStr[1].ToString(); RhombusH2Behind.Text = hStr[1].ToString();
             RhombusM1.Text = mStr[0].ToString(); RhombusM1Behind.Text = mStr[0].ToString();
             RhombusM2.Text = mStr[1].ToString(); RhombusM2Behind.Text = mStr[1].ToString();
+            
+            if (isStacked || isUpward)
+            {
+                string timeStr = hStr + ":" + mStr;
+                string dateStr = dt.Day + "/" + dt.Month;
+                string dayStr = dt.ToString("ddd").ToUpper();
+                var s2 = IsolatedStorageSettings.ApplicationSettings;
+                string cached = s2.Contains("CachedWeather") ? (string)s2["CachedWeather"] : "28° ☁";
+                string weatherStr = cached;
+                
+                string carrier = "";
+                try
+                {
+                    carrier = Microsoft.Phone.Net.NetworkInformation.DeviceNetworkInformation.CellularMobileOperator;
+                }
+                catch { }
+                if (string.IsNullOrWhiteSpace(carrier))
+                    carrier = "No Service";
+                
+                if (isStacked)
+                {
+                    StackedTime.Text = timeStr; StackedTimeBehind.Text = timeStr;
+                    StackedDate.Text = dateStr; StackedDateBehind.Text = dateStr;
+                    StackedDay.Text = dayStr; StackedDayBehind.Text = dayStr;
+                    StackedWeather.Text = weatherStr; StackedWeatherBehind.Text = weatherStr;
+                    StackedCarrier.Text = carrier; StackedCarrierBehind.Text = carrier;
+                }
+                else
+                {
+                    UpwardTime.Text = timeStr; UpwardTimeBehind.Text = timeStr;
+                    UpwardDate.Text = dateStr; UpwardDateBehind.Text = dateStr;
+                    UpwardDay.Text = dayStr; UpwardDayBehind.Text = dayStr;
+                    UpwardWeather.Text = weatherStr; UpwardWeatherBehind.Text = weatherStr;
+                    UpwardCarrier.Text = carrier; UpwardCarrierBehind.Text = carrier;
+                }
+            }
         }
 
         private void ApplyClockPosition()
@@ -1243,6 +1346,33 @@ namespace HyperOS.Pages
             StackedTimeBehind.HorizontalAlignment = HorizontalAlignment.Stretch;
             StackedDatePanelBehind.HorizontalAlignment = ha;
             StackedWeatherBehind.HorizontalAlignment = HorizontalAlignment.Stretch;
+            
+            UpwardGrid.HorizontalAlignment = ha;
+            UpwardGridBehind.HorizontalAlignment = ha;
+            
+            UpwardCarrier.TextAlignment = ta;
+            UpwardTime.TextAlignment = ta;
+            UpwardDate.TextAlignment = ta;
+            UpwardDay.TextAlignment = ta;
+            UpwardWeather.TextAlignment = ta;
+            
+            UpwardCarrierBehind.TextAlignment = ta;
+            UpwardTimeBehind.TextAlignment = ta;
+            UpwardDateBehind.TextAlignment = ta;
+            UpwardDayBehind.TextAlignment = ta;
+            UpwardWeatherBehind.TextAlignment = ta;
+            
+            UpwardCarrier.HorizontalAlignment = HorizontalAlignment.Stretch;
+            UpwardTime.HorizontalAlignment = HorizontalAlignment.Stretch;
+            UpwardDate.HorizontalAlignment = HorizontalAlignment.Stretch;
+            UpwardDay.HorizontalAlignment = HorizontalAlignment.Stretch;
+            UpwardWeather.HorizontalAlignment = HorizontalAlignment.Stretch;
+            
+            UpwardCarrierBehind.HorizontalAlignment = HorizontalAlignment.Stretch;
+            UpwardTimeBehind.HorizontalAlignment = HorizontalAlignment.Stretch;
+            UpwardDateBehind.HorizontalAlignment = HorizontalAlignment.Stretch;
+            UpwardDayBehind.HorizontalAlignment = HorizontalAlignment.Stretch;
+            UpwardWeatherBehind.HorizontalAlignment = HorizontalAlignment.Stretch;
         }
 
         // Helper to avoid XNA vs Media.Color ambiguity
@@ -1311,6 +1441,11 @@ namespace HyperOS.Pages
             StackedTime.Foreground = brush; StackedTimeBehind.Foreground = brush;
             StackedDate.Foreground = brush; StackedDateBehind.Foreground = brush;
             StackedWeather.Foreground = brush; StackedWeatherBehind.Foreground = brush;
+
+            UpwardTime.Foreground = brush; UpwardTimeBehind.Foreground = brush;
+            UpwardDate.Foreground = brush; UpwardDateBehind.Foreground = brush;
+            UpwardDay.Foreground = brush; UpwardDayBehind.Foreground = brush;
+            UpwardWeather.Foreground = brush; UpwardWeatherBehind.Foreground = brush;
 
             // Apply clock opacity from Editor settings
             ClockPanel.Opacity = clockOpacity;
@@ -1731,6 +1866,11 @@ namespace HyperOS.Pages
                                     StackedWeather.Text = WeatherText.Text;
                                     StackedWeatherBehind.Text = WeatherText.Text;
                                 }
+                                else if (clockLayout == 8)
+                                {
+                                    UpwardWeather.Text = WeatherText.Text;
+                                    UpwardWeatherBehind.Text = WeatherText.Text;
+                                }
 
                                 // Cache to storage
                                 var s = IsolatedStorageSettings.ApplicationSettings;
@@ -1770,6 +1910,11 @@ namespace HyperOS.Pages
                     {
                         StackedWeather.Text = WeatherText.Text;
                         StackedWeatherBehind.Text = WeatherText.Text;
+                    }
+                    else if (clockLayout == 8)
+                    {
+                        UpwardWeather.Text = WeatherText.Text;
+                        UpwardWeatherBehind.Text = WeatherText.Text;
                     }
                 }
             }

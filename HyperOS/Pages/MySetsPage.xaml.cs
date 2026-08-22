@@ -373,9 +373,9 @@ namespace HyperOS.Pages
             var transBrush = new SolidColorBrush(Colors.Transparent);
             bool hasDepth = preset.UseDepthEffect && globalForeground != null;
 
-            // Date brush logic: Stacked layout shares the clock color, others use translucent white
-            var baseDateBrush = preset.ClockLayout == 7 ? brush : new SolidColorBrush(Color.FromArgb(180, 255, 255, 255));
-            bool isFullBehind = preset.ClockLayout == 7 || (preset.ClockLayout >= 2 && preset.ClockLayout <= 4);
+            // Date brush logic: Stacked/Upward layout shares the clock color, others use translucent white
+            var baseDateBrush = (preset.ClockLayout == 7 || preset.ClockLayout == 8) ? brush : new SolidColorBrush(Color.FromArgb(180, 255, 255, 255));
+            bool isFullBehind = preset.ClockLayout == 7 || preset.ClockLayout == 8 || (preset.ClockLayout >= 2 && preset.ClockLayout <= 4);
 
             // --- BEHIND LAYER (or full layer if no depth) ---
             // For Stacked/Analog layouts, if depth is enabled, the entire clock is behind
