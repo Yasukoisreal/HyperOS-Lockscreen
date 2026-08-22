@@ -426,28 +426,41 @@ namespace HyperOS.Pages
                 {
                     DayPanel.Text = newDay;
                     DatePanel.Text = newDate;
-                    
-                    if (clockLayout == 7)
+                    UpdateCountdown(); // Refresh once per day
+                }
+                
+                // Stacked layout date/day/carrier must be updated regardless of whether DayPanel changed,
+                // to prevent initialization bugs if the day happens to match the XAML default (Saturday).
+                if (clockLayout == 7)
+                {
+                    var now = DateTime.Now;
+                    string stackDateStr = now.Day + "/" + now.Month;
+                    if (StackedDate.Text != stackDateStr)
                     {
-                        var now = DateTime.Now;
-                        StackedDate.Text = now.Day + "/" + now.Month;
-                        StackedDateBehind.Text = StackedDate.Text;
-                        StackedDay.Text = now.ToString("ddd").ToUpper();
-                        StackedDayBehind.Text = StackedDay.Text;
+                        StackedDate.Text = stackDateStr;
+                        StackedDateBehind.Text = stackDateStr;
+                    }
+                    string stackDayStr = now.ToString("ddd").ToUpper();
+                    if (StackedDay.Text != stackDayStr)
+                    {
+                        StackedDay.Text = stackDayStr;
+                        StackedDayBehind.Text = stackDayStr;
+                    }
+                    
+                    string carrier = "";
+                    try
+                    {
+                        carrier = Microsoft.Phone.Net.NetworkInformation.DeviceNetworkInformation.CellularMobileOperator;
+                    }
+                    catch { }
+                    if (string.IsNullOrWhiteSpace(carrier))
+                        carrier = "No Service";
                         
-                        string carrier = "";
-                        try
-                        {
-                            carrier = Microsoft.Phone.Net.NetworkInformation.DeviceNetworkInformation.CellularMobileOperator;
-                        }
-                        catch { }
-                        if (string.IsNullOrWhiteSpace(carrier))
-                            carrier = "No Service";
+                    if (StackedCarrier.Text != carrier)
+                    {
                         StackedCarrier.Text = carrier;
                         StackedCarrierBehind.Text = carrier;
                     }
-                    
-                    UpdateCountdown(); // Refresh once per day
                 }
             }
         }
