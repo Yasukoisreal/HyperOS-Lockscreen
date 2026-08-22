@@ -373,14 +373,21 @@ namespace HyperOS.Pages
             var transBrush = new SolidColorBrush(Colors.Transparent);
             bool hasDepth = preset.UseDepthEffect && globalForeground != null;
 
+            // Date brush logic: Stacked layout shares the clock color, others use translucent white
+            var baseDateBrush = preset.ClockLayout == 7 ? brush : new SolidColorBrush(Color.FromArgb(180, 255, 255, 255));
+            bool isFullBehind = preset.ClockLayout == 7 || (preset.ClockLayout >= 2 && preset.ClockLayout <= 4);
+
             // --- BEHIND LAYER (or full layer if no depth) ---
+            // For Stacked/Analog layouts, if depth is enabled, the entire clock is behind
+            var behindDateBrush = hasDepth ? (isFullBehind ? baseDateBrush : transBrush) : baseDateBrush;
+            
             var behindStack = ClockRenderer.BuildCardPreview(
                 preset.ClockLayout, preset.ClockStyle, preset.ClockSize,
                 preset.ClockX, preset.ClockY, preset.DateAlign, CARD_W, CARD_H,
-                hasDepth ? (preset.DepthHourBehind ? brush : transBrush) : brush,
-                hasDepth ? (preset.DepthColonBehind ? brush : transBrush) : brush,
-                hasDepth ? (preset.DepthMinuteBehind ? brush : transBrush) : brush,
-                hasDepth ? transBrush : new SolidColorBrush(Color.FromArgb(180, 255, 255, 255)), index);
+                hasDepth ? (preset.DepthHourBehind || isFullBehind ? brush : transBrush) : brush,
+                hasDepth ? (preset.DepthColonBehind || isFullBehind ? brush : transBrush) : brush,
+                hasDepth ? (preset.DepthMinuteBehind || isFullBehind ? brush : transBrush) : brush,
+                behindDateBrush, index);
             inner.Children.Add(behindStack);
 
             // --- FOREGROUND OVERLAY ---
@@ -393,13 +400,14 @@ namespace HyperOS.Pages
                 });
 
                 // --- FRONT LAYER (parts NOT behind) ---
+                var frontDateBrush = isFullBehind ? transBrush : baseDateBrush;
                 var frontStack = ClockRenderer.BuildCardPreview(
                     preset.ClockLayout, preset.ClockStyle, preset.ClockSize,
                     preset.ClockX, preset.ClockY, preset.DateAlign, CARD_W, CARD_H,
-                    preset.DepthHourBehind ? transBrush : brush,
-                    preset.DepthColonBehind ? transBrush : brush,
-                    preset.DepthMinuteBehind ? transBrush : brush,
-                    new SolidColorBrush(Color.FromArgb(180, 255, 255, 255)), index);
+                    (preset.DepthHourBehind || isFullBehind) ? transBrush : brush,
+                    (preset.DepthColonBehind || isFullBehind) ? transBrush : brush,
+                    (preset.DepthMinuteBehind || isFullBehind) ? transBrush : brush,
+                    frontDateBrush, index);
                 inner.Children.Add(frontStack);
             }
 
