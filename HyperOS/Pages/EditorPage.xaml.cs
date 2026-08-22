@@ -707,8 +707,10 @@ namespace HyperOS.Pages
                 PStackedCarrier.FontSize = sz * 0.20;
                 PStackedDay.FontSize = sz * 0.22;
                 
-                PStackedTime.Margin = new Thickness(-4, -sz * 0.18, 0, -sz * 0.18);
-                PStackedWeather.Margin = new Thickness(0, -sz * 0.08, 0, 0);
+                PStackedTime.Margin = new Thickness(-4, -sz * 0.20, 0, 0);
+                PStackedDatePanel.Margin = new Thickness(0, -sz * 0.20, 0, 0);
+                PStackedDay.Margin = new Thickness(sz * 0.08, sz * 0.08, 0, 0);
+                PStackedWeather.Margin = new Thickness(0, -sz * 0.20, 0, 0);
             }
 
             // Color
