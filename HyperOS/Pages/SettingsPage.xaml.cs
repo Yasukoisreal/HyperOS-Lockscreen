@@ -1,6 +1,7 @@
 using System;
 using System.IO.IsolatedStorage;
 using System.Windows;
+using System.Windows.Media;
 using Microsoft.Phone.Controls;
 using Windows.Phone.System.LockScreenExtensibility;
 
@@ -9,6 +10,7 @@ namespace HyperOS.Pages
     public partial class SettingsPage : PhoneApplicationPage
     {
         private bool isLoading = true;
+        private bool isSettingNewPattern = false;
 
         public SettingsPage()
         {
@@ -32,8 +34,27 @@ namespace HyperOS.Pages
             PinPanel.Visibility = pinOn ? Visibility.Visible : Visibility.Collapsed;
             if (pinOn)
                 PinBox.Text = Get<string>(s, "sPassword", "");
+
+            string pattern = Get<string>(s, "AppPatternToMatch", "");
+            bool hasPattern = !string.IsNullOrEmpty(pattern);
+            PatternPanel.Visibility = (patternOn && hasPattern) ? Visibility.Visible : Visibility.Collapsed;
             if (patternOn)
-                PatternHint.Text = "✅ Pattern is configured for the lock screen";
+            {
+                PatternHint.Text = hasPattern
+                    ? "✅ Pattern is configured for the lock screen"
+                    : "⚠️ No pattern saved. Tap toggle to set pattern";
+            }
+            else
+            {
+                PatternHint.Text = "";
+            }
+
+            if (pinOn)
+                SecurityStatus.Text = "🔒 PIN enabled";
+            else if (patternOn && hasPattern)
+                SecurityStatus.Text = "🔒 Pattern lock enabled";
+            else
+                SecurityStatus.Text = "🔓 No security";
 
             // Owner info
             OwnerInfoBox.Text = Get<string>(s, "OwnerInfo", "");
@@ -64,6 +85,17 @@ namespace HyperOS.Pages
         #endregion
 
         #region Handlers
+
+        protected override void OnBackKeyPress(System.ComponentModel.CancelEventArgs e)
+        {
+            if (PatternSetupDialog.Visibility == Visibility.Visible)
+            {
+                e.Cancel = true;
+                ClosePatternSetupDialog(false);
+                return;
+            }
+            base.OnBackKeyPress(e);
+        }
 
         private void Back_Tap(object sender, System.Windows.Input.GestureEventArgs e)
         {
@@ -131,6 +163,7 @@ namespace HyperOS.Pages
                     PatternToggle.IsChecked = false;
                     isLoading = false;
                     Save("bIsPatternOn", false);
+                    PatternPanel.Visibility = Visibility.Collapsed;
                     PatternHint.Text = "";
                 }
                 PinPanel.Visibility = Visibility.Visible;
@@ -142,7 +175,7 @@ namespace HyperOS.Pages
                 Save("bIsPasswordEnabled", false);
                 Save("sPassword", "");
                 PinPanel.Visibility = Visibility.Collapsed;
-                SecurityStatus.Text = "🔓 PIN đã tắt";
+                SecurityStatus.Text = "🔓 PIN disabled";
             }
         }
 
@@ -187,19 +220,87 @@ namespace HyperOS.Pages
                     PinToggle.IsChecked = false;
                     isLoading = false;
                     Save("bIsPasswordEnabled", false);
+                    Save("sPassword", "");
                     PinPanel.Visibility = Visibility.Collapsed;
                 }
-                Save("bIsPatternOn", true);
-                PatternHint.Text = "⬆ Draw pattern on lock screen to setup";
-                SecurityStatus.Text = "🔒 Pattern lock enabled";
+
+                var s = IsolatedStorageSettings.ApplicationSettings;
+                string pattern = Get<string>(s, "AppPatternToMatch", "");
+                if (string.IsNullOrEmpty(pattern))
+                {
+                    OpenPatternSetupDialog(true);
+                }
+                else
+                {
+                    Save("bIsPatternOn", true);
+                    PatternPanel.Visibility = Visibility.Visible;
+                    PatternHint.Text = "✅ Pattern is configured for the lock screen";
+                    SecurityStatus.Text = "🔒 Pattern lock enabled";
+                }
             }
             else
             {
                 Save("bIsPatternOn", false);
-                Save("AppPatternToMatch", "");
+                PatternPanel.Visibility = Visibility.Collapsed;
                 PatternHint.Text = "";
                 SecurityStatus.Text = "🔓 No security";
             }
+        }
+
+        private void ChangePattern_Click(object sender, RoutedEventArgs e)
+        {
+            OpenPatternSetupDialog(false);
+        }
+
+        private void OpenPatternSetupDialog(bool isNewSetup)
+        {
+            isSettingNewPattern = isNewSetup;
+            PatternSetupHintText.Text = "Draw pattern (connect at least 3 dots)";
+            PatternSetupHintText.Foreground = new SolidColorBrush(Color.FromArgb(0x88, 0xFF, 0xFF, 0xFF));
+            SetupPatternControl.Reset();
+            PatternSetupDialog.Visibility = Visibility.Visible;
+        }
+
+        private void ClosePatternSetupDialog(bool patternSaved)
+        {
+            PatternSetupDialog.Visibility = Visibility.Collapsed;
+            SetupPatternControl.Reset();
+
+            if (!patternSaved && isSettingNewPattern)
+            {
+                isLoading = true;
+                PatternToggle.IsChecked = false;
+                isLoading = false;
+                Save("bIsPatternOn", false);
+                PatternPanel.Visibility = Visibility.Collapsed;
+                PatternHint.Text = "";
+            }
+        }
+
+        private void PatternSetupDialog_Cancel_Click(object sender, RoutedEventArgs e)
+        {
+            ClosePatternSetupDialog(false);
+        }
+
+        private void PatternSetupDialog_Cancel_Tap(object sender, System.Windows.Input.GestureEventArgs e)
+        {
+            ClosePatternSetupDialog(false);
+        }
+
+        private void SetupPatternControl_RegistrationSuccess(object sender, EventArgs e)
+        {
+            Save("bIsPatternOn", true);
+            PatternPanel.Visibility = Visibility.Visible;
+            PatternHint.Text = "✅ Pattern is configured for the lock screen";
+            SecurityStatus.Text = "🔒 Pattern lock enabled";
+            ClosePatternSetupDialog(true);
+            MessageBox.Show("Pattern lock has been set successfully!", "Pattern Saved", MessageBoxButton.OK);
+        }
+
+        private void SetupPatternControl_RegistrationInvalid(object sender, EventArgs e)
+        {
+            PatternSetupHintText.Text = "⚠️ Connect at least 3 dots to set pattern";
+            PatternSetupHintText.Foreground = new SolidColorBrush(Colors.Red);
         }
 
         #endregion

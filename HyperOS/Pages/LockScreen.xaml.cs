@@ -629,6 +629,7 @@ namespace HyperOS.Pages
             }
             else if (bIsPatternOn)
             {
+                if (pattLoc != null) pattLoc.Reset();
                 PatternGrid.Visibility = Visibility.Visible;
                 PatternErrorText.Visibility = Visibility.Collapsed;
                 try { ((Storyboard)Resources["PatternGridAnim"]).Begin(); } catch { }

@@ -5,6 +5,7 @@
     xmlns:phone="clr-namespace:Microsoft.Phone.Controls;assembly=Microsoft.Phone"
     xmlns:shell="clr-namespace:Microsoft.Phone.Shell;assembly=Microsoft.Phone"
     xmlns:toolkit="clr-namespace:Microsoft.Phone.Controls;assembly=Microsoft.Phone.Controls.Toolkit"
+    xmlns:controls="clr-namespace:HyperOS.Controls"
     SupportedOrientations="Portrait" Orientation="Portrait"
     shell:SystemTray.IsVisible="False"
     Loaded="SettingsPage_Loaded">
@@ -84,6 +85,13 @@
                     <toolkit:ToggleSwitch x:Name="PatternToggle" Grid.Column="1"
                         Checked="PatternToggle_Changed" Unchecked="PatternToggle_Changed"/>
                 </Grid>
+                <StackPanel x:Name="PatternPanel" Visibility="Collapsed" Margin="0,4,0,0">
+                    <Button x:Name="ChangePatternBtn" Content="Change Pattern" Click="ChangePattern_Click"
+                        Background="#14FFFFFF" Foreground="#DDFFFFFF" BorderThickness="0"
+                        FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans" FontSize="15"
+                        HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                        Margin="0,4,0,0"/>
+                </StackPanel>
                 <TextBlock x:Name="PatternHint" Text="" FontSize="12" Foreground="#88FFFFFF"
                     HorizontalAlignment="Center" Margin="0,4,0,0"
                     FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"/>
@@ -125,7 +133,7 @@
                 <TextBox x:Name="ApiKeyBox" Background="#14FFFFFF" Foreground="White"
                     FontSize="14" FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"
                     LostFocus="ApiKey_LostFocus" InputScope="Url" BorderThickness="0"/>
-                <TextBlock Text="Free: remove.bg/api • 50 lượt/tháng" FontSize="11"
+                <TextBlock Text="Free: remove.bg/api • 50 calls/month" FontSize="11"
                     Foreground="#44FFFFFF" HorizontalAlignment="Center" Margin="0,4,0,0"
                     FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"/>
 
@@ -145,6 +153,38 @@
 
             </StackPanel>
         </ScrollViewer>
+
+        <!-- Pattern Setup Dialog -->
+        <Grid x:Name="PatternSetupDialog" Visibility="Collapsed" Canvas.ZIndex="100">
+            <Rectangle Fill="#CC000000" Tap="PatternSetupDialog_Cancel_Tap"/>
+            <Border Background="#FF1E1E2E" CornerRadius="16" 
+                    VerticalAlignment="Center" HorizontalAlignment="Center"
+                    Width="380" Padding="20">
+                <StackPanel>
+                    <TextBlock Text="Set Pattern Lock" FontSize="22" FontWeight="Bold" 
+                               Foreground="White" Margin="0,0,0,6"
+                               HorizontalAlignment="Center"
+                               FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"/>
+                    <TextBlock x:Name="PatternSetupHintText" Text="Draw pattern (connect at least 3 dots)" 
+                               FontSize="13" Foreground="#88FFFFFF" Margin="0,0,0,16"
+                               HorizontalAlignment="Center"
+                               FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"/>
+
+                    <controls:PatternLockMetroControl x:Name="SetupPatternControl"
+                        Width="320" Height="320"
+                        HorizontalAlignment="Center"
+                        IsRegisterationMode="True"
+                        RegistrationSuccess="SetupPatternControl_RegistrationSuccess"
+                        RegistrationInvalid="SetupPatternControl_RegistrationInvalid"/>
+
+                    <Button Content="Cancel" Click="PatternSetupDialog_Cancel_Click"
+                        Background="#14FFFFFF" Foreground="#DDFFFFFF" BorderThickness="0"
+                        FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans" FontSize="15"
+                        HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                        Margin="0,16,0,0"/>
+                </StackPanel>
+            </Border>
+        </Grid>
     </Grid>
 
 </phone:PhoneApplicationPage>

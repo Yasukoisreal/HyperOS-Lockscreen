@@ -15,6 +15,7 @@ namespace HyperOS.Controls
         public event EventHandler PatternMatchSuccess;
         public event EventHandler PatternMatchUnsuccess;
         public event EventHandler RegistrationSuccess;
+        public event EventHandler RegistrationInvalid;
 
         // Properties
         public bool IsRegisterationMode { get; set; }
@@ -51,29 +52,16 @@ namespace HyperOS.Controls
         public PatternLockMetroControl()
         {
             InitializeComponent();
-            Tries = 5;
 
-            dots = new Ellipse[]
-            {
-                Dot0, Dot1, Dot2,
-                Dot3, Dot4, Dot5,
-                Dot6, Dot7, Dot8
-            };
-
-            rings = new Ellipse[]
-            {
-                Ring0, Ring1, Ring2,
-                Ring3, Ring4, Ring5,
-                Ring6, Ring7, Ring8
-            };
-
-            // Dot center positions for 320x320 canvas (60px margin, 100px spacing)
             dotCenters = new Point[]
             {
                 new Point(60, 60),   new Point(160, 60),  new Point(260, 60),
                 new Point(60, 160),  new Point(160, 160), new Point(260, 160),
                 new Point(60, 260),  new Point(160, 260), new Point(260, 260)
             };
+
+            dots = new Ellipse[] { Dot0, Dot1, Dot2, Dot3, Dot4, Dot5, Dot6, Dot7, Dot8 };
+            rings = new Ellipse[] { Ring0, Ring1, Ring2, Ring3, Ring4, Ring5, Ring6, Ring7, Ring8 };
 
             dotVisited = new bool[9];
             currentPattern = new List<int>();
@@ -82,15 +70,25 @@ namespace HyperOS.Controls
             LoadPattern();
         }
 
-        private void LoadPattern()
+        public void LoadPattern()
         {
             try
             {
                 var s = IsolatedStorageSettings.ApplicationSettings;
                 if (s.Contains("AppPatternToMatch"))
                     patternToMatch = (string)s["AppPatternToMatch"];
+                else
+                    patternToMatch = "";
             }
             catch { }
+        }
+
+        public void Reset()
+        {
+            currentPattern.Clear();
+            ClearLines();
+            ResetDots();
+            LoadPattern();
         }
 
         private void UserControl_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -161,8 +159,19 @@ namespace HyperOS.Controls
                     patternToMatch = pattern;
 
                     HighlightDotsSuccess();
-                    if (RegistrationSuccess != null)
-                        RegistrationSuccess(this, EventArgs.Empty);
+                    var successTimer = new System.Windows.Threading.DispatcherTimer
+                    {
+                        Interval = TimeSpan.FromMilliseconds(350)
+                    };
+                    successTimer.Tick += (s2, a2) =>
+                    {
+                        successTimer.Stop();
+                        ResetDots();
+                        ClearLines();
+                        if (RegistrationSuccess != null)
+                            RegistrationSuccess(this, EventArgs.Empty);
+                    };
+                    successTimer.Start();
                 }
                 else
                 {
@@ -185,6 +194,11 @@ namespace HyperOS.Controls
             else
             {
                 // Not enough dots
+                if (currentPattern.Count > 0 && IsRegisterationMode)
+                {
+                    if (RegistrationInvalid != null)
+                        RegistrationInvalid(this, EventArgs.Empty);
+                }
                 ResetDots();
                 ClearLines();
             }
