@@ -90,7 +90,7 @@ User                    OS Shell (Power Mgr)         App Host (AgHost)       Sys
 
 ## 3. System Extensibility & Configuration
 
-To allow an application to be recognized as a valid lock screen provider in Windows Phone's system settings (**Settings > Lock Screen**), two configuration files are required.
+To register an application as an interactive Live Lock Screen provider and hook into the OS compositor, two configuration files are required.
 
 ### 3.1 `Properties/WMAppManifest.xml`
 
@@ -130,7 +130,7 @@ Declare the lock UI capability and the lock screen extension contracts:
                  TaskID="_default"
                  ExtraFile="Extensions\\LockAppExtension.xml" />
 
-      <!-- Contract 2: Allows background stream feeding for lock screen backgrounds -->
+      <!-- Contract 2: Allows background stream feeding for static lock screen backgrounds -->
       <Extension ExtensionName="LockScreen_Background"
                  ConsumerID="{111DFF24-AA15-4A96-8006-2BFF8122084F}"
                  TaskID="_default" />
@@ -143,8 +143,8 @@ Declare the lock UI capability and the lock screen extension contracts:
 #### Consumer ID Reference:
 | Consumer ID GUID | Extension Name | Description |
 |---|---|---|
-| `{CD4601F6-351B-43C7-9087-6B12BD98ED63}` | `LockScreen_Application` | Internal Windows Phone 8.1 Shell consumer ID. The OS settings app queries for this GUID when listing available live lock screen providers. |
-| `{111DFF24-AA15-4A96-8006-2BFF8122084F}` | `LockScreen_Background` | Allows the application to manage and supply lock screen background buffers. |
+| `{CD4601F6-351B-43C7-9087-6B12BD98ED63}` | `LockScreen_Application` | Internal Windows Phone 8.1 Shell consumer ID. Designates the application as a Live Lock Screen host process for `AgHost.exe` and enables programmatic registration via `ExtensibilityApp.RegisterLockScreenApplication()`. |
+| `{111DFF24-AA15-4A96-8006-2BFF8122084F}` | `LockScreen_Background` | Allows the application to appear in the phone's **Settings > lock screen > Background** dropdown to supply static wallpaper images. |
 | `ID_CAP_SHELL_DEVICE_LOCK_UI_API` | Lock UI Capability | Grants Silverlight execution privileges to call `Windows.Phone.System.SystemProtection` APIs. |
 
 ### 3.2 Descriptor File: `Extensions\LockAppExtension.xml`
@@ -164,7 +164,11 @@ Create a folder named `Extensions` at the project root, and add an XML file name
 
 ### 3.3 Programmatic Registration: `ExtensibilityApp`
 
-In addition to selecting the app under Windows Phone **Settings > lock screen**, Windows Phone 8.1 Silverlight provides the official `ExtensibilityApp` API to query, activate, or deactivate lock screen integration directly from your application's C# code:
+> [!IMPORTANT]
+> **Key Architectural Distinction:**
+> Windows Phone 8.1 system settings (**Settings > lock screen > Background**) only allows selecting *static image providers* (e.g., Bing or Photo). There is **no menu option in the phone settings** to activate a Live Lock Screen!
+> 
+> Instead, Live Lock Screen applications **must be activated programmatically** from inside the application using `ExtensibilityApp`:
 
 ```csharp
 using Windows.Phone.System.LockScreenExtensibility;
@@ -631,24 +635,49 @@ Follow this guide to build a new Live Lock Screen application from scratch:
    }
    ```
 
-### Step 6: Activate as Lock Screen Provider
+### Step 6: Activate the Live Lock Screen
 
-You can register your app as the active lock screen in either of two ways:
+> [!NOTE]
+> The phone's built-in **Settings > lock screen > Background** menu only selects static wallpaper feeds (like Bing). It **cannot** enable a Live Lock Screen application.
+> 
+> Therefore, Live Lock Screens **must be activated programmatically** from within your application (for example, via an Enable switch in your settings page):
 
-#### Option A: In-App Toggle (Programmatic)
-In your `MainPage.xaml.cs` or settings view:
 ```csharp
 using Windows.Phone.System.LockScreenExtensibility;
 
-// Register the app as active lock screen provider
-if (!ExtensibilityApp.IsLockScreenApplicationRegistered())
+// Inside your Settings or Setup page:
+private void EnableLiveLockScreen()
 {
-    ExtensibilityApp.RegisterLockScreenApplication();
+    try
+    {
+        if (!ExtensibilityApp.IsLockScreenApplicationRegistered())
+        {
+            // Prompts the OS to activate this application as the Live Lock Screen
+            ExtensibilityApp.RegisterLockScreenApplication();
+        }
+    }
+    catch (Exception ex)
+    {
+        System.Diagnostics.Debug.WriteLine("Registration error: " + ex.Message);
+    }
+}
+
+private void DisableLiveLockScreen()
+{
+    try
+    {
+        if (ExtensibilityApp.IsLockScreenApplicationRegistered())
+        {
+            // Reverts back to the standard OS static lock screen
+            ExtensibilityApp.UnregisterLockScreenApplication();
+        }
+    }
+    catch (Exception ex)
+    {
+        System.Diagnostics.Debug.WriteLine("Unregistration error: " + ex.Message);
+    }
 }
 ```
-
-#### Option B: System Settings
-On the physical device or emulator, go to **Settings > lock screen > Background** and select your application name from the dropdown.
 
 ---
 

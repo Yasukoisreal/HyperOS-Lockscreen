@@ -140,7 +140,7 @@ HyperOS\Bin\ARM\Release\HyperOS_Release_ARM.xap
 ### Deployment to Device
 1. Enable **Developer Unlock** on your Windows Phone 8.1 device via *Windows Phone Developer Registration*.
 2. Deploy the `.xap` using **Windows Phone Application Deployment** tool or **Windows Phone Power Tools**.
-3. Go to **Settings > Lock Screen** on your Windows Phone and select **HyperOS** as your lock screen provider.
+3. Launch **HyperOS** from the App List, open **Settings**, and turn on the **Live Lock Screen** toggle.
 
 ---
 
