@@ -1,137 +1,137 @@
-# 📘 Windows Phone 8.1 Live Lock Screen: Tài Liệu Kỹ Thuật & Kiến Trúc Chuyên Sâu Tầng Hệ Điều Hành
+# 📘 Windows Phone 8.1 Live Lock Screen: Tài Liệu Kỹ Thuật & Kiến Trúc Nền Tảng Cho Lập Trình Viên
 
-Tài liệu kỹ thuật toàn diện và chuyên sâu nhất dành cho lập trình viên giải thích bản chất, cơ chế hoạt động tầng hệ điều hành (OS Internals), mô hình luồng, bảo mật và kỹ thuật tối ưu hóa khi xây dựng ứng dụng **Live Lock Screen** trên nền tảng **Windows Phone 8.1 Silverlight**.
+> **Mục đích tài liệu:** Cung cấp đầy đủ kiến trúc hệ thống, cơ chế hoạt động tầng hệ điều hành (OS Internals), và hướng dẫn thực hành từng bước giúp lập trình viên có thể tự thiết kế và xây dựng bất kỳ ứng dụng **Live Lock Screen** nào trên nền tảng **Windows Phone 8.1 Silverlight**.
 
 ---
 
-## 1. Bối Cảnh & Bản Chất Của Live Lock Screen
+## 1. Bản Chất Kỹ Thuật Của Live Lock Screen
 
-### 1.1 Lịch sử hình thành
-Tại hội nghị **Microsoft Build 2014**, Joe Belfiore đã công bố tính năng **Live Lock Screen** cho bản cập nhật Windows Phone 8.1. Trước đó trên Windows Phone 8.0, màn hình khóa chỉ là một giao diện tĩnh: nhà phát triển chỉ có thể đăng ký làm Lock Screen Provider để thay đổi ảnh nền tĩnh (`LockScreen.SetImageFileUri`) và gửi 5 biểu tượng badge thông báo nhỏ.
+### 1.1 Khái niệm & Bối cảnh
+Trước bản cập nhật Windows Phone 8.1, màn hình khóa trên Windows Phone 8.0 chỉ là một giao diện tĩnh: các ứng dụng bên thứ ba chỉ có thể làm hai việc cơ bản:
+1. Đặt ảnh nền tĩnh thông qua `LockScreen.SetImageFileUri(...)`.
+2. Hiển thị thông báo dạng số hoặc văn bản ngắn trên 5 slot badge biểu tượng của hệ thống.
 
-Live Lock Screen trên WP8.1 ra đời nhằm mở khóa khả năng tùy biến chuyển động (interactive animations), kiểu hiển thị đồng hồ phong phú và hỗ trợ tương tác cảm ứng đa điểm trực tiếp ngay khi bật màn hình.
+Từ **Windows Phone 8.1**, Microsoft giới thiệu cơ chế mở rộng **Live Lock Screen (Extensibility Framework)**, cho phép một ứng dụng có thể thay thế toàn bộ giao diện màn hình khóa bằng một trang giao diện XAML tương tác đầy đủ, hỗ trợ hoạt ảnh chuyển động (animations), cử chỉ chạm vuốt (gestures) và nội dung tùy biến thời gian thực.
 
-### 1.2 Bản chất kỹ thuật thực sự tầng OS (Architecture Truth)
-Một câu hỏi nền tảng mà mọi lập trình viên đều cần hiểu rõ: **Live Lock Screen có thay thế kernel lock screen bảo mật của Windows Phone không?**
+### 1.2 Bản chất tầng hệ điều hành (OS Architecture)
+Live Lock Screen **không thay thế kernel bảo mật** của hệ điều hành. Cơ chế hoạt động thực tế như sau:
 
-> **CÂU TRẢ LỜI LÀ: HOÀN TOÀN KHÔNG.**
->
-> Ứng dụng Live Lock Screen thực chất là một **ứng dụng Silverlight đặc biệt** chạy trong một sandbox chuyên dụng được hệ điều hành Windows Phone 8.1 cấp quyền hiển thị ngay trên bề mặt màn hình khóa (**Lock Screen Compositor Surface**). Hệ điều hành vẫn kiểm soát toàn bộ phần cứng, bảo mật hạt nhân (Secure Kernel), mã PIN gốc của máy và trạng thái nguồn.
+* Ứng dụng Live Lock Screen là một **tiến trình Silverlight đặc biệt** chạy trong sandbox của OS Shell.
+* Khi người dùng bật sáng màn hình, hệ điều hành sẽ ánh xạ giao diện XAML của ứng dụng lên bề mặt kết xuất của màn hình khóa (**Lock Screen Compositor Surface**).
+* Khi người dùng tương tác mở khóa, ứng dụng chỉ làm nhiệm vụ gửi tín hiệu yêu cầu mở khóa (`RequestScreenUnlock`) về lại cho hệ điều hành.
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
-│                      MÀN HÌNH HIỂN THỊ (DISPLAY)                       │
+│                      MÀN HÌNH THIẾT BỊ (DISPLAY)                       │
 ├────────────────────────────────────────────────────────────────────────┤
-│  [Lớp 1 - Ưu tiên cao nhất] Native OS PIN Keypad / Emergency Call      │
-│  - Do chính Windows Phone OS Shell dựng, app hoàn toàn không can thiệp │
+│  [Lớp 1 - Ưu tiên cao nhất] Giao diện Native PIN / Cuộc gọi khẩn cấp   │
+│  - Hoàn toàn do hệ điều hành vẽ, ứng dụng không thể can thiệp          │
 ├────────────────────────────────────────────────────────────────────────┤
-│  [Lớp 2] Live Lock Screen Extensibility App (Silverlight AgHost)       │
-│  - Đồng hồ HyperOS, hoạt ảnh Storyboard, hiệu ứng 2.5D Depth, v.v.     │
+│  [Lớp 2] Live Lock Screen Extensibility App (Silverlight Runtime)      │
+│  - Giao diện tùy chỉnh (Đồng hồ, hoạt cảnh, widget, cử chỉ chạm vuốt)  │
 ├────────────────────────────────────────────────────────────────────────┤
-│  [Lớp 3] OS Lock Screen Host & System Protection Watchdog              │
-│  - Quản lý vòng đời, kiểm soát RAM, giám sát timeout 500ms             │
+│  [Lớp 3] OS Lock Screen Host & Watchdog Service                        │
+│  - Quản lý trạng thái nguồn, kiểm soát hạn mức RAM và timeout vẽ       │
 ├────────────────────────────────────────────────────────────────────────┤
-│  [Lớp 4 - Đáy] Start Screen / Ứng dụng đang chạy ngầm phía sau         │
+│  [Lớp 4 - Đáy] Start Screen / Ứng dụng đang chạy trước đó              │
 └────────────────────────────────────────────────────────────────────────┘
 ```
 
-### 1.3 Vì sao WinRT 8.1 KHÔNG THỂ làm Live Lock Screen?
-Windows Phone 8.1 hỗ trợ hai nền tảng runtime song song: **Silverlight 8.1** (`Microsoft.Phone.*`) và **WinRT 8.1** (`Windows.UI.Xaml.*`).
-- Trên WinRT 8.1, Microsoft chỉ cung cấp namespace `Windows.ApplicationModel.LockScreen`, vốn chỉ cho phép thay đổi ảnh tĩnh hoặc hiển thị văn bản badge.
-- Kiến trúc mở rộng Live Lock Screen (`LockAppExtension`) được thiết kế cắm trực tiếp vào **Silverlight Application Host (`AgHost.exe`)**. Do đó, **bắt buộc phải sử dụng Windows Phone Silverlight 8.1** mới có thể tạo ra Live Lock Screen tương tác chuyển động.
+### 1.3 Tại sao bắt buộc phải là Silverlight 8.1 (Không dùng WinRT)?
+Trên Windows Phone 8.1 tồn tại hai nền tảng runtime:
+- **WinRT 8.1 XAML (`Windows.UI.Xaml.*`):** Chỉ hỗ trợ API `Windows.ApplicationModel.LockScreen` để đổi ảnh tĩnh và badge. WinRT **không có** cơ chế cắm ứng dụng tương tác vào màn hình khóa.
+- **Silverlight 8.1 (`System.Windows.*`, `Microsoft.Phone.*`):** Hệ điều hành cung cấp điểm nối mở rộng (`LockAppExtension`) gắn trực tiếp vào tiến trình **`AgHost.exe`** (Silverlight Application Host). Vì vậy, **bắt buộc phải sử dụng dự án Windows Phone Silverlight 8.1**.
 
 ---
 
-## 2. Toàn Bộ Chu Trình Hoạt Động (End-to-End Sequence Diagram)
+## 2. Chu Trình Hoạt Động Hoàn Chỉnh (Lifecycle Sequence)
 
-Sơ đồ trình tự mô tả chính xác những gì diễn ra từ lúc người dùng bấm nút nguồn đến khi vào được màn hình chính:
+Sơ đồ trình tự mô tả vòng đời của một ứng dụng Live Lock Screen từ khi bật nguồn đến khi mở khóa:
 
 ```
-User (Người dùng)       Power Mgr / OS Shell       AgHost (App)           SystemProtection
-     │                           │                      │                         │
-     │── [1] Bấm Nút Nguồn ─────>│                      │                         │
-     │                           │── [2] Kích hoạt app >│                         │
-     │                           │   (Warm Resume)      │                         │
-     │                           │                      │── [3] Kiểm tra ────────>│
-     │                           │                      │   ScreenLocked          │
-     │                           │                      │<── [4] Trả về true ─────│
-     │                           │                      │                         │
-     │                           │                      │── [5] Navigate tới ────>│
-     │                           │                      │   LockScreen.xaml       │
-     │                           │                      │                         │
-     │                           │<── [6] Vẽ Frame 0 ───│ (Phải < 500ms để        │
-     │<── [7] Màn hình sáng ─────│                      │  tránh Fallback)        │
-     │    (Thấy đồng hồ HyperOS) │                      │                         │
-     │                           │                      │                         │
-     │── [8] Vuốt ngón tay lên ────────────────────────>│                         │
-     │   (ManipulationDelta)     │                      │ (Đồng bộ TranslateY     │
-     │                           │                      │  cho cả 2 lớp Depth)    │
-     │                           │                      │                         │
-     │── [9] Thả tay (Vượt ngưỡng unlock) ─────────────>│                         │
-     │                           │                      │── [10] Chạy UnlockAnim ─│
-     │                           │                      │    (Trượt mượt lên -800)│
-     │                           │                      │                         │
-     │                           │                      │── [11] Gọi Unlock ─────>│
-     │                           │<── [12] Báo OS ────────────────────────────────│
-     │                           │    RequestScreenUnlock                         │
-     │                           │                      │                         │
-     │                   [Có mã PIN máy?]               │                         │
-     │                      ┌────┴────┐                 │                         │
-     │                    CÓ          KHÔNG             │                         │
-     │                    │             │               │                         │
-     │<── [13a] Hiện ─────│             │               │                         │
-     │    Native PIN      │             │               │                         │
-     │    Bàn phím OS     │             │               │                         │
-     │                    │             │               │                         │
-     │<───────────────────┴─────────────┴─ [13b] Mở thẳng Start Screen ───────────│
+Người Dùng               OS Shell (Power Mgr)         Ứng Dụng (AgHost)       SystemProtection
+    │                              │                          │                      │
+    │── [1] Bấm Nút Nguồn ────────>│                          │                      │
+    │                              │── [2] Kích hoạt app ────>│                      │
+    │                              │   (Resume/Wake-up)       │                      │
+    │                              │                          │── [3] Kiểm tra ─────>│
+    │                              │                          │   ScreenLocked       │
+    │                              │                          │<── [4] Trả về true ──│
+    │                              │                          │                      │
+    │                              │                          │── [5] Navigate tới ─>│
+    │                              │                          │   trang Lock UI      │
+    │                              │                          │                      │
+    │                              │<── [6] Vẽ Frame 0 ───────│ (Phải < 500ms để     │
+    │<── [7] Màn hình phát sáng ───│    (Hoàn tất render)     │  tránh Fallback)     │
+    │    (Thấy giao diện khóa)     │                          │                      │
+    │                              │                          │                      │
+    │── [8] Vuốt ngón tay mở khóa ───────────────────────────>│                      │
+    │   (Xử lý Manipulation)       │                          │                      │
+    │                              │                          │                      │
+    │── [9] Đạt ngưỡng mở khóa ──────────────────────────────>│                      │
+    │                              │                          │── [10] Chạy Exit ────│
+    │                              │                          │    Animation         │
+    │                              │                          │                      │
+    │                              │                          │── [11] Yêu cầu ─────>│
+    │                              │<── [12] Bàn giao quyền ─────────────────────────│
+    │                              │    RequestScreenUnlock                          │
+    │                              │                          │                      │
+    │                     [Máy CÓ cài PIN OS?]                │                      │
+    │                         ┌────┴────┐                     │                      │
+    │                       CÓ          KHÔNG                 │                      │
+    │                       │             │                   │                      │
+    │<── [13a] Hiện ────────│             │                   │                      │
+    │    Bàn phím PIN máy   │             │                   │                      │
+    │    (Native OS PIN)    │             │                   │                      │
+    │                       │             │                   │                      │
+    │<──────────────────────┴─────────────┴─── [13b] Mở thẳng Start Screen ──────────│
 ```
 
 ---
 
-## 3. Cơ Chế Đăng Ký Mở Rộng Hệ Thống (Extensibility Architecture)
+## 3. Khung Đăng Ký Mở Rộng Hệ Thống (Configuration & Descriptors)
 
-Để biến một ứng dụng thông thường thành Live Lock Screen được hệ điều hành công nhận, ứng dụng phải khai báo đúng bộ descriptor chuẩn mực.
+Để ứng dụng xuất hiện trong danh sách lựa chọn tại mục **Cài đặt > Màn hình khóa** (*Settings > Lock Screen*) của điện thoại, ứng dụng cần 2 phần cấu hình bắt buộc.
 
 ### 3.1 Cấu hình `Properties/WMAppManifest.xml`
 
-Ứng dụng bắt buộc phải đăng ký Capability chuyên biệt và Extension Consumer ID:
+Khai báo quyền đặc quyền (`Capability`) và cặp `Extension` định danh:
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
 <Deployment xmlns="http://schemas.microsoft.com/windowsphone/2014/deployment" AppPlatformVersion="8.1">
-  <App xmlns="" ProductID="{d07b4623-ef8d-425d-9d79-23e30ac7c3b1}" 
-       Title="HyperOS Lockscreen" 
+  <App xmlns="" ProductID="{YOUR-APP-GUID-HERE}" 
+       Title="Custom Lock Screen" 
        RuntimeType="Silverlight" 
        Version="1.0.0.0" 
        Genre="apps.normal" 
-       Author="HyperOS" 
-       Description="HyperOS Live Lock Screen" 
-       Publisher="HyperOS" 
-       PublisherID="{90ac6b85-475a-4dfd-8bf7-00ba0e3700b6}">
+       Author="Developer" 
+       Description="Live Lock Screen Application" 
+       Publisher="PublisherName" 
+       PublisherID="{YOUR-PUBLISHER-GUID}">
 
     <IconPath IsRelative="true" IsResource="false">Assets\ApplicationIcon.png</IconPath>
 
-    <!-- 1. Capabilities bắt buộc -->
     <Capabilities>
+      <!-- QUAN TRỌNG: Quyền tương tác với API bảo vệ và mở khóa màn hình -->
+      <Capability Name="ID_CAP_SHELL_DEVICE_LOCK_UI_API" />
       <Capability Name="ID_CAP_NETWORKING" />
-      <Capability Name="ID_CAP_SHELL_DEVICE_LOCK_UI_API" /> <!-- QUAN TRỌNG NHẤT -->
-      <Capability Name="ID_CAP_IDENTITY_DEVICE" />
     </Capabilities>
 
-    <!-- 2. Điểm vào Router mặc định -->
+    <!-- Điểm vào mặc định: Bắt buộc trỏ tới Router trung gian -->
     <Tasks>
-      <DefaultTask Name="_default" NavigationPage="LockScreenPage.xaml" ActivationPolicy="Resume" />
+      <DefaultTask Name="_default" NavigationPage="LockScreenRouter.xaml" ActivationPolicy="Resume" />
     </Tasks>
 
-    <!-- 3. Đăng ký Extension Consumer ID -->
+    <!-- Đăng ký các Extension Consumer ID với hệ điều hành -->
     <Extensions>
-      <!-- LockScreen Application: Định danh ứng dụng giao diện khóa -->
+      <!-- Extension 1: Định danh ứng dụng là Live Lock Screen Provider -->
       <Extension ExtensionName="LockScreen_Application"
                  ConsumerID="{CD4601F6-351B-43C7-9087-6B12BD98ED63}"
                  TaskID="_default"
                  ExtraFile="Extensions\\LockAppExtension.xml" />
 
-      <!-- LockScreen Background: Cho phép cung cấp luồng ảnh nền -->
+      <!-- Extension 2: Cho phép ứng dụng xử lý dữ liệu nền màn hình khóa -->
       <Extension ExtensionName="LockScreen_Background"
                  ConsumerID="{111DFF24-AA15-4A96-8006-2BFF8122084F}"
                  TaskID="_default" />
@@ -141,16 +141,13 @@ User (Người dùng)       Power Mgr / OS Shell       AgHost (App)           Sy
 </Deployment>
 ```
 
-#### Giải mã các GUID định danh:
-| GUID | Tên Định Danh | Ý Nghĩa Kỹ Thuật |
-|---|---|---|
-| `{CD4601F6-351B-43C7-9087-6B12BD98ED63}` | `LockScreen_Application` | GUID nội bộ của OS Shell WP8.1. Khi người dùng vào *Cài đặt > Màn hình khóa*, hệ điều hành sẽ quét Registry tìm tất cả ứng dụng có ConsumerID này để hiển thị trong mục "Ứng dụng hiển thị màn hình khóa". |
-| `{111DFF24-AA15-4A96-8006-2BFF8122084F}` | `LockScreen_Background` | Cho phép ứng dụng đóng vai trò nhà cung cấp hình nền nền (Background Provider). |
-| `ID_CAP_SHELL_DEVICE_LOCK_UI_API` | Lock UI Capability | Quyền đặc quyền cho phép ứng dụng Silverlight gọi các hàm tương tác màn hình khóa trong namespace `Windows.Phone.System.SystemProtection`. |
+#### Giải mã các Consumer ID chuẩn của Microsoft:
+* `{CD4601F6-351B-43C7-9087-6B12BD98ED63}`: GUID nội bộ của OS Shell Windows Phone 8.1. Hệ điều hành quét GUID này để biết ứng dụng có khả năng vẽ giao diện khóa.
+* `{111DFF24-AA15-4A96-8006-2BFF8122084F}`: GUID cho phép tích hợp ảnh nền hệ thống.
 
-### 3.2 Tệp tin chỉ định giao thức `Extensions\LockAppExtension.xml`
+### 3.2 Tệp tin chỉ thị `Extensions\LockAppExtension.xml`
 
-Tệp tin này phải đặt tại đường dẫn `Extensions\LockAppExtension.xml`, thuộc tính tệp là `Content` và `Copy to Output Directory = Copy if newer`:
+Tạo thư mục `Extensions` ở thư mục gốc của project, bên trong tạo file `LockAppExtension.xml`:
 
 ```xml
 <?xml version="1.0"?>
@@ -159,18 +156,20 @@ Tệp tin này phải đặt tại đường dẫn `Extensions\LockAppExtension.
 </x:Extension>
 ```
 
-Tệp XML này đóng vai trò xác thực hợp đồng liên kết (Contract Descriptor) giữa OS Shell và ứng dụng theo không gian tên `urn:LockApp`.
+> **Thiết lập thuộc tính file trong Visual Studio:**
+> - **Build Action:** `Content`
+> - **Copy to Output Directory:** `Copy if newer`
 
 ---
 
-## 4. Mô Hình "Dual-Role" & Cửa Ngõ Điều Hướng (Routing Gateway)
+## 4. Kiến Trúc Điều Hướng Hai Vai Trò ("Dual-Role" Routing Pattern)
 
-Ứng dụng Live Lock Screen luôn tồn tại dưới dạng **Dual-Role (Ứng dụng 2 vai trò)**:
-1. **Trạng thái Mở (Unlocked Context):** Người dùng bấm vào biểu tượng ứng dụng ngoài màn hình chính để tùy chỉnh giao diện (phải hiển thị `MySetsPage.xaml` hoặc `EditorPage.xaml`).
-2. **Trạng thái Khóa (Locked Context):** Người dùng bấm nút nguồn bật sáng màn hình (phải hiển thị `LockScreen.xaml`).
+Một ứng dụng Live Lock Screen luôn có 2 vai trò hoàn toàn độc lập:
+1. **Chế độ Mở (Unlocked Context):** Người dùng bấm mở icon app từ màn hình Start để chỉnh sửa cài đặt, theme, cấu hình.
+2. **Chế độ Khóa (Locked Context):** Người dùng bấm nút nguồn bật máy, ứng dụng cần hiển thị màn hình khóa.
 
-### 4.1 Bộ định tuyến: `LockScreenPage.xaml.cs`
-Điểm vào `DefaultTask NavigationPage` **không bao giờ được trỏ trực tiếp** vào màn hình khóa hay màn hình cài đặt, mà phải thông qua router trung gian:
+### Triển khai `LockScreenRouter.xaml.cs`
+Không bao giờ trỏ `DefaultTask NavigationPage` trực tiếp vào trang khóa hoặc trang cài đặt. Phải sử dụng một trang rẽ nhánh:
 
 ```csharp
 using System;
@@ -178,11 +177,11 @@ using System.Windows.Navigation;
 using Microsoft.Phone.Controls;
 using Windows.Phone.System;
 
-namespace HyperOS
+namespace CustomLockScreen
 {
-    public partial class LockScreenPage : PhoneApplicationPage
+    public partial class LockScreenRouter : PhoneApplicationPage
     {
-        public LockScreenPage()
+        public LockScreenRouter()
         {
             InitializeComponent();
         }
@@ -193,252 +192,318 @@ namespace HyperOS
 
             try
             {
-                // Kiểm tra trạng thái khóa phần cứng của OS
+                // Kiểm tra trạng thái khóa phần cứng của hệ thống
                 if (SystemProtection.ScreenLocked)
                 {
-                    // Thiết bị ĐANG KHÓA -> Điều hướng tức thì tới giao diện màn hình khóa
-                    NavigationService.Navigate(
-                        new Uri("/Pages/LockScreen.xaml", UriKind.Relative));
+                    // Thiết bị đang khóa -> Điều hướng ngay tới giao diện khóa
+                    NavigationService.Navigate(new Uri("/Pages/LockViewPage.xaml", UriKind.Relative));
                 }
                 else
                 {
-                    // Thiết bị ĐÃ MỞ KHÓA -> Người dùng đang mở app bình thường
-                    NavigationService.Navigate(
-                        new Uri("/Pages/MySetsPage.xaml", UriKind.Relative));
+                    // Thiết bị đã mở -> Điều hướng tới giao diện cài đặt/tùy biến
+                    NavigationService.Navigate(new Uri("/Pages/SettingsPage.xaml", UriKind.Relative));
                 }
             }
             catch
             {
-                // Fallback an toàn nếu có ngoại lệ bảo mật
-                NavigationService.Navigate(
-                    new Uri("/Pages/MySetsPage.xaml", UriKind.Relative));
+                // Fallback an toàn
+                NavigationService.Navigate(new Uri("/Pages/SettingsPage.xaml", UriKind.Relative));
             }
         }
     }
 }
 ```
 
-> **Nguyên Lý:** `Windows.Phone.System.SystemProtection.ScreenLocked` trả về giá trị `true` khi và chỉ khi hệ điều hành đang ở trạng thái khóa màn hình.
+> **API Cốt Lõi:** `Windows.Phone.System.SystemProtection.ScreenLocked` trả về giá trị `true` khi màn hình đang ở trạng thái khóa bởi hệ điều hành.
 
 ---
 
-## 5. Cơ Chế Bảo Mật & Quá Trình Mở Khóa (Security & Unlock Flow)
+## 5. Cơ Chế Tương Tác, Cử Chỉ & Mở Khóa (Gestures & Unlock Flow)
 
-Khi một trang Silverlight đóng vai trò màn hình khóa, nó phải tuân thủ nghiêm ngặt các quy tắc bảo vệ:
+Khi xây dựng trang hiển thị màn hình khóa (`LockViewPage.xaml`), có 3 nguyên tắc bảo mật và tương tác bắt buộc:
 
-### 5.1 Chặn phím cứng Back (Hardware Back Key Interception)
-Nếu không chặn phím Back, người dùng chỉ cần nhấn nút Back trên điện thoại là ứng dụng sẽ bị đóng hoặc lùi trang, vô hiệu hóa toàn bộ màn hình khóa.
+### 5.1 Chặn phím cứng Back (Hardware Back Button)
+Nếu không chặn phím Back, người dùng chỉ cần nhấn nút Back trên điện thoại là trang khóa sẽ lùi lại hoặc đóng ứng dụng, làm lộ màn hình Start mà không cần vuốt.
 
 ```csharp
-// Trong Pages/LockScreen.xaml.cs
-private void PhoneApplicationPage_BackKeyPress(object sender, CancelEventArgs e)
+protected override void OnBackKeyPress(System.ComponentModel.CancelEventArgs e)
 {
-    // BẮT BUỘC: Hủy bỏ sự kiện Back Key khi đang ở màn hình khóa
+    base.OnBackKeyPress(e);
+    // BẮT BUỘC: Luôn hủy sự kiện nút Back khi đang ở màn hình khóa
     e.Cancel = true;
 }
 ```
 
-### 5.2 Xử lý cử chỉ vuốt & Vật lý đàn hồi (Swipe Physics & Snap-back)
-Khi người dùng kéo ngón tay lên, giao diện phải di chuyển mượt mà theo ngón tay. Nếu thả tay ra khi chưa kéo đủ độ cao, giao diện phải tự động đàn hồi trở về vị trí cũ (Snap-back):
+### 5.2 Xử lý cử chỉ vuốt (Gesture Physics & Snap-back)
+Giao diện khóa hiện đại thường hỗ trợ cử chỉ vuốt lên theo tay người dùng. Cần xử lý các sự kiện `Manipulation`:
 
 ```csharp
 private double dragDeltaY = 0;
-private const double UNLOCK_THRESHOLD = -150.0; // Kéo quá 150px sẽ mở khóa
+private const double UNLOCK_THRESHOLD = -150.0; // Kéo lên quá 150px sẽ mở khóa
 
-private void RootGrid_ManipulationDelta(object sender, ManipulationDeltaEventArgs e)
+private void LayoutRoot_ManipulationDelta(object sender, ManipulationDeltaEventArgs e)
 {
     dragDeltaY += e.DeltaManipulation.Translation.Y;
-    if (dragDeltaY > 0) dragDeltaY = 0; // Không cho phép kéo tụt xuống dưới
+    
+    // Giới hạn: chỉ cho phép vuốt lên, không cho kéo tụt xuống dưới
+    if (dragDeltaY > 0) dragDeltaY = 0;
 
-    // Cập nhật vị trí tức thời theo ngón tay
-    FrontTransform.TranslateY = dragDeltaY;
-    BehindTransform.TranslateY = dragDeltaY;
+    // Dịch chuyển panel theo ngón tay
+    ContentTransform.TranslateY = dragDeltaY;
 
-    // Làm mờ dần khi kéo lên cao
-    double opacity = 1.0 - Math.Min(1.0, Math.Abs(dragDeltaY) / 500.0);
-    OverlayInformationPanel.Opacity = opacity;
-    BehindForegroundGrid.Opacity = opacity;
+    // Giảm độ mờ dần theo quãng đường kéo
+    double opacity = 1.0 - Math.Min(1.0, Math.Abs(dragDeltaY) / 400.0);
+    ContentPanel.Opacity = opacity;
 }
 
-private void RootGrid_ManipulationCompleted(object sender, ManipulationCompletedEventArgs e)
+private void LayoutRoot_ManipulationCompleted(object sender, ManipulationCompletedEventArgs e)
 {
-    // Kiểm tra nếu kéo vượt ngưỡng hoặc vuốt nhanh (Vận tốc lớn)
+    // Mở khóa nếu: kéo vượt ngưỡng HOẶC vuốt với vận tốc nhanh (flick gesture)
     if (dragDeltaY < UNLOCK_THRESHOLD || e.FinalVelocities.LinearVelocity.Y < -800)
     {
-        RequestScreenUnlock();
+        ExecuteUnlockSequence();
     }
     else
     {
-        // Chưa đủ lực/quãng đường -> Chạy animation Snap-back về vị trí 0
+        // Chưa đủ điều kiện mở khóa -> Chạy hoạt ảnh Snap-back đàn hồi về vị trí cũ
         PlaySnapBackAnimation();
     }
 }
+
+private void PlaySnapBackAnimation()
+{
+    var sb = new Storyboard();
+    
+    var animY = new DoubleAnimation
+    {
+        To = 0,
+        Duration = TimeSpan.FromMilliseconds(250),
+        EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+    };
+    Storyboard.SetTarget(animY, ContentTransform);
+    Storyboard.SetTargetProperty(animY, new PropertyPath("TranslateY"));
+    
+    var animOp = new DoubleAnimation
+    {
+        To = 1.0,
+        Duration = TimeSpan.FromMilliseconds(250)
+    };
+    Storyboard.SetTarget(animOp, ContentPanel);
+    Storyboard.SetTargetProperty(animOp, new PropertyPath("Opacity"));
+
+    sb.Children.Add(animY);
+    sb.Children.Add(animOp);
+    
+    dragDeltaY = 0;
+    sb.Begin();
+}
 ```
 
-### 5.3 Gọi lệnh mở khóa hệ điều hành: `SystemProtection.RequestScreenUnlock()`
+### 5.3 Gọi lệnh mở khóa hệ thống: `SystemProtection.RequestScreenUnlock()`
+
+Khi hoàn thành hiệu ứng mở khóa, gọi API của hệ điều hành:
+
 ```csharp
-private void RequestScreenUnlock()
+private void ExecuteUnlockSequence()
 {
-    if (bIsAnimOn)
+    // Có thể kích hoạt hoạt cảnh trượt hết màn hình trước
+    TriggerUnlockExitAnimation(() =>
     {
-        try 
-        { 
-            // Bắt đầu animation trượt thẳng lên trên (-800px)
-            UnlockAnim.Begin(); 
-            return; 
-        } 
-        catch { }
-    }
-    DoActualUnlock();
-}
-
-private void UnlockAnim_Completed(object sender, EventArgs e)
-{
-    DoActualUnlock();
-}
-
-private void DoActualUnlock()
-{
-    try
-    {
-        if (SystemProtection.ScreenLocked)
+        try
         {
-            // BÀN GIAO QUYỀN KIỂM SOÁT LẠI CHO HỆ ĐIỀU HÀNH
-            SystemProtection.RequestScreenUnlock();
+            if (SystemProtection.ScreenLocked)
+            {
+                // BÀN GIAO QUYỀN MỞ KHÓA CHO HỆ ĐIỀU HÀNH
+                SystemProtection.RequestScreenUnlock();
+            }
         }
-    }
-    catch { }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine("Unlock error: " + ex.Message);
+        }
+    });
 }
 ```
 
-### 5.4 Cơ chế tương tác với mật khẩu cấp OS
-* **Nếu máy không có mật khẩu:** Ngay khi `RequestScreenUnlock()` được gọi, hệ điều hành lập tức tắt lớp phủ màn hình khóa, đưa người dùng vào màn hình Start hoặc ứng dụng đang dùng dở.
-* **Nếu máy có mật khẩu (PIN 4-6 số do người dùng cài trong Settings điện thoại):** Hệ điều hành **ngay lập tức đẩy giao diện bàn phím số Native PIN của Windows Phone lên đè lên trên**. Người dùng phải nhập đúng mật khẩu này mới có thể truy cập điện thoại.
-* **Kết luận:** Live Lock Screen an toàn 100%, không bao giờ có thể bị lợi dụng để hack hay bypass mật khẩu của người dùng.
+### 5.4 Cách hệ điều hành phản hồi lệnh mở khóa
+* **Nếu máy KHÔNG có mật khẩu:** Hệ điều hành lập tức hạ lớp màn hình khóa, đưa người dùng vào Start Screen hoặc ứng dụng đang chạy trước đó.
+* **Nếu máy CÓ mật khẩu (PIN 4-6 số cấu hình trong cài đặt hệ thống):** Hệ điều hành **ngay lập tức đẩy bàn phím số Native PIN của Windows Phone lên trên**. Người dùng phải nhập đúng PIN của máy mới vào được bên trong.
+* **Ý nghĩa:** Ứng dụng của bạn không bao giờ có thể gây nguy cơ bảo mật hay vượt mặt mã PIN của điện thoại.
 
 ---
 
-## 6. Bài Toán Hiệu Năng "Resuming..." & Tối Ưu Cho Máy 512MB RAM
+## 6. Tối Ưu Hiệu Năng & Bài Toán "Resuming..." (Thiết Bị 512MB RAM)
 
-### 6.1 Vì sao ứng dụng gốc của Microsoft từng bị người dùng chỉ trích?
-Năm 2014, ứng dụng *Live Lock Screen BETA* của Microsoft bị phàn nàn nhiều nhất ở điểm: **Mỗi khi bấm nút nguồn mở máy, màn hình xuất hiện chữ "Resuming..." màu xám mất 1 đến 2 giây trước khi hiện mặt đồng hồ.**
+### 6.1 Nguyên nhân của hiện tượng "Resuming..." trên Windows Phone 8.1
+Ứng dụng Live Lock Screen chính thức của Microsoft từng bị người dùng phàn nàn vì xuất hiện màn hình đen/chữ *"Resuming..."* mất 1-2 giây mỗi khi bấm nút nguồn. Các nguyên nhân kỹ thuật gồm:
 
-**Nguyên nhân kỹ thuật sâu xa:**
-1. **Dung lượng RAM eo hẹp của thiết bị bình dân:** Hầu hết máy Windows Phone 8.1 thời đó (Lumia 520, 525, 530, 620, 625, 630, 720) chỉ có **512MB RAM**.
-2. **Áp lực bộ nhớ đồ họa khi nạp ảnh (Bitmap Heap):** Mỗi bức ảnh nền Full HD (1080×1920) khi giải nén ra bộ nhớ RAM dạng uncompressed 32-bit ARGB sẽ ngốn:
-   $$\text{RAM} = 1080 \times 1920 \times 4 \text{ bytes} \approx 8.3 \text{ MB}$$
-   Nếu nạp 2 ảnh (ảnh nền + ảnh chủ thể tách nền Depth) cộng với các texture của hệ thống, bộ nhớ đồ họa có thể tăng thêm 20-30MB trong chớp mắt.
-3. **OS Watchdog Timeout (500ms):** Nếu ứng dụng Live Lock Screen không hoàn tất vẽ khung hình đầu tiên (Frame 0) trong khoảng thời gian quy định của hệ điều hành, OS sẽ cưỡng chế hiển thị màn hình khóa tĩnh dự phòng để tránh người dùng bị kẹt ở màn hình đen.
+1. **Hạn mức RAM khắt khe trên máy 512MB:** Các dòng máy như Lumia 520, 525, 530, 630 chiếm lượng lớn thị phần nhưng chỉ có 512MB RAM. Hạn mức RAM khả dụng cho ứng dụng màn hình khóa rất nhỏ.
+2. **Giải mã ảnh (Image Decoding Heap):** Mỗi ảnh nền chuẩn uncompressed chiếm:
+   $$\text{RAM} = \text{Chiều rộng} \times \text{Chiều cao} \times 4 \text{ bytes (ARGB)}$$
+   Một bức ảnh $1080 \times 1920$ tiêu tốn khoảng **8.3 MB** bộ nhớ RAM thuần cho mỗi instance. Nạp nhiều ảnh cùng lúc sẽ dẫn tới tràn bộ nhớ (Out Of Memory).
+3. **OS Watchdog Timeout (500ms):** Hệ điều hành giám sát chặt chẽ: nếu ứng dụng khóa không vẽ xong khung hình đầu tiên (Frame 0) trong vòng **500ms - 1000ms**, hệ điều hành sẽ coi ứng dụng bị treo và tự động hạ cấp (fallback) về màn hình khóa tĩnh mặc định của hệ thống.
 
-### 6.2 Giải pháp tối ưu hóa cực hạn trong dự án HyperOS
+### 6.2 Các kỹ thuật tối ưu hóa bắt buộc
 
-| Chiến Lược Tối Ưu | Kỹ Thuật Triển Khai Trong Mã Nguồn | Lợi Ích Mang Lại |
-|---|---|---|
-| **Dọn dẹp bộ nhớ triệt để (`OnNavigatedFrom`)** | Gán toàn bộ `ImageBrush.ImageSource = null`, dừng Storyboard vô hạn (`FlashBattery.Stop()`, `ChargingPulse.Stop()`) và gọi `GC.Collect()`. | Giải phóng ngay lập tức 100% RAM đồ họa khi tắt màn hình hoặc mở khóa, ngăn chặn tràn RAM (OOM). |
-| **Khử nhòe sub-pixel (Pixel Snapping)** | Mọi phép tính toán tọa độ `Margin` hoặc kích thước đều được ép kiểu số nguyên `(int)Math.Round(...)`. | Loại bỏ hiện tượng anti-aliasing nội suy sub-pixel của Silverlight, giúp chữ sắc nét tuyệt đối và giảm tải GPU shader. |
-| **Khởi tạo trực tiếp bằng C# thay vì parse XAML (`ClockRenderer.cs`)** | Tạo động `TextBlock` bằng code-behind thuần túy, tái sử dụng các instance cọ vẽ `SolidColorBrush` tĩnh. | Giảm thời gian nạp giao diện từ ~800ms xuống còn <50ms, triệt tiêu hoàn toàn hiện tượng "Resuming...". |
-| **Khóa kích thước AI Wallpaper** | Giới hạn tối đa kích thước ảnh do Pollinations AI tạo ra ở mức `1024×1024`. | Đảm bảo tỷ lệ khung hình chuẩn và không gây sốc bộ nhớ trên máy 512MB. |
+#### A. Dọn dẹp bộ nhớ triệt để khi rời trang (`OnNavigatedFrom`)
+Mỗi khi màn hình tắt hoặc khi người dùng mở khóa thành công, phải hủy hoàn toàn tham chiếu ảnh để bộ gom rác (Garbage Collector) thu hồi bộ nhớ đồ họa:
 
----
+```csharp
+protected override void OnNavigatedFrom(NavigationEventArgs e)
+{
+    base.OnNavigatedFrom(e);
 
-## 7. Kiến Trúc Hiệu Ứng Chiều Sâu 2.5D (Wallpaper Depth Effect)
+    // Hủy liên kết ảnh để giải phóng RAM GPU/Bitmap lập tức
+    if (BackgroundBrush != null) BackgroundBrush.ImageSource = null;
 
-Hiệu ứng chiều sâu mang lại phong cách hiện đại cho màn hình khóa bằng cách đặt một phần chữ số đồng hồ chìm ra phía sau chủ thể:
+    // Dừng tất cả Storyboard lặp vô hạn và DispatcherTimer
+    if (clockTimer != null && clockTimer.IsEnabled) clockTimer.Stop();
 
-```
-┌────────────────────────────────────────────────────────────────────────┐
-│  LỚP 4: Front Layer (`OverlayInformationPanel`)                        │
-│  - Chữ số giờ / ngày / widget nằm đè lên mặt trước chủ thể              │
-├────────────────────────────────────────────────────────────────────────┤
-│  LỚP 3: Foreground Subject Layer (`ForegroundLayerGrid`)               │
-│  - Bức ảnh PNG trong suốt đã được tách nền (chân dung, xe, hoa...)     │
-├────────────────────────────────────────────────────────────────────────┤
-│  LỚP 2: Behind Layer (`BehindForegroundGrid`)                          │
-│  - Chữ số giờ / phút nằm chìm phía sau lưng chủ thể                     │
-├────────────────────────────────────────────────────────────────────────┤
-│  LỚP 1: Background Layer (`RootGrid.Background`)                       │
-│  - Ảnh nền phong cảnh gốc (Full Wallpaper JPG)                         │
-└────────────────────────────────────────────────────────────────────────┘
+    // Thu gom rác chủ động
+    GC.Collect();
+}
 ```
 
-### Kỹ thuật đồng bộ chuyển vị (Transform Synchronization)
-Để tránh hiện tượng văn bản ở Lớp 2 và Lớp 4 bị "rách hình" hoặc trôi lệch nhau khi người dùng vuốt ngón tay:
-- Cả hai lớp đều được gán `CompositeTransform` riêng biệt: `FrontTransform` và `BehindTransform`.
-- Trong hàm `RootGrid_ManipulationDelta`, cả hai Transform này **bắt buộc phải nhận cùng một giá trị `dragDeltaY`** trong cùng một chu kỳ vẽ (render frame).
+#### B. Khử nhòe đồ họa bằng Pixel Snapping (Làm tròn tọa độ số nguyên)
+Trên Silverlight, nếu tọa độ `Margin` hoặc `Canvas` là số thực dấu phẩy động (float/double), hệ thống sẽ nội suy sub-pixel gây nhòe mờ văn bản và làm GPU tốn tài nguyên chống răng cưa (anti-aliasing). Luôn ép kiểu về số nguyên:
+
+```csharp
+// Luôn ép kiểu int cho Margin/Canvas Coordinates
+int roundedX = (int)Math.Round(calculatedX);
+int roundedY = (int)Math.Round(calculatedY);
+MyClockElement.Margin = new Thickness(roundedX, roundedY, 0, 0);
+```
+
+#### C. Giữ cây giao diện (Visual Tree) tinh gọn
+- Không lồng ghép quá nhiều cấp layout (`Grid` lồng trong `StackPanel` lồng trong `Border`).
+- Hạn chế sử dụng DataBinding phức tạp ở trang khóa; thay vào đó, gán trực tiếp thuộc tính qua code-behind (`ClockText.Text = DateTime.Now.ToString("HH:mm")`) để đạt tốc độ render tối đa.
 
 ---
 
-## 8. Hướng Dẫn Từng Bước Cho Lập Trình Viên Tạo Mới Live Lock Screen
+## 7. Hướng Dẫn Từng Bước Tạo Dự Án Mới Từ Đầu (Step-by-Step Tutorial)
+
+Dưới đây là quy trình hoàn chỉnh để bạn tạo ra một dự án Live Lock Screen của riêng mình:
 
 ### Bước 1: Khởi tạo Project
-- Dùng **Visual Studio 2015** (hoặc VS 2013).
-- Chọn template: `Visual C# > Windows Phone Apps > Blank App (Windows Phone Silverlight)`.
-- Target OS Version: **Windows Phone 8.1**.
+1. Mở **Visual Studio 2015** (hoặc 2013).
+2. Chọn `File > New > Project`.
+3. Chọn template: `Visual C# > Windows Phone Apps > Blank App (Windows Phone Silverlight)`.
+4. Đặt tên project (ví dụ: `MyLiveLockScreen`).
+5. Chọn Target Version: **Windows Phone 8.1**.
 
-### Bước 2: Cấu hình `WMAppManifest.xml`
-- Mở file bằng `View Code` (XML Editor).
-- Thêm capability:
-  ```xml
-  <Capability Name="ID_CAP_SHELL_DEVICE_LOCK_UI_API" />
-  ```
-- Thêm cụm thẻ `<Extensions>` ngay sau thẻ `</Tokens>`:
-  ```xml
-  <Extensions>
-    <Extension ExtensionName="LockScreen_Application"
-               ConsumerID="{CD4601F6-351B-43C7-9087-6B12BD98ED63}"
-               TaskID="_default"
-               ExtraFile="Extensions\\LockAppExtension.xml" />
-    <Extension ExtensionName="LockScreen_Background"
-               ConsumerID="{111DFF24-AA15-4A96-8006-2BFF8122084F}"
-               TaskID="_default" />
-  </Extensions>
-  ```
+### Bước 2: Khai báo Manifest & Extension
+1. Mở file `Properties\WMAppManifest.xml` bằng chế độ mã nguồn (**View Code**).
+2. Thêm capability trong thẻ `<Capabilities>`:
+   ```xml
+   <Capability Name="ID_CAP_SHELL_DEVICE_LOCK_UI_API" />
+   ```
+3. Đổi thuộc tính `NavigationPage` trong thẻ `<DefaultTask>` thành:
+   ```xml
+   NavigationPage="LockRouter.xaml"
+   ```
+4. Thêm thẻ `<Extensions>` ngay sau thẻ `</Tokens>`:
+   ```xml
+   <Extensions>
+     <Extension ExtensionName="LockScreen_Application"
+                ConsumerID="{CD4601F6-351B-43C7-9087-6B12BD98ED63}"
+                TaskID="_default"
+                ExtraFile="Extensions\\LockAppExtension.xml" />
+     <Extension ExtensionName="LockScreen_Background"
+                ConsumerID="{111DFF24-AA15-4A96-8006-2BFF8122084F}"
+                TaskID="_default" />
+   </Extensions>
+   ```
 
-### Bước 3: Tạo File Descriptor
-- Tạo thư mục mới trong project: `Extensions`.
-- Tạo file XML bên trong: `LockAppExtension.xml`.
-- Nội dung file:
-  ```xml
-  <?xml version="1.0"?>
-  <x:Extension xmlns:x="urn:LockApp">
-    <AppID>App</AppID>
-  </x:Extension>
-  ```
-- Trong cửa sổ **Properties** của file này:
-  - `Build Action`: **Content**
-  - `Copy to Output Directory`: **Copy if newer**
+### Bước 3: Tạo tệp tin `LockAppExtension.xml`
+1. Nhấp chuột phải vào Project, chọn `Add > New Folder`, đặt tên thư mục là `Extensions`.
+2. Nhấp chuột phải vào thư mục `Extensions`, chọn `Add > New Item > XML File`, đặt tên là `LockAppExtension.xml`.
+3. Nhập nội dung:
+   ```xml
+   <?xml version="1.0"?>
+   <x:Extension xmlns:x="urn:LockApp">
+     <AppID>App</AppID>
+   </x:Extension>
+   ```
+4. Trong cửa sổ **Properties** của file `LockAppExtension.xml`:
+   - Đặt `Build Action` = **Content**.
+   - Đặt `Copy to Output Directory` = **Copy if newer**.
 
-### Bước 4: Tạo Router `LockScreenPage.xaml`
-- Tạo một trang rỗng `LockScreenPage.xaml`.
-- Trong code-behind `OnNavigatedTo`:
-  ```csharp
-  if (Windows.Phone.System.SystemProtection.ScreenLocked)
-      NavigationService.Navigate(new Uri("/Pages/LockScreen.xaml", UriKind.Relative));
-  else
-      NavigationService.Navigate(new Uri("/Pages/SettingsPage.xaml", UriKind.Relative));
-  ```
+### Bước 4: Tạo trang điều hướng `LockRouter.xaml`
+1. Tạo trang mới: `Add > New Item > Windows Phone Portrait Page`, đặt tên `LockRouter.xaml`.
+2. Mở file `LockRouter.xaml.cs`, thay thế nội dung phương thức `OnNavigatedTo`:
+   ```csharp
+   protected override void OnNavigatedTo(NavigationEventArgs e)
+   {
+       base.OnNavigatedTo(e);
+       if (Windows.Phone.System.SystemProtection.ScreenLocked)
+       {
+           NavigationService.Navigate(new Uri("/LockView.xaml", UriKind.Relative));
+       }
+       else
+       {
+           NavigationService.Navigate(new Uri("/MainPage.xaml", UriKind.Relative));
+       }
+   }
+   ```
 
-### Bước 5: Viết Giao Diện Khóa `LockScreen.xaml`
-- Gắn sự kiện `BackKeyPress="PhoneApplicationPage_BackKeyPress"` và đặt `e.Cancel = true;`.
-- Bắt cử chỉ vuốt `ManipulationDelta` và `ManipulationCompleted`.
-- Khi người dùng vuốt lên đủ ngưỡng, gọi `Windows.Phone.System.SystemProtection.RequestScreenUnlock()`.
+### Bước 5: Tạo trang màn hình khóa `LockView.xaml`
+1. Tạo trang mới: `Add > New Item > Windows Phone Portrait Page`, đặt tên `LockView.xaml`.
+2. Xây dựng giao diện XAML cơ bản:
+   ```xml
+   <phone:PhoneApplicationPage
+       x:Class="MyLiveLockScreen.LockView"
+       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+       xmlns:phone="clr-namespace:Microsoft.Phone.Controls;assembly=Microsoft.Phone"
+       xmlns:shell="clr-namespace:Microsoft.Phone.Shell;assembly=Microsoft.Phone"
+       SupportedOrientations="Portrait" Orientation="Portrait"
+       shell:SystemTray.IsVisible="False">
+
+       <Grid x:Name="LayoutRoot" Background="Black"
+             ManipulationDelta="LayoutRoot_ManipulationDelta"
+             ManipulationCompleted="LayoutRoot_ManipulationCompleted">
+           
+           <StackPanel x:Name="ClockPanel" VerticalAlignment="Center" HorizontalAlignment="Center">
+               <StackPanel.RenderTransform>
+                   <CompositeTransform x:Name="ClockTransform" />
+               </StackPanel.RenderTransform>
+               
+               <TextBlock x:Name="TimeText" Text="12:00" FontSize="80" 
+                          HorizontalAlignment="Center" Foreground="White" />
+               <TextBlock x:Name="DateText" Text="Monday, January 1" FontSize="20" 
+                          HorizontalAlignment="Center" Foreground="#AAFFFFFF" />
+               <TextBlock Text="▲ Swipe up to unlock" FontSize="16" Margin="0,50,0,0"
+                          HorizontalAlignment="Center" Foreground="#66FFFFFF" />
+           </StackPanel>
+       </Grid>
+   </phone:PhoneApplicationPage>
+   ```
+3. Trong `LockView.xaml.cs`:
+   - Bắt sự kiện `OnBackKeyPress` và đặt `e.Cancel = true;`.
+   - Sử dụng `DispatcherTimer` để cập nhật đồng hồ mỗi giây.
+   - Viết sự kiện `ManipulationDelta` và `ManipulationCompleted` để khi vuốt lên sẽ gọi `Windows.Phone.System.SystemProtection.RequestScreenUnlock()`.
 
 ---
 
-## 9. Bảng Tra Cứu API An Toàn vs Bị Cấm (WP8.1 Silverlight)
+## 8. Bảng Tra Cứu API & Những Lưu Ý Cho Nhà Phát Triển (Cheat Sheet)
 
-| Danh Mục | ❌ Tuyệt Đối Tránh (WinRT / UWP) | ✅ Sử Dụng Thay Thế (Silverlight WP8.1) |
+| Tác Vụ | ❌ API Bị Cấm (Gây Lỗi Build / Không Chạy) | ✅ API Chuẩn Trên WP8.1 Silverlight |
 |---|---|---|
-| **UI Framework** | `Windows.UI.Xaml.*` | `System.Windows.*` |
-| **File I/O** | `Windows.Storage.StorageFile` | `System.IO.IsolatedStorage.IsolatedStorageFile` |
-| **Cài đặt App** | `Windows.Storage.ApplicationData` | `System.IO.IsolatedStorage.IsolatedStorageSettings` |
-| **Chọn ảnh** | `FileOpenPicker` | `Microsoft.Phone.Tasks.PhotoChooserTask` |
-| **Nút Back cứng** | `HardwareButtons.BackPressed` | `PhoneApplicationPage.BackKeyPress` event |
-| **Điều hướng** | `Frame.Navigate()` | `NavigationService.Navigate()` |
-| **Luồng giao diện**| `CoreDispatcher` | `Deployment.Current.Dispatcher.BeginInvoke()` |
-| **Giao diện Binding**| `x:Bind` | `{Binding}` hoặc gán trực tiếp bằng C# |
-| **Mở khóa máy** | `Application.Current.Exit()` | `SystemProtection.RequestScreenUnlock()` |
+| **Cấu trúc XAML** | `Windows.UI.Xaml.*` (WinRT) | `System.Windows.*` |
+| **Lưu tập tin** | `Windows.Storage.StorageFile` | `System.IO.IsolatedStorage.IsolatedStorageFile` |
+| **Lưu cấu hình cài đặt** | `Windows.Storage.ApplicationData` | `System.IO.IsolatedStorage.IsolatedStorageSettings` |
+| **Chọn ảnh từ máy** | `Windows.Storage.Pickers.FileOpenPicker` | `Microsoft.Phone.Tasks.PhotoChooserTask` |
+| **Nút Back phần cứng** | `HardwareButtons.BackPressed` | `PhoneApplicationPage.BackKeyPress` event |
+| **Chuyển trang** | `Frame.Navigate(...)` | `NavigationService.Navigate(...)` |
+| **Chuyển luồng UI** | `CoreDispatcher` | `Deployment.Current.Dispatcher.BeginInvoke(...)` |
+| **Hoạt ảnh** | CSS / XAML Transitions phức tạp | `Storyboard`, `DoubleAnimation` với Easing Functions |
+| **Lệnh mở khóa** | Tự thoát app (`Application.Current.Exit()`) | `SystemProtection.RequestScreenUnlock()` |
 
 ---
 
-*Tài liệu được biên soạn dựa trên nghiên cứu kiến trúc thực tế và hoàn thiện mã nguồn của dự án HyperOS Live Lock Screen.*
+## 9. Tổng Kết
+
+Cơ chế **Live Lock Screen** trên Windows Phone 8.1 là một thiết kế thông minh kết hợp giữa:
+1. **Tính an toàn tuyệt đối:** Giao diện tùy biến chạy trên tầng ứng dụng, lớp mật khẩu gốc của OS vẫn bảo vệ phía dưới.
+2. **Khả năng tương tác cao:** Hỗ trợ toàn bộ công nghệ XAML, cử chỉ cảm ứng, hoạt ảnh Storyboard của Silverlight.
+3. **Hiệu năng tức thì nếu tối ưu đúng cách:** Bằng việc giải phóng bộ nhớ ảnh khi không hiển thị, làm tròn pixel và giữ Visual Tree tinh gọn, bất kỳ lập trình viên nào cũng có thể tạo nên những trải nghiệm mở khóa mượt mà, phản hồi ngay lập tức trên mọi thiết bị Windows Phone 8.1.
