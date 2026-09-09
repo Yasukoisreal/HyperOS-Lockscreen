@@ -1,4 +1,4 @@
-﻿# GitHub Copilot Instructions — HyperOS Live Lock Screen
+# GitHub Copilot Instructions — HyperOS Live Lock Screen
 
 You are assisting with a **Windows Phone 8.1 Silverlight** project. Prioritize correctness, XAML compatibility, and memory efficiency over modern patterns.
 
@@ -6,7 +6,7 @@ You are assisting with a **Windows Phone 8.1 Silverlight** project. Prioritize c
 
 ### Hardware & OS Limitations
 - **Framework:** **Windows Phone 8.1 Silverlight** (NOT WinRT/UWP). Ensure ALL APIs and UI components (XAML) are WP8.1 Silverlight compatible.
-- **RAM Target:** 512MB RAM devices. Aggressively free image resources when not in use.
+- **RAM Target:** Recommended 1GB+ RAM (512MB RAM devices experience noticeable stutter/lag during animations due to heavy font assets and 2.5D depth compositing). Aggressively free image resources when not in use.
 - **No DecodePixelWidth limit:** Do NOT set `DecodePixelWidth` or `DecodePixelHeight` on `BitmapImage` (except for small thumbnails like `MySetsPage` cards).
 
 ### BANNED APIs & Namespaces (WinRT/UWP only)

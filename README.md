@@ -3,7 +3,8 @@
 [![Platform](https://img.shields.io/badge/platform-Windows%20Phone%208.1%20Silverlight-0078D7.svg)](https://learn.microsoft.com/en-us/previous-versions/windows/apps/)
 [![Framework](https://img.shields.io/badge/.NET%20Framework-Silverlight%20v8.1-512BD4.svg)](https://microsoft.com)
 [![Build](https://img.shields.io/badge/build-MSBuild%2014.0-brightgreen.svg)]()
-[![RAM Target](https://img.shields.io/badge/target%20RAM-512MB%2B-orange.svg)]()
+[![RAM Target](https://img.shields.io/badge/RAM-1GB%2B%20Recommended-blue.svg)]()
+[![Min RAM](https://img.shields.io/badge/min%20RAM-512MB%20(Laggy)-orange.svg)]()
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 A modern, highly customizable **Live Lock Screen** application for **Windows Phone 8.1 Silverlight**, inspired by the visual design and fluid typography of **Xiaomi HyperOS**.
@@ -60,12 +61,28 @@ A modern, highly customizable **Live Lock Screen** application for **Windows Pho
 
 ---
 
-## 🚀 Performance & Low-Memory Optimization (512MB RAM)
+## 📱 Hardware & System Requirements
 
-Designed specifically for low-end Windows Phone 8.1 devices (such as Lumia 520, 525, 530, 630):
+> [!WARNING]
+> **512MB RAM Device Performance Warning:**  
+> Real-device testing confirms that devices with **512MB RAM** (e.g. Lumia 520, 525, 530, 620, 625, 630, 720) experience noticeable **stutter and lag** during wake animations and carousel swipes. This is caused by the large font bundle (~31.5MB for MiSans), high-resolution wallpaper decoding, and multi-layer 2.5D depth compositing.  
+> **1GB RAM or higher is strongly recommended** for a smooth, fluid 60 FPS experience.
+
+| Specification | Minimum Requirement | Recommended Specification | Notes |
+|---|---|---|---|
+| **RAM** | 512 MB *(Stutter / Laggy)* | **1 GB or 2 GB** | Recommended devices: Lumia 730, 830, 920, 925, 930, 1020, 1520, Icon. |
+| **Processor** | Dual-core 1.0 GHz | Quad-core 1.2 GHz+ | Snapdragon 400 / S4 Plus / 800 |
+| **Operating System** | Windows Phone 8.1 | Windows Phone 8.1 Update 1 / 2 | Silverlight runtime enabled |
+| **Screen Resolution** | WVGA (480×800) | 720p (720×1280) / 1080p | Scales automatically |
+
+---
+
+## 🚀 Performance & Memory Optimizations
+
+To maximize responsiveness across all supported hardware:
 * **Aggressive Memory Reclamation**: Automatically flushes all `ImageBrush.ImageSource` allocations and triggers garbage collection on page navigation (`OnNavigatedFrom`).
-* **Sub-Pixel Rounding**: Dynamically rounded layout coordinates to integer pixels prevent anti-aliasing blur and GPU rasterization strain.
-* **Cached Brushes**: Centralized brush palettes and visual element caching to avoid allocation spikes during carousel swipes.
+* **Sub-Pixel Rounding (Pixel Snapping)**: Dynamically rounded layout coordinates to integer pixels prevent anti-aliasing blur and GPU rasterization strain.
+* **Cached Brushes & Canvas Reuse**: Centralized brush palettes and visual element caching avoid allocation spikes during carousel swipes.
 
 ---
 

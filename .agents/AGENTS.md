@@ -78,7 +78,7 @@ When editing existing code:
 ### Hardware & OS Limitations
 
 - **Silverlight Framework:** This project is built using **Windows Phone 8.1 Silverlight** (NOT WinRT/UWP). Ensure ALL APIs and UI components (XAML) are compatible with WP8.1 Silverlight.
-- **RAM Target:** Target **512MB RAM** devices. Be extremely mindful of memory limits and aggressively free image resources when not in use.
+- **RAM Target:** Recommended **1GB - 2GB RAM** (Real device tests on 512MB RAM devices show noticeable stutter/lag due to heavy font assets, wallpaper decoding, and 2.5D depth layers). Continue to aggressively free image resources when not in use.
 - **No DecodePixelWidth limit:** Do NOT set `DecodePixelWidth` or `DecodePixelHeight` on BitmapImage. Load images at full quality. The app loads at most 2 images (background + foreground for depth).
 
 ### BANNED APIs & Namespaces (Do NOT use)
