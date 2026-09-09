@@ -144,6 +144,23 @@ HyperOS\Bin\ARM\Release\HyperOS_Release_ARM.xap
 
 ---
 
+## 📘 Developer Guide & Technical Architecture
+
+Want to build your own custom Live Lock Screen application for Windows Phone 8.1?
+Check out our comprehensive platform architecture and developer guide:
+👉 **[LIVE_LOCK_SCREEN_ARCHITECTURE.md](LIVE_LOCK_SCREEN_ARCHITECTURE.md)**
+
+It covers:
+* OS-level execution lifecycle and sequence diagrams.
+* Extensibility contracts (`WMAppManifest.xml` and `LockAppExtension.xml`).
+* Programmatic registration (`ExtensibilityApp`).
+* Dual-role routing architecture (`ScreenLocked`).
+* Gesture tracking, physics, and security unlock flow (`RequestScreenUnlock`).
+* Performance optimizations and avoiding "Resuming..." on 512MB RAM devices.
+* Complete step-by-step tutorial with compilable code.
+
+---
+
 ## 📜 Credits & Acknowledgments
 
 * **Inspiration**: Xiaomi HyperOS Lock Screen design language.

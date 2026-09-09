@@ -162,6 +162,26 @@ Create a folder named `Extensions` at the project root, and add an XML file name
 > - **Build Action:** `Content`
 > - **Copy to Output Directory:** `Copy if newer`
 
+### 3.3 Programmatic Registration: `ExtensibilityApp`
+
+In addition to selecting the app under Windows Phone **Settings > lock screen**, Windows Phone 8.1 Silverlight provides the official `ExtensibilityApp` API to query, activate, or deactivate lock screen integration directly from your application's C# code:
+
+```csharp
+using Windows.Phone.System.LockScreenExtensibility;
+
+// Check if currently registered as the active live lock screen
+bool isRegistered = ExtensibilityApp.IsLockScreenApplicationRegistered();
+
+// Programmatically register as the active live lock screen
+if (!isRegistered)
+{
+    ExtensibilityApp.RegisterLockScreenApplication();
+}
+
+// Programmatically unregister (reverts to default OS lock screen)
+ExtensibilityApp.UnregisterLockScreenApplication();
+```
+
 ---
 
 ## 4. The "Dual-Role" Routing Architecture
@@ -432,21 +452,50 @@ Follow this guide to build a new Live Lock Screen application from scratch:
 
 ### Step 4: Implement `LockRouter.xaml`
 1. Add a new `Windows Phone Portrait Page` named `LockRouter.xaml`.
-2. In `LockRouter.xaml.cs`:
+2. Minimal `LockRouter.xaml` XAML:
+   ```xml
+   <phone:PhoneApplicationPage
+       x:Class="MyLockScreen.LockRouter"
+       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+       xmlns:phone="clr-namespace:Microsoft.Phone.Controls;assembly=Microsoft.Phone"
+       xmlns:shell="clr-namespace:Microsoft.Phone.Shell;assembly=Microsoft.Phone"
+       SupportedOrientations="Portrait" Orientation="Portrait"
+       shell:SystemTray.IsVisible="False">
+       <Grid x:Name="LayoutRoot" Background="Black" />
+   </phone:PhoneApplicationPage>
+   ```
+3. In `LockRouter.xaml.cs`:
    ```csharp
-   protected override void OnNavigatedTo(NavigationEventArgs e)
+   using System;
+   using System.Windows.Navigation;
+   using Microsoft.Phone.Controls;
+   using Windows.Phone.System;
+
+   namespace MyLockScreen
    {
-       base.OnNavigatedTo(e);
-       if (Windows.Phone.System.SystemProtection.ScreenLocked)
-           NavigationService.Navigate(new Uri("/LockView.xaml", UriKind.Relative));
-       else
-           NavigationService.Navigate(new Uri("/MainPage.xaml", UriKind.Relative));
+       public partial class LockRouter : PhoneApplicationPage
+       {
+           public LockRouter()
+           {
+               InitializeComponent();
+           }
+
+           protected override void OnNavigatedTo(NavigationEventArgs e)
+           {
+               base.OnNavigatedTo(e);
+               if (SystemProtection.ScreenLocked)
+                   NavigationService.Navigate(new Uri("/LockView.xaml", UriKind.Relative));
+               else
+                   NavigationService.Navigate(new Uri("/MainPage.xaml", UriKind.Relative));
+           }
+       }
    }
    ```
 
 ### Step 5: Implement `LockView.xaml`
 1. Add a new `Windows Phone Portrait Page` named `LockView.xaml`.
-2. Minimal XAML layout:
+2. Complete XAML layout (`LockView.xaml`):
    ```xml
    <phone:PhoneApplicationPage
        x:Class="MyLockScreen.LockView"
@@ -455,8 +504,7 @@ Follow this guide to build a new Live Lock Screen application from scratch:
        xmlns:phone="clr-namespace:Microsoft.Phone.Controls;assembly=Microsoft.Phone"
        xmlns:shell="clr-namespace:Microsoft.Phone.Shell;assembly=Microsoft.Phone"
        SupportedOrientations="Portrait" Orientation="Portrait"
-       shell:SystemTray.IsVisible="False"
-       BackKeyPress="PhoneApplicationPage_BackKeyPress">
+       shell:SystemTray.IsVisible="False">
 
        <Grid x:Name="LayoutRoot" Background="Black"
              ManipulationDelta="LayoutRoot_ManipulationDelta"
@@ -477,10 +525,130 @@ Follow this guide to build a new Live Lock Screen application from scratch:
        </Grid>
    </phone:PhoneApplicationPage>
    ```
-3. In `LockView.xaml.cs`:
-   - Set `e.Cancel = true;` in `PhoneApplicationPage_BackKeyPress`.
-   - Update `TimeText.Text` and `DateText.Text` using a `DispatcherTimer`.
-   - Implement `ManipulationDelta` and `ManipulationCompleted` to invoke `Windows.Phone.System.SystemProtection.RequestScreenUnlock()`.
+3. Complete code-behind (`LockView.xaml.cs`):
+   ```csharp
+   using System;
+   using System.Windows;
+   using System.Windows.Input;
+   using System.Windows.Media.Animation;
+   using System.Windows.Navigation;
+   using System.Windows.Threading;
+   using Microsoft.Phone.Controls;
+   using Windows.Phone.System;
+
+   namespace MyLockScreen
+   {
+       public partial class LockView : PhoneApplicationPage
+       {
+           private DispatcherTimer clockTimer;
+           private double dragDeltaY = 0;
+           private const double UNLOCK_THRESHOLD = -150.0;
+
+           public LockView()
+           {
+               InitializeComponent();
+               UpdateTime();
+
+               clockTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+               clockTimer.Tick += (s, e) => UpdateTime();
+           }
+
+           protected override void OnNavigatedTo(NavigationEventArgs e)
+           {
+               base.OnNavigatedTo(e);
+
+               // Remove LockRouter from back stack so hardware Back won't navigate back to it
+               while (NavigationService.CanGoBack)
+                   NavigationService.RemoveBackEntry();
+
+               clockTimer.Start();
+           }
+
+           protected override void OnNavigatedFrom(NavigationEventArgs e)
+           {
+               base.OnNavigatedFrom(e);
+               clockTimer.Stop();
+           }
+
+           protected override void OnBackKeyPress(System.ComponentModel.CancelEventArgs e)
+           {
+               base.OnBackKeyPress(e);
+               // CRITICAL: Block hardware back button to maintain screen lock
+               e.Cancel = true;
+           }
+
+           private void UpdateTime()
+           {
+               var now = DateTime.Now;
+               TimeText.Text = now.ToString("HH:mm");
+               DateText.Text = now.ToString("dddd, MMMM d");
+           }
+
+           private void LayoutRoot_ManipulationDelta(object sender, ManipulationDeltaEventArgs e)
+           {
+               dragDeltaY += e.DeltaManipulation.Translation.Y;
+               if (dragDeltaY > 0) dragDeltaY = 0; // Only allow dragging upwards
+
+               ContentTransform.TranslateY = dragDeltaY;
+               ContentPanel.Opacity = 1.0 - Math.Min(1.0, Math.Abs(dragDeltaY) / 450.0);
+           }
+
+           private void LayoutRoot_ManipulationCompleted(object sender, ManipulationCompletedEventArgs e)
+           {
+               if (dragDeltaY < UNLOCK_THRESHOLD || e.FinalVelocities.LinearVelocity.Y < -800)
+               {
+                   if (SystemProtection.ScreenLocked)
+                       SystemProtection.RequestScreenUnlock();
+               }
+               else
+               {
+                   // Snap back with cubic ease
+                   var sb = new Storyboard();
+                   var animY = new DoubleAnimation
+                   {
+                       To = 0,
+                       Duration = TimeSpan.FromMilliseconds(200),
+                       EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+                   };
+                   Storyboard.SetTarget(animY, ContentTransform);
+                   Storyboard.SetTargetProperty(animY, new PropertyPath("TranslateY"));
+                   sb.Children.Add(animY);
+
+                   var animOp = new DoubleAnimation
+                   {
+                       To = 1.0,
+                       Duration = TimeSpan.FromMilliseconds(200)
+                   };
+                   Storyboard.SetTarget(animOp, ContentPanel);
+                   Storyboard.SetTargetProperty(animOp, new PropertyPath("Opacity"));
+                   sb.Children.Add(animOp);
+
+                   dragDeltaY = 0;
+                   sb.Begin();
+               }
+           }
+       }
+   }
+   ```
+
+### Step 6: Activate as Lock Screen Provider
+
+You can register your app as the active lock screen in either of two ways:
+
+#### Option A: In-App Toggle (Programmatic)
+In your `MainPage.xaml.cs` or settings view:
+```csharp
+using Windows.Phone.System.LockScreenExtensibility;
+
+// Register the app as active lock screen provider
+if (!ExtensibilityApp.IsLockScreenApplicationRegistered())
+{
+    ExtensibilityApp.RegisterLockScreenApplication();
+}
+```
+
+#### Option B: System Settings
+On the physical device or emulator, go to **Settings > lock screen > Background** and select your application name from the dropdown.
 
 ---
 
@@ -489,6 +657,7 @@ Follow this guide to build a new Live Lock Screen application from scratch:
 | Capability / API | ❌ Banned (WinRT / UWP) | ✅ Required (WP8.1 Silverlight) |
 |---|---|---|
 | **UI Framework** | `Windows.UI.Xaml.*` | `System.Windows.*` |
+| **Lock Screen Registration** | `Windows.ApplicationModel.LockScreen.*` | `Windows.Phone.System.LockScreenExtensibility.ExtensibilityApp` |
 | **File Storage** | `Windows.Storage.StorageFile` | `System.IO.IsolatedStorage.IsolatedStorageFile` |
 | **Settings Storage** | `Windows.Storage.ApplicationData` | `System.IO.IsolatedStorage.IsolatedStorageSettings` |
 | **Photo Chooser** | `Windows.Storage.Pickers.FileOpenPicker` | `Microsoft.Phone.Tasks.PhotoChooserTask` |
