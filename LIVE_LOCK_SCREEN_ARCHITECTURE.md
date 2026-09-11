@@ -3,7 +3,7 @@
 > **Purpose:** A comprehensive, platform-level technical reference and implementation guide for developers building custom **Live Lock Screen** applications on **Windows Phone 8.1 Silverlight**.
 
 > [!NOTE]
-> **Developer Disclaimer:** This documentation is compiled from hands-on experiments, reverse engineering, and community research on Windows Phone 8.1 Silverlight. Because Microsoft never published complete official documentation for the internal Live Lock Screen extensibility framework, some details, quirks, or edge cases may not be 100% complete or universally accurate across all device firmware revisions. Feedback, bug reports, and contributions via pull requests or issues are always warmly welcomed!
+> **Developer Disclaimer:** This documentation is compiled directly from personal reverse-engineering, testing, and hands-on experiments by the author on Windows Phone 8.1 Silverlight. Because Microsoft never published complete official documentation for the internal Live Lock Screen extensibility framework, these findings are based on the author's own reverse engineering and real-device testing, and may not be 100% complete or universally accurate across all Lumia models and firmware revisions. Feedback, bug reports, and contributions via pull requests or issues are always warmly welcomed!
 
 ---
 
