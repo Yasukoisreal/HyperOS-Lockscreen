@@ -118,11 +118,24 @@ Declare the lock UI capability and the lock screen extension contracts:
     </Capabilities>
 
     <!-- Default Entry Point: Must point to the Router Gateway -->
+    <!-- ActivationPolicy="Resume" is mandatory: enables instant warm-resume on screen wake-up -->
     <Tasks>
       <DefaultTask Name="_default" NavigationPage="LockRouter.xaml" ActivationPolicy="Resume" />
     </Tasks>
 
-    <!-- Register Extensibility Extension Contracts with the OS -->
+    <!-- Standard PrimaryToken (required by WMAppManifest schema before <Extensions>) -->
+    <Tokens>
+      <PrimaryToken TokenID="AppToken" TaskName="_default">
+        <TemplateFlip>
+          <SmallImageURI IsRelative="true" IsResource="false">Assets\Tiles\FlipCycleTileSmall.png</SmallImageURI>
+          <Count>0</Count>
+          <BackgroundImageURI IsRelative="true" IsResource="false">Assets\Tiles\FlipCycleTileMedium.png</BackgroundImageURI>
+          <Title>CustomLockScreen</Title>
+        </TemplateFlip>
+      </PrimaryToken>
+    </Tokens>
+
+    <!-- Register Extensibility Extension Contracts with the OS (MUST be placed after </Tokens>) -->
     <Extensions>
       <!-- Contract 1: Designates the app as a Live Lock Screen Application -->
       <Extension ExtensionName="LockScreen_Application"
@@ -140,12 +153,13 @@ Declare the lock UI capability and the lock screen extension contracts:
 </Deployment>
 ```
 
-#### Consumer ID Reference:
-| Consumer ID GUID | Extension Name | Description |
-|---|---|---|
-| `{CD4601F6-351B-43C7-9087-6B12BD98ED63}` | `LockScreen_Application` | Internal Windows Phone 8.1 Shell consumer ID. Designates the application as a Live Lock Screen host process for `AgHost.exe` and enables programmatic registration via `ExtensibilityApp.RegisterLockScreenApplication()`. |
-| `{111DFF24-AA15-4A96-8006-2BFF8122084F}` | `LockScreen_Background` | Allows the application to appear in the phone's **Settings > lock screen > Background** dropdown to supply static wallpaper images. |
-| `ID_CAP_SHELL_DEVICE_LOCK_UI_API` | Lock UI Capability | Grants Silverlight execution privileges to call `Windows.Phone.System.SystemProtection` APIs. |
+#### Consumer ID & Parameter Reference:
+| Property / GUID | Description |
+|---|---|
+| `{CD4601F6-351B-43C7-9087-6B12BD98ED63}` | **LockScreen_Application**: Internal Windows Phone 8.1 Shell consumer ID. Designates the application as a Live Lock Screen host process for `AgHost.exe` and enables programmatic registration via `ExtensibilityApp.RegisterLockScreenApplication()`. |
+| `{111DFF24-AA15-4A96-8006-2BFF8122084F}` | **LockScreen_Background**: Allows the application to appear in the phone's **Settings > lock screen > Background** dropdown to supply static wallpaper images. |
+| `ID_CAP_SHELL_DEVICE_LOCK_UI_API` | **Lock UI Capability**: Mandatory. Grants Silverlight execution privileges to call `Windows.Phone.System.SystemProtection` APIs (`ScreenLocked`, `RequestScreenUnlock`). |
+| `ActivationPolicy="Resume"` | **Activation Policy**: Critical for performance. Instructs the OS to warm-resume the suspended process in memory instead of cold-booting, preventing the "Resuming..." delay when turning on the screen. |
 
 ### 3.2 Descriptor File: `Extensions\LockAppExtension.xml`
 
@@ -222,18 +236,18 @@ namespace CustomLockScreen
                 if (SystemProtection.ScreenLocked)
                 {
                     // Device is locked -> Route directly to the Live Lock Screen view
-                    NavigationService.Navigate(new Uri("/Pages/LockView.xaml", UriKind.Relative));
+                    NavigationService.Navigate(new Uri("/LockView.xaml", UriKind.Relative));
                 }
                 else
                 {
-                    // Device is unlocked -> Route to the customization/settings view
-                    NavigationService.Navigate(new Uri("/Pages/SettingsPage.xaml", UriKind.Relative));
+                    // Device is unlocked -> Route to the configuration/settings view
+                    NavigationService.Navigate(new Uri("/MainPage.xaml", UriKind.Relative));
                 }
             }
             catch
             {
                 // Fallback safe routing
-                NavigationService.Navigate(new Uri("/Pages/SettingsPage.xaml", UriKind.Relative));
+                NavigationService.Navigate(new Uri("/MainPage.xaml", UriKind.Relative));
             }
         }
     }
