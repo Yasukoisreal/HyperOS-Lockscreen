@@ -159,6 +159,8 @@ It covers:
 * Performance optimizations and avoiding "Resuming..." on 512MB RAM devices.
 * Complete step-by-step tutorial with compilable code.
 
+> **Note:** As Microsoft never officially published complete documentation for this framework, this guide is compiled from community reverse engineering and real-device testing; contributions and corrections are welcome!
+
 ---
 
 ## 📜 Credits & Acknowledgments
