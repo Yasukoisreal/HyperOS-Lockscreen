@@ -221,6 +221,7 @@ namespace HyperOS.Pages
                     LoadForeground();
                     ApplyDepthLayers();
                     ApplyFreePositions();
+                    ApplySignatureStyle();
 
                     // Replay animations (user just came back from settings)
                     PlayEntryAnimations();
@@ -894,10 +895,8 @@ namespace HyperOS.Pages
                 dateAlign = (int)s["DateAlign"];
             if (s.Contains("ClockLayout"))
                 clockLayout = (int)s["ClockLayout"];
-            if (s.Contains("ClockOpacity"))
-                clockOpacity = (double)s["ClockOpacity"];
-            if (s.Contains("ClockHue"))
-                clockHue = (int)s["ClockHue"];
+            clockOpacity = s.Contains("ClockOpacity") ? (double)s["ClockOpacity"] : 1.0;
+            clockHue = s.Contains("ClockHue") ? (int)s["ClockHue"] : -1;
 
             // Owner info
             if (s.Contains("OwnerInfo"))
@@ -913,24 +912,24 @@ namespace HyperOS.Pages
                     OwnerInfoText.Visibility = Visibility.Collapsed;
                 }
             }
+            else
+            {
+                OwnerInfoText.Visibility = Visibility.Collapsed;
+            }
 
             // Weather
-            if (s.Contains("ShowWeather"))
-                showWeather = (bool)s["ShowWeather"];
+            showWeather = s.Contains("ShowWeather") ? (bool)s["ShowWeather"] : false;
             if (s.Contains("WeatherLat"))
                 weatherLat = (double)s["WeatherLat"];
             if (s.Contains("WeatherLon"))
                 weatherLon = (double)s["WeatherLon"];
 
             // Countdown
-            if (s.Contains("ShowCountdown"))
-                showCountdown = (bool)s["ShowCountdown"];
+            showCountdown = s.Contains("ShowCountdown") ? (bool)s["ShowCountdown"] : false;
 
             // Background filters
-            if (s.Contains("UseMatte"))
-                useMatte = (bool)s["UseMatte"];
-            if (s.Contains("UseRibbed"))
-                useRibbed = (bool)s["UseRibbed"];
+            useMatte = s.Contains("UseMatte") ? (bool)s["UseMatte"] : false;
+            useRibbed = s.Contains("UseRibbed") ? (bool)s["UseRibbed"] : false;
             if (s.Contains("CountdownTarget"))
                 countdownTarget = (DateTime)s["CountdownTarget"];
             if (s.Contains("CountdownName"))
@@ -938,14 +937,10 @@ namespace HyperOS.Pages
 
 
             // Depth effect
-            if (s.Contains("UseDepthEffect"))
-                useDepthEffect = (bool)s["UseDepthEffect"];
-            if (s.Contains("DepthHourBehind"))
-                depthHourBehind = (bool)s["DepthHourBehind"];
-            if (s.Contains("DepthColonBehind"))
-                depthColonBehind = (bool)s["DepthColonBehind"];
-            if (s.Contains("DepthMinuteBehind"))
-                depthMinuteBehind = (bool)s["DepthMinuteBehind"];
+            useDepthEffect = s.Contains("UseDepthEffect") ? (bool)s["UseDepthEffect"] : false;
+            depthHourBehind = s.Contains("DepthHourBehind") ? (bool)s["DepthHourBehind"] : true;
+            depthColonBehind = s.Contains("DepthColonBehind") ? (bool)s["DepthColonBehind"] : true;
+            depthMinuteBehind = s.Contains("DepthMinuteBehind") ? (bool)s["DepthMinuteBehind"] : true;
 
             // Free layout positions (from Editor)
             hasFreeLayout = s.Contains("ClockX");
@@ -960,30 +955,18 @@ namespace HyperOS.Pages
             }
 
             // Signature
-            if (s.Contains("ShowSignature"))
-                showSignature = (bool)s["ShowSignature"];
-            if (s.Contains("SignatureText"))
-                sigText = (string)s["SignatureText"];
-            if (s.Contains("SignatureFont"))
-                sigFontIndex = (int)s["SignatureFont"];
-            if (s.Contains("SignatureSpacing"))
-                sigSpacing = (double)s["SignatureSpacing"];
-            if (s.Contains("SignatureAlign"))
-                sigAlign = (int)s["SignatureAlign"];
-            if (s.Contains("SignatureLayout"))
-                sigLayout = (int)s["SignatureLayout"];
-            if (s.Contains("SignatureColor"))
-                sigColorIdx = (int)s["SignatureColor"];
-            if (s.Contains("SignatureBlend"))
-                sigBlend = (int)s["SignatureBlend"];
-            if (s.Contains("SignatureOpacity"))
-                sigOpacity = (double)s["SignatureOpacity"];
-            if (s.Contains("SignatureHue"))
-                sigHue = (int)s["SignatureHue"];
-            if (s.Contains("SignatureX"))
-                signatureX = (double)s["SignatureX"];
-            if (s.Contains("SignatureY"))
-                signatureY = (double)s["SignatureY"];
+            showSignature = s.Contains("ShowSignature") ? (bool)s["ShowSignature"] : false;
+            sigText = s.Contains("SignatureText") ? (string)s["SignatureText"] : "";
+            sigFontIndex = s.Contains("SignatureFont") ? (int)s["SignatureFont"] : 0;
+            sigSpacing = s.Contains("SignatureSpacing") ? (double)s["SignatureSpacing"] : 0;
+            sigAlign = s.Contains("SignatureAlign") ? (int)s["SignatureAlign"] : 1;
+            sigLayout = s.Contains("SignatureLayout") ? (int)s["SignatureLayout"] : 0;
+            sigColorIdx = s.Contains("SignatureColor") ? (int)s["SignatureColor"] : 0;
+            sigBlend = s.Contains("SignatureBlend") ? (int)s["SignatureBlend"] : 0;
+            sigOpacity = s.Contains("SignatureOpacity") ? (double)s["SignatureOpacity"] : 1.0;
+            sigHue = s.Contains("SignatureHue") ? (int)s["SignatureHue"] : -1;
+            signatureX = s.Contains("SignatureX") ? (double)s["SignatureX"] : 30;
+            signatureY = s.Contains("SignatureY") ? (double)s["SignatureY"] : 650;
         }
 
         private void SetClockFont(FontFamily ff)
@@ -1484,6 +1467,8 @@ namespace HyperOS.Pages
                 RhombusDot.Opacity = 1;
                 StackedGrid.Opacity = 1;
                 StackedGridBehind.Visibility = Visibility.Collapsed;
+                UpwardGrid.Opacity = 1;
+                UpwardGridBehind.Visibility = Visibility.Collapsed;
                 return;
             }
 
@@ -1493,10 +1478,11 @@ namespace HyperOS.Pages
             BehindClockPanel.HorizontalAlignment = ClockPanel.HorizontalAlignment;
 
             bool isStacked = clockLayout == 7;
+            bool isUpward = clockLayout == 8;
 
-            if (isAnalog || isStacked)
+            if (isAnalog || isStacked || isUpward)
             {
-                // Analog/Stacked: treat entire clock as behind
+                // Analog/Stacked/Upward: treat entire clock as behind
                 BehindForegroundGrid.Visibility = Visibility.Visible;
                 AnalogClockCanvas.Opacity = 0;
                 AnalogClockCanvasBehind.Visibility = Visibility.Visible;
@@ -1505,6 +1491,8 @@ namespace HyperOS.Pages
                 MinutePart.Opacity = 0;
                 StackedGrid.Opacity = 0;
                 StackedGridBehind.Visibility = Visibility.Visible;
+                UpwardGrid.Opacity = 0;
+                UpwardGridBehind.Visibility = Visibility.Visible;
             }
             else
             {
@@ -1514,6 +1502,8 @@ namespace HyperOS.Pages
                 AnalogClockCanvas.Opacity = 1;
                 StackedGridBehind.Visibility = Visibility.Collapsed;
                 StackedGrid.Opacity = 1;
+                UpwardGridBehind.Visibility = Visibility.Collapsed;
+                UpwardGrid.Opacity = 1;
 
                 double hOp = depthHourBehind ? 0 : 1;
                 double hOpB = depthHourBehind ? 1 : 0;
@@ -2066,6 +2056,9 @@ namespace HyperOS.Pages
             public double ClockX = -1, ClockY = -1;
             public bool UseDepthEffect;
             public bool DepthHourBehind = true, DepthColonBehind = true, DepthMinuteBehind = true;
+            public bool UseMatte, UseRibbed;
+            public int ClockHue = -1;
+            public int SignatureHue = -1;
             public string BackgroundImage; // e.g. "Assets/Pictures/classic02.jpg"
         }
 
@@ -2139,15 +2132,18 @@ namespace HyperOS.Pages
                 var o = msPresetsOriginal[i];
                 msPresets.Add(new MSPreset
                 {
-                    Name = o.Name, Subtitle = o.Subtitle,
+                    Name = o.Name, Subtitle = o.Subtitle, Category = o.Category,
                     ClockStyle = o.ClockStyle, ClockSize = o.ClockSize,
                     ClockColor = o.ClockColor, ClockBlend = o.ClockBlend,
+                    ClockHue = o.ClockHue, SignatureHue = o.SignatureHue,
                     DateAlign = o.DateAlign, ClockLayout = o.ClockLayout,
                     ClockX = o.ClockX, ClockY = o.ClockY,
                     UseDepthEffect = o.UseDepthEffect,
                     DepthHourBehind = o.DepthHourBehind,
                     DepthColonBehind = o.DepthColonBehind,
                     DepthMinuteBehind = o.DepthMinuteBehind,
+                    UseMatte = o.UseMatte,
+                    UseRibbed = o.UseRibbed,
                     PreviewBg = o.PreviewBg, PreviewClockColor = o.PreviewClockColor,
                     BackgroundImage = o.BackgroundImage
                 });
@@ -2165,6 +2161,7 @@ namespace HyperOS.Pages
             if (s.Contains("ClockSize")) try { first.ClockSize = (int)s["ClockSize"]; } catch { }
             if (s.Contains("ClockColor")) try { first.ClockColor = (int)s["ClockColor"]; } catch { }
             if (s.Contains("ClockBlend")) try { first.ClockBlend = (int)s["ClockBlend"]; } catch { }
+            if (s.Contains("ClockHue")) try { first.ClockHue = (int)s["ClockHue"]; } catch { }
             if (s.Contains("ClockLayout")) try { first.ClockLayout = (int)s["ClockLayout"]; } catch { }
             if (s.Contains("ClockX")) try { first.ClockX = (double)s["ClockX"]; } catch { }
             if (s.Contains("ClockY")) try { first.ClockY = (double)s["ClockY"]; } catch { }
@@ -2172,6 +2169,9 @@ namespace HyperOS.Pages
             if (s.Contains("DepthHourBehind")) try { first.DepthHourBehind = (bool)s["DepthHourBehind"]; } catch { }
             if (s.Contains("DepthColonBehind")) try { first.DepthColonBehind = (bool)s["DepthColonBehind"]; } catch { }
             if (s.Contains("DepthMinuteBehind")) try { first.DepthMinuteBehind = (bool)s["DepthMinuteBehind"]; } catch { }
+            if (s.Contains("UseMatte")) try { first.UseMatte = (bool)s["UseMatte"]; } catch { }
+            if (s.Contains("UseRibbed")) try { first.UseRibbed = (bool)s["UseRibbed"]; } catch { }
+            first.PreviewClockColor = ClockRenderer.ResolveClockColor(first.ClockColor, first.ClockBlend, first.ClockHue);
 
             for (int i = 1; i < msPresets.Count; i++)
             {
@@ -2183,6 +2183,7 @@ namespace HyperOS.Pages
                     if (s.Contains(pfx + "ClockSize")) try { p.ClockSize = (int)s[pfx + "ClockSize"]; } catch { }
                     if (s.Contains(pfx + "ClockColor")) try { p.ClockColor = (int)s[pfx + "ClockColor"]; } catch { }
                     if (s.Contains(pfx + "ClockBlend")) try { p.ClockBlend = (int)s[pfx + "ClockBlend"]; } catch { }
+                    if (s.Contains(pfx + "ClockHue")) try { p.ClockHue = (int)s[pfx + "ClockHue"]; } catch { }
                     if (s.Contains(pfx + "ClockLayout")) try { p.ClockLayout = (int)s[pfx + "ClockLayout"]; } catch { }
                     if (s.Contains(pfx + "ClockX")) try { p.ClockX = (double)s[pfx + "ClockX"]; } catch { }
                     if (s.Contains(pfx + "ClockY")) try { p.ClockY = (double)s[pfx + "ClockY"]; } catch { }
@@ -2190,6 +2191,9 @@ namespace HyperOS.Pages
                     if (s.Contains(pfx + "DepthHourBehind")) try { p.DepthHourBehind = (bool)s[pfx + "DepthHourBehind"]; } catch { }
                     if (s.Contains(pfx + "DepthColonBehind")) try { p.DepthColonBehind = (bool)s[pfx + "DepthColonBehind"]; } catch { }
                     if (s.Contains(pfx + "DepthMinuteBehind")) try { p.DepthMinuteBehind = (bool)s[pfx + "DepthMinuteBehind"]; } catch { }
+                    if (s.Contains(pfx + "UseMatte")) try { p.UseMatte = (bool)s[pfx + "UseMatte"]; } catch { }
+                    if (s.Contains(pfx + "UseRibbed")) try { p.UseRibbed = (bool)s[pfx + "UseRibbed"]; } catch { }
+                    p.PreviewClockColor = ClockRenderer.ResolveClockColor(p.ClockColor, p.ClockBlend, p.ClockHue);
                 }
             }
 
@@ -2251,7 +2255,10 @@ namespace HyperOS.Pages
             {
                 using (var store = IsolatedStorageFile.GetUserStoreForApplication())
                 {
-                    string savedFile = "Background_" + index + ".jpg";
+                    string savedFile = (preset.UseMatte || preset.UseRibbed) && store.FileExists("Background_Filtered_" + index + ".jpg")
+                        ? "Background_Filtered_" + index + ".jpg"
+                        : "Background_" + index + ".jpg";
+
                     if (store.FileExists(savedFile))
                     {
                         using (var stream = store.OpenFile(savedFile, System.IO.FileMode.Open, System.IO.FileAccess.Read))
@@ -2296,14 +2303,20 @@ namespace HyperOS.Pages
             var transBrush = new SolidColorBrush(Colors.Transparent);
             bool hasDepth = preset.UseDepthEffect && msForeground != null;
 
+            // Date brush logic: Stacked/Upward layout shares the clock color, others use translucent white
+            var baseDateBrush = (preset.ClockLayout == 7 || preset.ClockLayout == 8) ? brush : new SolidColorBrush(MC.FromArgb(180, 255, 255, 255));
+            bool isFullBehind = preset.ClockLayout == 7 || preset.ClockLayout == 8 || (preset.ClockLayout >= 2 && preset.ClockLayout <= 4);
+
             // --- BEHIND LAYER (or full layer if no depth) ---
+            var behindDateBrush = hasDepth ? (isFullBehind ? baseDateBrush : transBrush) : baseDateBrush;
+
             var behindStack = ClockRenderer.BuildCardPreview(
                 preset.ClockLayout, preset.ClockStyle, preset.ClockSize,
                 preset.ClockX, preset.ClockY, preset.DateAlign, MS_CW, MS_CH,
-                hasDepth ? (preset.DepthHourBehind ? brush : transBrush) : brush,
-                hasDepth ? (preset.DepthColonBehind ? brush : transBrush) : brush,
-                hasDepth ? (preset.DepthMinuteBehind ? brush : transBrush) : brush,
-                hasDepth ? transBrush : new SolidColorBrush(MC.FromArgb(180, 255, 255, 255)), index);
+                hasDepth ? (preset.DepthHourBehind || isFullBehind ? brush : transBrush) : brush,
+                hasDepth ? (preset.DepthColonBehind || isFullBehind ? brush : transBrush) : brush,
+                hasDepth ? (preset.DepthMinuteBehind || isFullBehind ? brush : transBrush) : brush,
+                behindDateBrush, index);
             inner.Children.Add(behindStack);
 
             // --- FOREGROUND OVERLAY ---
@@ -2316,13 +2329,14 @@ namespace HyperOS.Pages
                 });
 
                 // --- FRONT LAYER ---
+                var frontDateBrush = isFullBehind ? transBrush : baseDateBrush;
                 var frontStack = ClockRenderer.BuildCardPreview(
                     preset.ClockLayout, preset.ClockStyle, preset.ClockSize,
                     preset.ClockX, preset.ClockY, preset.DateAlign, MS_CW, MS_CH,
-                    preset.DepthHourBehind ? transBrush : brush,
-                    preset.DepthColonBehind ? transBrush : brush,
-                    preset.DepthMinuteBehind ? transBrush : brush,
-                    new SolidColorBrush(MC.FromArgb(180, 255, 255, 255)), index);
+                    (preset.DepthHourBehind || isFullBehind) ? transBrush : brush,
+                    (preset.DepthColonBehind || isFullBehind) ? transBrush : brush,
+                    (preset.DepthMinuteBehind || isFullBehind) ? transBrush : brush,
+                    frontDateBrush, index);
                 inner.Children.Add(frontStack);
             }
 
@@ -2424,53 +2438,44 @@ namespace HyperOS.Pages
         {
             var preset = msPresets[msCurrentIndex];
             var s = IsolatedStorageSettings.ApplicationSettings;
+            s["ActivePresetIndex"] = msCurrentIndex;
 
-            string pfx = "Set" + msCurrentIndex + "_";
-            bool hasSavedSlot = s.Contains(pfx + "ClockStyle");
+            string px = "Set" + msCurrentIndex + "_";
 
-            if (hasSavedSlot)
+            // If this preset hasn't been saved yet, initialize its default keys
+            if (!s.Contains(px + "ClockStyle"))
             {
-                // Copy all saved preset slot settings to global keys
-                string[] keys = { "ClockStyle", "ClockPosition", "ClockHAlign", "ClockColor", "ClockBlend", "ClockSize",
-                    "ClockLayout",
-                    "ShowWeather", "ShowCountdown", "UseDepthEffect", "DepthHourBehind", "DepthColonBehind", "DepthMinuteBehind",
-                    "ClockX", "ClockY", "WeatherX", "WeatherY", "CountdownX", "CountdownY",
-                    "bIsAnimOn", "DateAlign", "CountdownName", "CountdownTarget", "OwnerInfo",
-                    "ShowSignature", "SignatureX", "SignatureY", "SignatureText", "SignatureFont",
-                    "SignatureSpacing", "SignatureAlign", "SignatureColor", "SignatureBlend", "SignatureLayout" };
-                foreach (var key in keys)
-                {
-                    string sk = pfx + key;
-                    if (s.Contains(sk)) s[key] = s[sk];
-                }
+                s[px + "ClockStyle"] = preset.ClockStyle;
+                s[px + "ClockSize"] = preset.ClockSize;
+                s[px + "ClockColor"] = preset.ClockColor;
+                s[px + "ClockBlend"] = preset.ClockBlend;
+                s[px + "ClockHue"] = preset.ClockHue;
+                s[px + "SignatureHue"] = preset.SignatureHue;
+                s[px + "DateAlign"] = preset.DateAlign;
+                s[px + "ClockLayout"] = preset.ClockLayout;
+                if (preset.ClockX >= 0) s[px + "ClockX"] = preset.ClockX;
+                if (preset.ClockY >= 0) s[px + "ClockY"] = preset.ClockY;
+                s[px + "UseDepthEffect"] = preset.UseDepthEffect;
+                s[px + "DepthHourBehind"] = preset.DepthHourBehind;
+                s[px + "DepthColonBehind"] = preset.DepthColonBehind;
+                s[px + "DepthMinuteBehind"] = preset.DepthMinuteBehind;
             }
-            else
+
+            // Sync ALL Set{n}_ keys to global keys so EditorPage and LockScreen read correctly
+            string[] keys = { "ClockStyle", "ClockSize", "ClockColor", "ClockBlend", "ClockOpacity", "ClockHue", "DateAlign", "ClockLayout",
+                "ClockX", "ClockY", "UseDepthEffect", "DepthHourBehind", "DepthColonBehind", "DepthMinuteBehind",
+                "UseMatte", "UseRibbed",
+                "ShowWeather", "ShowCountdown", "WeatherX", "WeatherY", "CountdownX", "CountdownY",
+                "ShowSignature", "SignatureText", "SignatureFont", "SignatureSpacing", "SignatureAlign", "SignatureColor", "SignatureBlend", "SignatureOpacity", "SignatureHue", "SignatureX", "SignatureY" };
+            foreach (var key in keys)
             {
-                // Apply preset defaults — reset everything
-                s["ClockStyle"] = preset.ClockStyle;
-                s["ClockSize"] = preset.ClockSize;
-                s["ClockColor"] = preset.ClockColor;
-                s["ClockBlend"] = preset.ClockBlend;
-                s["DateAlign"] = preset.DateAlign;
-                s["ClockLayout"] = preset.ClockLayout;
-                s["ClockPosition"] = 1;   // Center
-                s["ClockHAlign"] = 1;     // Center
-
-                // Set position from preset defaults if available (ISSUE 12 fix)
-                if (preset.ClockX >= 0)
-                    s["ClockX"] = preset.ClockX;
-                else if (s.Contains("ClockX"))
-                    s.Remove("ClockX");
-
-                if (preset.ClockY >= 0)
-                    s["ClockY"] = preset.ClockY;
-                else if (s.Contains("ClockY"))
-                    s.Remove("ClockY");
-
-                // Remove remaining free layout positions
-                string[] posKeys = { "WeatherX", "WeatherY", "CountdownX", "CountdownY" };
-                foreach (var pk in posKeys)
-                    if (s.Contains(pk)) s.Remove(pk);
+                if (s.Contains(px + key))
+                    s[key] = s[px + key];
+                else
+                {
+                    // Remove global keys if preset doesn't have them (fallback to default)
+                    if (s.Contains(key)) s.Remove(key);
+                }
             }
 
             // Handle wallpaper
@@ -2485,6 +2490,16 @@ namespace HyperOS.Pages
                         if (store.FileExists("Background.jpg"))
                             store.DeleteFile("Background.jpg");
                         store.CopyFile(presetBg, "Background.jpg");
+
+                        // Also copy filtered background if it exists
+                        string presetFilteredBg = "Background_Filtered_" + msCurrentIndex + ".jpg";
+                        if (store.FileExists("Background_Filtered.jpg"))
+                            store.DeleteFile("Background_Filtered.jpg");
+                        if (store.FileExists(presetFilteredBg))
+                            store.CopyFile(presetFilteredBg, "Background_Filtered.jpg");
+
+                        s[px + "BackgroundImage"] = null; // Clear fallback string
+                        if (s.Contains("BackgroundImage")) s.Remove("BackgroundImage");
                     }
                     else
                     {
@@ -2508,19 +2523,30 @@ namespace HyperOS.Pages
                                 }
                             }
                             catch { }
+
+                            // Also save the string for Editor fallback
+                            s[px + "BackgroundImage"] = preset.BackgroundImage;
+                            s["BackgroundImage"] = preset.BackgroundImage;
+
+                            // Built-in preset means no custom filters
+                            if (store.FileExists("Background_Filtered.jpg"))
+                                store.DeleteFile("Background_Filtered.jpg");
                         }
                         else
                         {
                             // Truly no wallpaper (analog presets) — remove old one
                             if (store.FileExists("Background.jpg"))
                                 store.DeleteFile("Background.jpg");
+                            if (store.FileExists("Background_Filtered.jpg"))
+                                store.DeleteFile("Background_Filtered.jpg");
+                            if (s.Contains(px + "BackgroundImage")) s.Remove(px + "BackgroundImage");
+                            if (s.Contains("BackgroundImage")) s.Remove("BackgroundImage");
                         }
                     }
                 }
             }
             catch { }
 
-            s["ActivePresetIndex"] = msCurrentIndex;
             s.Save();
             MySetsOverlay.Visibility = Visibility.Collapsed;
 
@@ -2532,12 +2558,24 @@ namespace HyperOS.Pages
             ApplyClockPosition();
             ApplyClockHAlign();
             ApplyClockColor();
-            ApplyFreePositions();
             lastTimeText = "";
             UpdateTime();
+            UpdateBattery();
+            UpdateCountdown();
+            if (showWeather)
+            {
+                if (!weatherTimer.IsEnabled) weatherTimer.Start();
+                FetchWeather(true);
+            }
+            else
+            {
+                weatherTimer.Stop();
+                WeatherText.Visibility = Visibility.Collapsed;
+            }
             LoadForeground();
             ApplyDepthLayers();
-            UpdateCountdown();
+            ApplyFreePositions();
+            ApplySignatureStyle();
         }
 
         private void MySets_Close_Tap(object sender, System.Windows.Input.GestureEventArgs e)

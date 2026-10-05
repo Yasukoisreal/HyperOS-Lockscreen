@@ -82,7 +82,7 @@
                             FontSize="16" Foreground="White" Margin="0,3"/>
                         <TextBlock Text="Based on Lollipop Lockscreen by Flydream"
                             FontSize="16" Foreground="White" Margin="0,3"/>
-                        <TextBlock Text="Weather data by Forecast.io"
+                        <TextBlock Text="Weather data by Open-Meteo"
                             FontSize="16" Foreground="#AAFFFFFF" Margin="0,3"/>
                         <TextBlock Text="© 2026 HyperOS"
                             FontSize="16" Foreground="#88FFFFFF" Margin="0,10,0,0"/>
