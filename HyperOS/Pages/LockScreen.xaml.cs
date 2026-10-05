@@ -345,8 +345,6 @@ namespace HyperOS.Pages
                     sb.Begin();
 
                     ((Storyboard)Resources["DayAnim"]).Begin();
-                    if (Resources.Contains("ParallaxAnim"))
-                        ((Storyboard)Resources["ParallaxAnim"]).Begin();
                 }
                 catch { }
             }
