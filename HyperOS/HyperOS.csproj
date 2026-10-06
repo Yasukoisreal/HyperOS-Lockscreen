@@ -373,14 +373,6 @@
     </Reference>
   </ItemGroup>
 
-  <ItemGroup>
-    <!-- Native InProcessServer DLL placed in root of XAP for runtime activation -->
-    <Content Include="Libs\LockScreen.Bridge.dll">
-      <Link>LockScreen.Bridge.dll</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
-
   <!-- ============ BUILD IMPORTS ============ -->
   <Import Project="$(MSBuildExtensionsPath)\Microsoft\$(TargetFrameworkIdentifier)\$(TargetFrameworkVersion)\Microsoft.$(TargetFrameworkIdentifier).$(TargetFrameworkVersion).Overrides.targets" />
   <Import Project="$(MSBuildExtensionsPath)\Microsoft\$(TargetFrameworkIdentifier)\$(TargetFrameworkVersion)\Microsoft.$(TargetFrameworkIdentifier).CSharp.targets" />
