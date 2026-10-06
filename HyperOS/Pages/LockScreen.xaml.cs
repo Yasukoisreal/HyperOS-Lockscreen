@@ -30,8 +30,6 @@ namespace HyperOS.Pages
         private bool isUnlockingStarted = false;
 
         // Settings flags
-        private bool bIsPasswordEnabled;
-        private bool bIsPatternOn;
         private bool bIsAnimOn = true;
         private int clockStyle = 0;
         private int clockPosition = 1; // 0=Top, 1=Center, 2=Bottom
@@ -44,20 +42,10 @@ namespace HyperOS.Pages
         private int dateAlign = 1;      // 0=Left, 1=Center, 2=Right
         private int clockLayout = 0;    // 0=Horiz, 1=Vert, 2=Analog Minimal, 3=Classic, 4=Swiss
 
-        // PIN
-        private string passwordText = "";
-        private string UserPassword = "";
-        private int passwordTries = 5;
-
-        // Pattern
-        private int patternTries = 5;
-
         // Swipe threshold
         private double yToUnlock = 250;
 
         // Cached resources (CPU optimization)
-        private static readonly SolidColorBrush FilledBrush = new SolidColorBrush(Colors.White);
-        private static readonly SolidColorBrush EmptyBrush = new SolidColorBrush(Colors.Transparent);
         private static readonly SolidColorBrush ChargingBrush = new SolidColorBrush(
             System.Windows.Media.Color.FromArgb(0xAA, 0xFF, 0xCC, 0x00));
         private static readonly SolidColorBrush NormalBatteryBrush = new SolidColorBrush(
@@ -266,10 +254,6 @@ namespace HyperOS.Pages
                 var tb = (CompositeTransform)BehindForegroundGrid.RenderTransform;
                 tb.TranslateY = 0;
                 BehindForegroundGrid.Opacity = 1;
-
-                PassGrid.Visibility = Visibility.Collapsed;
-                PatternGrid.Visibility = Visibility.Collapsed;
-                RecoverGrid.Visibility = Visibility.Collapsed;
             }
         }
 
@@ -351,11 +335,6 @@ namespace HyperOS.Pages
         {
             Dispatcher.BeginInvoke(() =>
             {
-                if (VisualStateManager.GoToState(this, "Normal", true))
-                {
-                    passwordText = "";
-                    UpdatePassCodeInd();
-                }
 
                 var t = (CompositeTransform)OverlayInformationPanel.RenderTransform;
                 if (t != null && t.TranslateY != 0)
@@ -657,17 +636,7 @@ namespace HyperOS.Pages
             if (Math.Abs(t.TranslateY) > yToUnlock || isFlick)
             {
                 isUnlockingStarted = false;
-                if (!bIsPasswordEnabled && !bIsPatternOn)
-                {
-                    // No security — unlock directly
-                    RequestScreenUnlock();
-                }
-                else
-                {
-                    // Show PIN/Pattern
-                    VisualStateManager.GoToState(this, "PassEnter", true);
-                    ShowUnlockMethod();
-                }
+                RequestScreenUnlock();
             }
             else
             {
@@ -729,30 +698,6 @@ namespace HyperOS.Pages
 
         #region Unlock Methods
 
-        private void ShowUnlockMethod()
-        {
-            if (bIsPasswordEnabled)
-            {
-                PassGrid.Visibility = Visibility.Visible;
-                passwordText = "";
-                UpdatePassCodeInd();
-                Inc_Pass.Visibility = Visibility.Collapsed;
-                try { ((Storyboard)Resources["PassAnim"]).Begin(); } catch { }
-            }
-            else if (bIsPatternOn)
-            {
-                if (pattLoc != null) pattLoc.Reset();
-                PatternGrid.Visibility = Visibility.Visible;
-                PatternErrorText.Visibility = Visibility.Collapsed;
-                try { ((Storyboard)Resources["PatternGridAnim"]).Begin(); } catch { }
-            }
-            else
-            {
-                // No security — unlock directly
-                RequestScreenUnlock();
-            }
-        }
-
         private void RequestScreenUnlock()
         {
             // Play unlock animation first if animations enabled
@@ -792,134 +737,6 @@ namespace HyperOS.Pages
         private void CameraShortcut_Tap(object sender, System.Windows.Input.GestureEventArgs e)
         {
             // Unlock screen — WP8.1 doesn't allow direct camera launch from lock
-            RequestScreenUnlock();
-        }
-
-        #endregion
-
-        #region PIN Pad
-
-        private void AddDigit(string digit)
-        {
-            if (passwordText.Length < 4)
-            {
-                passwordText += digit;
-                UpdatePassCodeInd();
-
-                // Auto-submit when 4 digits entered
-                if (passwordText.Length == 4)
-                {
-                    CheckPassword();
-                }
-            }
-        }
-
-        private void _0_Click(object sender, RoutedEventArgs e) { AddDigit("0"); }
-        private void _1_Click(object sender, RoutedEventArgs e) { AddDigit("1"); }
-        private void _2_Click(object sender, RoutedEventArgs e) { AddDigit("2"); }
-        private void _3_Click(object sender, RoutedEventArgs e) { AddDigit("3"); }
-        private void _4_Click(object sender, RoutedEventArgs e) { AddDigit("4"); }
-        private void _5_Click(object sender, RoutedEventArgs e) { AddDigit("5"); }
-        private void _6_Click(object sender, RoutedEventArgs e) { AddDigit("6"); }
-        private void _7_Click(object sender, RoutedEventArgs e) { AddDigit("7"); }
-        private void _8_Click(object sender, RoutedEventArgs e) { AddDigit("8"); }
-        private void _9_Click(object sender, RoutedEventArgs e) { AddDigit("9"); }
-
-        private void OK_Button_Click(object sender, RoutedEventArgs e)
-        {
-            // Backspace — delete last digit
-            if (passwordText.Length > 0)
-            {
-                passwordText = passwordText.Substring(0, passwordText.Length - 1);
-                UpdatePassCodeInd();
-            }
-        }
-
-        private void PassBox_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
-        {
-            // Hidden textbox mirror for PIN
-        }
-
-        private void CheckPassword()
-        {
-            if (passwordText == UserPassword)
-            {
-                // Correct PIN
-                try { ((Storyboard)Resources["PassAnimR"]).Begin(); } catch { }
-                RequestScreenUnlock();
-            }
-            else
-            {
-                // Wrong PIN
-                passwordTries--;
-                passwordText = "";
-                UpdatePassCodeInd();
-                Inc_Pass.Visibility = Visibility.Visible;
-
-                if (passwordTries <= 0)
-                {
-                    PassGrid.Visibility = Visibility.Collapsed;
-                    ShowRecovery();
-                }
-            }
-        }
-
-        private void UpdatePassCodeInd()
-        {
-            Char1.Background = passwordText.Length >= 1 ? FilledBrush : EmptyBrush;
-            Char2.Background = passwordText.Length >= 2 ? FilledBrush : EmptyBrush;
-            Char3.Background = passwordText.Length >= 3 ? FilledBrush : EmptyBrush;
-            Char4.Background = passwordText.Length >= 4 ? FilledBrush : EmptyBrush;
-        }
-
-        #endregion
-
-        #region Pattern Lock
-
-        private void PatternLockMetroControl_PatternMatchSuccess(object sender, EventArgs e)
-        {
-            try { ((Storyboard)Resources["PatternGridAnimR"]).Begin(); } catch { }
-            RequestScreenUnlock();
-        }
-
-        private void pattLoc_PatternMatchUnsuccess(object sender, EventArgs e)
-        {
-            patternTries--;
-            PatternErrorText.Visibility = Visibility.Visible;
-
-            if (patternTries <= 0)
-            {
-                CaptionTextNoTries.Visibility = Visibility.Visible;
-                PatternGrid.Visibility = Visibility.Collapsed;
-                ShowRecovery();
-            }
-        }
-
-        #endregion
-
-        #region Recovery
-
-        private void ShowRecovery()
-        {
-            RecoverGrid.Visibility = Visibility.Visible;
-            try { ((Storyboard)Resources["RecoverGridAnim"]).Begin(); } catch { }
-        }
-
-        private void RecoverButton_Click(object sender, RoutedEventArgs e)
-        {
-            // Reset password/pattern and unlock
-            var settings = IsolatedStorageSettings.ApplicationSettings;
-            settings["bIsPasswordEnabled"] = false;
-            settings["bIsPatternOn"] = false;
-            settings.Save();
-
-            bIsPasswordEnabled = false;
-            bIsPatternOn = false;
-            passwordTries = 5;
-            patternTries = 5;
-
-            try { ((Storyboard)Resources["RecoverGridAnimR"]).Begin(); } catch { }
-            RecoverGrid.Visibility = Visibility.Collapsed;
             RequestScreenUnlock();
         }
 
@@ -983,14 +800,8 @@ namespace HyperOS.Pages
         {
             var s = IsolatedStorageSettings.ApplicationSettings;
 
-            if (s.Contains("bIsPasswordEnabled"))
-                bIsPasswordEnabled = (bool)s["bIsPasswordEnabled"];
-            if (s.Contains("bIsPatternOn"))
-                bIsPatternOn = (bool)s["bIsPatternOn"];
             if (s.Contains("bIsAnimOn"))
                 bIsAnimOn = (bool)s["bIsAnimOn"];
-            if (s.Contains("sPassword"))
-                UserPassword = (string)s["sPassword"];
             if (s.Contains("ClockStyle"))
                 clockStyle = (int)s["ClockStyle"];
             if (s.Contains("ClockPosition"))
@@ -2104,43 +1915,14 @@ namespace HyperOS.Pages
         private void PhoneApplicationPage_BackKeyPress(
             object sender, System.ComponentModel.CancelEventArgs e)
         {
-            // If PIN or Pattern grid is visible, go back to main lock screen
-            if (PassGrid.Visibility == Visibility.Visible)
+            var t = (CompositeTransform)OverlayInformationPanel.RenderTransform;
+            if (t != null && t.TranslateY != 0)
             {
                 e.Cancel = true;
-                PassGrid.Visibility = Visibility.Collapsed;
-                passwordText = "";
-                UpdatePassCodeInd();
-                VisualStateManager.GoToState(this, "PassClose", true);
-
-                // Reset overlay
-                var t = (CompositeTransform)OverlayInformationPanel.RenderTransform;
                 t.TranslateY = 0;
                 OverlayInformationPanel.Opacity = 1;
-                return;
-            }
-
-            if (PatternGrid.Visibility == Visibility.Visible)
-            {
-                e.Cancel = true;
-                PatternGrid.Visibility = Visibility.Collapsed;
-                VisualStateManager.GoToState(this, "PassClose", true);
-
-                var t = (CompositeTransform)OverlayInformationPanel.RenderTransform;
-                t.TranslateY = 0;
-                OverlayInformationPanel.Opacity = 1;
-                return;
-            }
-
-            if (RecoverGrid.Visibility == Visibility.Visible)
-            {
-                e.Cancel = true;
-                RecoverGrid.Visibility = Visibility.Collapsed;
-                VisualStateManager.GoToState(this, "PassClose", true);
-
-                var t = (CompositeTransform)OverlayInformationPanel.RenderTransform;
-                t.TranslateY = 0;
-                OverlayInformationPanel.Opacity = 1;
+                ExtensibilityHelper.EndUnlock();
+                isUnlockingStarted = false;
                 return;
             }
 
@@ -2222,11 +2004,8 @@ namespace HyperOS.Pages
 
         private void LayoutRoot_Hold(object sender, System.Windows.Input.GestureEventArgs e)
         {
-            // Guard: don't open MySets if security panel is open or if user is mid-swipe
-            if (PassGrid.Visibility == Visibility.Visible
-                || PatternGrid.Visibility == Visibility.Visible
-                || RecoverGrid.Visibility == Visibility.Visible
-                || MySetsOverlay.Visibility == Visibility.Visible)
+            // Guard: don't open MySets if overlay is already open or if user is mid-swipe
+            if (MySetsOverlay.Visibility == Visibility.Visible)
                 return;
 
             var t = (CompositeTransform)OverlayInformationPanel.RenderTransform;

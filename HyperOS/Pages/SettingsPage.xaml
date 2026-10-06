@@ -5,7 +5,6 @@
     xmlns:phone="clr-namespace:Microsoft.Phone.Controls;assembly=Microsoft.Phone"
     xmlns:shell="clr-namespace:Microsoft.Phone.Shell;assembly=Microsoft.Phone"
     xmlns:toolkit="clr-namespace:Microsoft.Phone.Controls;assembly=Microsoft.Phone.Controls.Toolkit"
-    xmlns:controls="clr-namespace:HyperOS.Controls"
     SupportedOrientations="Portrait" Orientation="Portrait"
     shell:SystemTray.IsVisible="False"
     Loaded="SettingsPage_Loaded">
@@ -48,57 +47,15 @@
                 <!-- SECURITY -->
                 <TextBlock Text="SECURITY" FontSize="13" Foreground="#55FFFFFF"
                     FontFamily="/Assets/Fonts/MiSans-Demibold.ttf#MiSans" Margin="0,24,0,8"/>
-
-                <!-- PIN Code -->
                 <Grid Background="#14FFFFFF" Margin="0,0,0,0">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Text="PIN Code Lock" FontSize="15" Foreground="White"
-                        FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"
-                        VerticalAlignment="Center" Margin="12,0,0,0"/>
-                    <toolkit:ToggleSwitch x:Name="PinToggle" Grid.Column="1"
-                        Checked="PinToggle_Changed" Unchecked="PinToggle_Changed"/>
+                    <StackPanel Margin="14,12,14,12">
+                        <TextBlock Text="Windows Phone System Security" FontSize="15" Foreground="White"
+                            FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"/>
+                        <TextBlock Text="HyperOS uses your phone's native lock screen PIN. When locked, swipe up to display the system PIN pad."
+                            FontSize="12" Foreground="#88FFFFFF" TextWrapping="Wrap" Margin="0,6,0,0"
+                            FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"/>
+                    </StackPanel>
                 </Grid>
-                <StackPanel x:Name="PinPanel" Visibility="Collapsed" Margin="0,4,0,0">
-                    <TextBox x:Name="PinBox" Background="#14FFFFFF" Foreground="White"
-                        BorderThickness="0" FontSize="16" MaxLength="4"
-                        FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"
-                        InputScope="Number"/>
-                    <Button Content="Save PIN" Click="SavePin_Click"
-                        Background="#14FFFFFF" Foreground="#DDFFFFFF" BorderThickness="0"
-                        FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans" FontSize="15"
-                        HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
-                        Margin="0,4,0,0"/>
-                </StackPanel>
-
-                <!-- Pattern Lock -->
-                <Grid Background="#14FFFFFF" Margin="0,8,0,0">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Text="Pattern Lock" FontSize="15" Foreground="White"
-                        FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"
-                        VerticalAlignment="Center" Margin="12,0,0,0"/>
-                    <toolkit:ToggleSwitch x:Name="PatternToggle" Grid.Column="1"
-                        Checked="PatternToggle_Changed" Unchecked="PatternToggle_Changed"/>
-                </Grid>
-                <StackPanel x:Name="PatternPanel" Visibility="Collapsed" Margin="0,4,0,0">
-                    <Button x:Name="ChangePatternBtn" Content="Change Pattern" Click="ChangePattern_Click"
-                        Background="#14FFFFFF" Foreground="#DDFFFFFF" BorderThickness="0"
-                        FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans" FontSize="15"
-                        HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
-                        Margin="0,4,0,0"/>
-                </StackPanel>
-                <TextBlock x:Name="PatternHint" Text="" FontSize="12" Foreground="#88FFFFFF"
-                    HorizontalAlignment="Center" Margin="0,4,0,0"
-                    FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"/>
-
-                <TextBlock x:Name="SecurityStatus" Text="" FontSize="12"
-                    Foreground="#88FFFFFF" HorizontalAlignment="Center" Margin="0,8,0,0"
-                    FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"/>
 
                 <!-- OWNER INFO -->
                 <TextBlock Text="OWNER INFO" FontSize="13" Foreground="#55FFFFFF"
@@ -153,38 +110,6 @@
 
             </StackPanel>
         </ScrollViewer>
-
-        <!-- Pattern Setup Dialog -->
-        <Grid x:Name="PatternSetupDialog" Visibility="Collapsed" Canvas.ZIndex="100">
-            <Rectangle Fill="#CC000000" Tap="PatternSetupDialog_Cancel_Tap"/>
-            <Border Background="#FF1E1E2E" CornerRadius="16" 
-                    VerticalAlignment="Center" HorizontalAlignment="Center"
-                    Width="380" Padding="20">
-                <StackPanel>
-                    <TextBlock Text="Set Pattern Lock" FontSize="22" FontWeight="Bold" 
-                               Foreground="White" Margin="0,0,0,6"
-                               HorizontalAlignment="Center"
-                               FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"/>
-                    <TextBlock x:Name="PatternSetupHintText" Text="Draw pattern (connect at least 3 dots)" 
-                               FontSize="13" Foreground="#88FFFFFF" Margin="0,0,0,16"
-                               HorizontalAlignment="Center"
-                               FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"/>
-
-                    <controls:PatternLockMetroControl x:Name="SetupPatternControl"
-                        Width="320" Height="320"
-                        HorizontalAlignment="Center"
-                        IsRegisterationMode="True"
-                        RegistrationSuccess="SetupPatternControl_RegistrationSuccess"
-                        RegistrationInvalid="SetupPatternControl_RegistrationInvalid"/>
-
-                    <Button Content="Cancel" Click="PatternSetupDialog_Cancel_Click"
-                        Background="#14FFFFFF" Foreground="#DDFFFFFF" BorderThickness="0"
-                        FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans" FontSize="15"
-                        HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
-                        Margin="0,16,0,0"/>
-                </StackPanel>
-            </Border>
-        </Grid>
     </Grid>
 
 </phone:PhoneApplicationPage>
