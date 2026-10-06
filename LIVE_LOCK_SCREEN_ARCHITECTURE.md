@@ -556,6 +556,22 @@ private void OnManipulationDelta(object sender, ManipulationDeltaEventArgs e)
 }
 ```
 
+#### The Decoupled Static Wallpaper vs. Translating Foreground Interaction Pattern
+In modern high-fidelity lock screen designs (including HyperOS and Windows Phone's most polished themes), dragging the entire page as a single rigid sheet often looks unpolished and causes letterboxing artifacts. Instead, production architectures implement a **decoupled multi-layer gesture model**:
+
+1. **During Touch Drag (`ManipulationDelta`):**
+   - **Wallpaper Remains Static ($Y = 0$):** The background image container (`BackgroundContainer`) is pinned strictly at $Y=0$ and never translates during the touch drag. This anchors the visual composition and eliminates jarring black bars at the bottom.
+   - **Foreground Translates & Fades:** Only the foreground elements (clock typography, date, notification badges, interactive widgets) track the user's finger displacement and smoothly fade out:
+     ```csharp
+     ForegroundTransform.TranslateY = clampedDeltaY;
+     ForegroundPanel.Opacity = 1.0 - Math.Min(1.0, Math.Abs(clampedDeltaY) / 450.0);
+     ```
+2. **Upon Touch Release (`ManipulationCompleted`):**
+   - **If Gesture Meets Unlock Threshold:** The foreground elements fade to zero, and **only then** does the background wallpaper run a smooth upward slide animation:
+     - On devices with a PIN: Wallpaper translates up to `unlockThreshold` (`-pinpadHeight`), cleanly revealing the OS PIN pad.
+     - On devices without a PIN: Wallpaper translates off the screen (`-800px`), followed by `SystemProtection.RequestScreenUnlock()`.
+   - **If Gesture is Aborted / Below Threshold:** The wallpaper remains undisturbed at $Y=0$, and only the foreground typography and widgets run a spring-back animation to snap back to position with full opacity.
+
 #### Quota & Deceleration Inertia Model (from Tetra Lockscreen):
 When the user releases touch (`ManipulationCompleted`), Tetra evaluates whether the gesture meets the unlock threshold using an **exact physical deceleration formula**:
 
@@ -601,24 +617,110 @@ private void OnManipulationCompleted(object sender, ManipulationCompletedEventAr
         PlayBounceBackAnimation();
     }
 }
+```
 
-private void PlayBounceBackAnimation()
+### 5.3 Custom Mathematical Spring Physics (`LocksScreenBounceEase`) & Multi-Keyframe Snap-Back
+
+Rather than using generic linear or cubic animations, Microsoft's *Live Lock Screen BETA* engineered a dedicated mathematical easing class inheriting from `System.Windows.Media.Animation.EasingFunctionBase` to model elastic spring physics when a swipe is cancelled:
+
+#### 1. The Official `LocksScreenBounceEase` Easing Class
+```csharp
+using System;
+using System.Windows;
+using System.Windows.Media.Animation;
+
+namespace LockScreen.Utils
 {
-    var sb = new Storyboard();
-    var bounce = new DoubleAnimation
+    public class LocksScreenBounceEase : EasingFunctionBase
     {
-        To = 0.0,
-        Duration = TimeSpan.FromSeconds(1.5),
-        EasingFunction = new BounceEase { Bounces = 2, Bounciness = 1.9 }
-    };
-    Storyboard.SetTarget(bounce, ContentTransform);
-    Storyboard.SetTargetProperty(bounce, new PropertyPath("TranslateY"));
-    sb.Children.Add(bounce);
-    sb.Begin();
+        public static readonly DependencyProperty DistanceProperty = 
+            DependencyProperty.Register("Distance", typeof(double), typeof(LocksScreenBounceEase), new PropertyMetadata(0.0));
+
+        public static readonly DependencyProperty BouncinessProperty = 
+            DependencyProperty.Register("Bounciness", typeof(double), typeof(LocksScreenBounceEase), new PropertyMetadata(2.0));
+
+        public double Distance
+        {
+            get { return (double)GetValue(DistanceProperty); }
+            set { SetValue(DistanceProperty, value); }
+        }
+
+        public double Bounciness
+        {
+            get { return (double)GetValue(BouncinessProperty); }
+            set { SetValue(BouncinessProperty, value); }
+        }
+
+        protected override double EaseInCore(double normalizedTime)
+        {
+            double num = normalizedTime * 5.0;
+            double d = Math.Log(num + 1.0, 2.0);
+            double num2 = Math.Floor(d);
+            double y = num2 + 1.0;
+            double num3 = (1.0 - Math.Pow(2.0, num2)) / -5.0;
+            double num4 = (1.0 - Math.Pow(2.0, y)) / -5.0;
+            double num5 = (num3 + num4) * 0.5;
+            double num6 = normalizedTime - num5;
+            double num7 = num5 - num3;
+            double num8 = 0.0;
+            switch ((int)num2)
+            {
+                case 2:
+                    num8 = 1.0;
+                    break;
+                case 1:
+                    num8 = 100.0 / Distance;
+                    break;
+                case 0:
+                    num8 = 50.0 / Distance;
+                    break;
+            }
+            return (0.0 - num8) / (num7 * num7) * (num6 - num7) * (num6 + num7);
+        }
+    }
 }
 ```
 
-### 5.3 Requesting the Unlock: `SystemProtection.RequestScreenUnlock()`
+#### 2. Three-Stage Keyframe Snap-Back Animation (`StoryboardHelper`)
+When snapping back after a cancelled drag gesture, *Live Lock Screen BETA* utilized a multi-keyframe sequence combining `CircleEase` and `BounceEase` to deliver a tactile, weighted elastic rebound:
+
+```csharp
+public static void AddDoubleAnimationBounce(this Storyboard storyboard, DependencyObject item, 
+    string property, double firstbounce, double finalvalue, double firstdelay)
+{
+    var anim = new DoubleAnimationUsingKeyFrames();
+    
+    // Keyframe 1: Immediate deceleration to rest position
+    anim.KeyFrames.Add(new EasingDoubleKeyFrame
+    {
+        KeyTime = KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(firstdelay)),
+        Value = finalvalue,
+        EasingFunction = new CircleEase { EasingMode = EasingMode.EaseOut }
+    });
+
+    // Keyframe 2: Quick primary rebound bounce (300ms)
+    anim.KeyFrames.Add(new EasingDoubleKeyFrame
+    {
+        KeyTime = KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(firstdelay + 300.0)),
+        Value = firstbounce,
+        EasingFunction = new CircleEase { EasingMode = EasingMode.EaseOut }
+    });
+
+    // Keyframe 3: Secondary decaying oscillation settling to final value (1500ms)
+    anim.KeyFrames.Add(new EasingDoubleKeyFrame
+    {
+        KeyTime = KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(firstdelay + 1500.0)),
+        Value = finalvalue,
+        EasingFunction = new BounceEase { Bounces = 1, Bounciness = 2.0 }
+    });
+
+    Storyboard.SetTarget(anim, item);
+    Storyboard.SetTargetProperty(anim, new PropertyPath(property));
+    storyboard.Children.Add(anim);
+}
+```
+
+### 5.4 Requesting the Unlock: `SystemProtection.RequestScreenUnlock()`
 
 Once the unlock gesture or animation concludes, pass control back to the operating system:
 
@@ -661,7 +763,7 @@ private void InitiateUnlockSequence()
 }
 ```
 
-### 5.4 Operating System Security Guarantee
+### 5.5 Operating System Security Guarantee
 - **Device has NO native password:** The OS immediately drops the lock screen compositor layer and restores the user to their previous app or Start screen.
 - **Device HAS a native password (PIN configured in Phone Settings):** The operating system **instantly presents the Native Windows Phone PIN Keypad overlay on top**. The user must enter their valid device PIN to gain access.
 - **Conclusion:** A Live Lock Screen application can never compromise device security, bypass PIN protection, or introduce lock screen vulnerabilities.
@@ -672,10 +774,12 @@ private void InitiateUnlockSequence()
 
 Windows Phone 8.1 devices feature either capacitive buttons or on-screen virtual navigation bars. How status elements are integrated defines the visual quality of the lock screen.
 
-### 6.1 Native `SystemTray` Integration Patterns
+### 6.1 Native `SystemTray` Integration & The Edge-to-Edge Rule
 
-#### Pattern A: Native Transparent SystemTray Overlay (Recommended)
-Allows the native status bar (cellular signal bars, Wi-Fi icon, battery level, roaming indicators) to overlay directly onto the lock screen wallpaper without black letterboxing or duplicate clock text:
+Windows Phone 8.1 enforces strict operating system policies regarding the status bar when rendering on the lock screen surface. Understanding these constraints is crucial to achieving edge-to-edge wallpaper rendering without unsightly black bars.
+
+#### The Mandatory Full-Bleed Transparent Pattern (Pattern A)
+To allow custom wallpapers to extend seamlessly behind the status bar without any letterboxing:
 
 ```xml
 <phone:PhoneApplicationPage
@@ -689,12 +793,13 @@ Allows the native status bar (cellular signal bars, Wi-Fi icon, battery level, r
 > **Why `#FFFFFE` instead of `#FFFFFF`?**
 > In Windows Phone 8.1 Silverlight, setting `ForegroundColor="#FFFFFE"` (nearly pure white) forces high-contrast white glyphs without triggering system theme automatic inversion bugs.
 
-#### Pattern B: Pure Immersive Fullscreen (Custom Widgets)
-If the lock screen provides its own custom status widgets:
+#### The "Hiding SystemTray" Fallacy (Why `IsVisible="False"` Fails on Lock Screens)
+In standard Windows Phone Silverlight applications, setting `shell:SystemTray.IsVisible="False"` completely removes the status bar and expands the page canvas to full height. 
 
-```xml
-shell:SystemTray.IsVisible="False"
-```
+**However, on the Live Lock Screen surface, the OS Shell behaves differently:**
+1. **Regulatory & Emergency Requirement:** Due to telecommunications compliance and emergency calling standards (e.g., E911), the operating system Shell mandates that the user must always be able to observe cellular reception, battery status, and roaming state before attempting an emergency call.
+2. **Forced Letterbox Strip:** If a Live Lock Screen page specifies `shell:SystemTray.IsVisible="False"`, the OS does **not** grant the app full vertical pixels. Instead, the OS compositor inserts an opaque black strip across the top (typically 32px on WVGA, 54px on 720p/1080p), severely breaking full-bleed wallpapers.
+3. **Architectural Rule:** Never attempt to hide `SystemTray` on a Live Lock Screen. Always declare `IsVisible="True"` combined with `Opacity="0"` to allow complete edge-to-edge visual bleeding.
 
 ### 6.2 On-Screen Software Navigation Bar Handling
 On devices without capacitive buttons (e.g., Lumia 530, 630, 730), Windows Phone 8.1 displays an on-screen navigation bar at the bottom.
@@ -850,8 +955,49 @@ public void InitializeBadgeLifecycle()
 
 ### 7.5 Performance Rules for Badges
 1. **Snapshot Equality Dirty Checking:** Compare the snapshot hash (alarm state + badge counters + detailed text) before invoking UI thread updates. If unchanged, skip visual tree updates entirely.
-2. **In-Memory Icon Caching:** Store decoded `BitmapImage` instances in a static dictionary keyed by URI. Do not re-allocate bitmap streams every 10 seconds.
+2. **In-Memory Icon Caching:** Store decoded `BitmapImage` instances in a static dictionary keyed by URI. Do not re-allocate bitmap streams every 10 seconds:
+   ```csharp
+   private static readonly Dictionary<string, BitmapImage> _iconCache = new Dictionary<string, BitmapImage>();
+
+   public static BitmapImage GetOrCreateIcon(string key, byte[] rawBytes)
+   {
+       if (_iconCache.TryGetValue(key, out var cached)) return cached;
+       var bmp = new BitmapImage();
+       using (var ms = new MemoryStream(rawBytes)) { bmp.SetSource(ms); }
+       _iconCache[key] = bmp;
+       return bmp;
+   }
+   ```
 3. **Dispatcher Throttling:** Always execute the native bridge query on a background thread (`Task.Run`), then dispatch only the final data snapshot to the UI thread.
+
+### 7.6 Referencing & Packaging Native WinMD Bridges in Visual Studio / MSBuild
+
+In Windows Phone 8.1 Silverlight, native bridges are distributed as pairs: a **WinMD metadata declaration** (`.winmd`) and a **native C++/CX runtime binary** (`.dll`):
+- `LockScreen_Bridge.winmd` + `LockScreen.Bridge.dll` (Gen 1)
+- `Facet_Lockscreen_Bridge.winmd` + `Facet_Lockscreen_Bridge.dll` (Gen 2)
+
+#### Project Configuration in `.csproj`:
+1. **The Metadata Assembly Reference:** Add the `.winmd` file as a managed reference so C# code gets full IntelliSense and type checking:
+   ```xml
+   <ItemGroup>
+     <Reference Include="LockScreen_Bridge">
+       <HintPath>Libs\LockScreen_Bridge.winmd</HintPath>
+     </Reference>
+   </ItemGroup>
+   ```
+2. **The Native Binary Payload:** The companion `.dll` contains native ARM/x86 compiled machine code and **must be packaged directly into the root or output folder of the application XAP**:
+   ```xml
+   <ItemGroup>
+     <Content Include="Libs\LockScreen.Bridge.dll">
+       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+     </Content>
+   </ItemGroup>
+   ```
+
+#### Resolving the MSBuild "Cannot add a link to the file" Warning:
+- **Visual Studio Warning:** `The file 'Libs\LockScreen.Bridge.dll' could not be added to the project. Cannot add a link to the file ... This file is within the project directory tree.`
+- **Cause:** This occurs when a `.csproj` contains `<Link>LockScreen.Bridge.dll</Link>` pointing to a file that is already inside the project directory structure. In MSBuild, the `<Link>` element is reserved strictly for external files located *outside* the project tree.
+- **Resolution:** Remove `<Link>` and use a direct `<Content Include="Libs\LockScreen.Bridge.dll"><CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory></Content>`.
 
 ---
 
@@ -909,7 +1055,78 @@ private void StopClockTimer()
 }
 ```
 
-### 8.2 Battery & Power Source Monitoring
+### 8.2 Typographic Text Clocks (The Algorithmic `NumberToText` Pattern)
+
+Microsoft's *Live Lock Screen BETA* featured an iconic **Typographic** theme that rendered current hours, minutes, and dates entirely as English textual words (e.g., `10:24` $\rightarrow$ `"TEN"`, `"TWENTY-FOUR"`; `23rd` $\rightarrow$ `"TWENTY-THIRD"`).
+
+Rather than hardcoding hundreds of string literals, the official implementation used an algorithmic decomposition pattern (`NumberToText.cs`):
+
+```csharp
+using System;
+using System.Text;
+
+namespace LockScreen.Utils
+{
+    public static class NumberToText
+    {
+        private static readonly string[] _ones = 
+            { "zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine" };
+        private static readonly string[] _onesOrdinal = 
+            { "zero", "first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth", "ninth" };
+        private static readonly string[] _teens = 
+            { "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen" };
+        private static readonly string[] _teensOrdinal = 
+            { "tenth", "eleventh", "twelfth", "thirteenth", "fourteenth", "fifteenth", "sixteenth", "seventeenth", "eighteenth", "nineteen" };
+        private static readonly string[] _tens = 
+            { "", "ten", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety" };
+        private static readonly string[] _tensOrdinal = 
+            { "", "tenth", "twentieth", "thirtieth", "fortieth", "fiftieth", "sixtieth", "seventieth", "eightieth", "ninetieth" };
+
+        public static string Convert(int value)
+        {
+            if (value < 0 || value > 99) return value.ToString();
+            if (value < 10) return _ones[value];
+            if (value < 20) return _teens[value - 10];
+
+            int tensDigit = value / 10;
+            int onesDigit = value % 10;
+            if (onesDigit == 0) return _tens[tensDigit];
+            return string.Format("{0}-{1}", _tens[tensDigit], _ones[onesDigit]);
+        }
+
+        public static string ConvertToOrdinal(int value)
+        {
+            if (value < 1 || value > 31) return value.ToString();
+            if (value < 10) return _onesOrdinal[value];
+            if (value < 20) return _teensOrdinal[value - 10];
+
+            int tensDigit = value / 10;
+            int onesDigit = value % 10;
+            if (onesDigit == 0) return _tensOrdinal[tensDigit];
+            return string.Format("{0}-{1}", _tens[tensDigit], _onesOrdinal[onesDigit]);
+        }
+
+        public static string FormatTimeString(DateTime dt)
+        {
+            int hour12 = dt.Hour % 12;
+            if (hour12 == 0) hour12 = 12;
+            string hourStr = Convert(hour12).ToUpperInvariant();
+
+            string minStr;
+            if (dt.Minute == 0)
+                minStr = "O'CLOCK";
+            else if (dt.Minute < 10)
+                minStr = "OH " + Convert(dt.Minute).ToUpperInvariant();
+            else
+                minStr = Convert(dt.Minute).ToUpperInvariant();
+
+            return string.Format("{0}\n{1}", hourStr, minStr);
+        }
+    }
+}
+```
+
+### 8.3 Battery & Power Source Monitoring
 Safe Silverlight APIs for monitoring battery without polling loops:
 
 ```csharp
@@ -921,7 +1138,7 @@ int chargeLevel = battery.RemainingChargePercent;
 bool isCharging = Microsoft.Phone.Info.DeviceStatus.PowerSource == Microsoft.Phone.Info.PowerSource.External;
 ```
 
-### 8.3 Cellular Carrier Name Querying & Throttling
+### 8.4 Cellular Carrier Name Querying & Throttling
 ```csharp
 // CellularMobileOperator queries can incur minor P/Invoke latency
 // Cache the result and refresh only every 15 minutes or when null
@@ -944,28 +1161,50 @@ private string GetCarrierName()
 }
 ```
 
-### 8.4 Flashlight / Torch Controller
-Using `Windows.Media.Capture.MediaCapture` and `TorchControl`:
+### 8.5 Hardware Flashlight / Torch Controller (`TorchControl`)
 
+On modern lock screens, users expect an immediate flashlight toggle button. Tetra Lockscreen pioneered this capability using Windows Phone 8.1's camera video controller.
+
+#### 1. Manifest Capability:
+Accessing the LED flash hardware requires the camera capability in `Properties\WMAppManifest.xml`:
+```xml
+<Capability Name="ID_CAP_ISV_CAMERA" />
+```
+
+#### 2. Robust Implementation with Haptic Feedback & Re-Entrancy Guard:
 ```csharp
+using System;
+using System.Linq;
+using System.Threading.Tasks;
 using Windows.Devices.Enumeration;
 using Windows.Media.Capture;
 using Windows.Media.Devices;
+using Microsoft.Devices; // For VibrateController
 
-public static class FlashlightController
+public static class FlashlightHelper
 {
     private static MediaCapture _mediaCapture;
+    private static bool _isProcessing = false;
     public static bool IsOn { get; private set; }
+    public static event Action<bool> StateChanged;
 
-    public static async Task<bool> SetTorchAsync(bool enable)
+    public static async Task<bool> ToggleAsync()
     {
+        // Re-entrancy guard: ignore rapid repetitive tapping while hardware is initializing
+        if (_isProcessing) return IsOn;
+        _isProcessing = true;
+
         try
         {
-            if (enable)
+            // Haptic vibration feedback (25ms subtle click)
+            VibrateController.Default.Start(TimeSpan.FromMilliseconds(25));
+
+            if (!IsOn)
             {
                 if (_mediaCapture == null)
                 {
                     var devices = await DeviceInformation.FindAllAsync(DeviceClass.VideoCapture);
+                    // Locate back-facing camera; fallback to primary camera
                     var backCam = devices.FirstOrDefault(x => x.EnclosureLocation != null && 
                                   x.EnclosureLocation.Panel == Windows.Devices.Enumeration.Panel.Back) 
                                   ?? devices.FirstOrDefault();
@@ -975,7 +1214,7 @@ public static class FlashlightController
                     await _mediaCapture.InitializeAsync(new MediaCaptureInitializationSettings
                     {
                         VideoDeviceId = backCam.Id,
-                        AudioDeviceId = string.Empty, // Avoid requesting microphone access
+                        AudioDeviceId = string.Empty, // CRITICAL: Avoid requesting microphone permissions
                         StreamingCaptureMode = StreamingCaptureMode.Video,
                         PhotoCaptureSource = PhotoCaptureSource.VideoPreview
                     });
@@ -987,7 +1226,6 @@ public static class FlashlightController
                     if (torch.PowerSupported) torch.PowerPercent = 100f;
                     torch.Enabled = true;
                     IsOn = true;
-                    return true;
                 }
             }
             else
@@ -1000,54 +1238,121 @@ public static class FlashlightController
                     _mediaCapture = null;
                 }
                 IsOn = false;
-                return true;
             }
+            StateChanged?.Invoke(IsOn);
+            return IsOn;
         }
-        catch { }
-        return false;
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine("Flashlight error: " + ex.Message);
+            return false;
+        }
+        finally
+        {
+            _isProcessing = false;
+        }
+    }
+
+    public static void TurnOffAndDispose()
+    {
+        if (_mediaCapture != null)
+        {
+            try
+            {
+                var torch = _mediaCapture.VideoDeviceController.TorchControl;
+                if (torch.Supported) torch.Enabled = false;
+                _mediaCapture.Dispose();
+            }
+            catch { }
+            _mediaCapture = null;
+            IsOn = false;
+            StateChanged?.Invoke(false);
+        }
     }
 }
 ```
 
 > [!IMPORTANT]
-> Always turn off the flashlight and dispose `MediaCapture` in `OnNavigatedFrom` when the lock screen suspends, otherwise hardware camera access remains locked and battery drains rapidly.
+> Always call `FlashlightHelper.TurnOffAndDispose()` in `OnNavigatedFrom` when the lock screen suspends, otherwise hardware camera access remains locked and battery drains rapidly.
 
-### 8.5 Modular Plugin & Widget Architecture (The Tetra Architecture)
-Tetra Lockscreen implemented a modular, decoupled plugin architecture where rich interactive tools live directly on the lock screen surface.
+### 8.6 Quick Camera Viewfinder & The OS Sandbox Boundary
 
-#### Architectural Components:
-1. **`Plugin` Abstract Base Class:**
-   - Defines plugin metadata (`GetName`, `GetDisplayName`, `GetIcon`).
-   - Declares lifecycle refresh triggers via `UpdateOn` bitwise flags:
-     ```csharp
-     [Flags]
-     public enum UpdateOn : short
-     {
-         None = 0,
-         Interval = 1,       // Periodic timer refresh
-         Initialization = 2, // When page loads (OnNavigatedTo)
-         Activation = 4,     // When user taps widget icon
-         Scheduled = 8,      // Precise scheduled alarm/event
-         Obscured = 0x10,    // Display turned off / Action Center pulled down
-         Unobscured = 0x20   // Display turned on / Action Center closed
-     }
-     ```
-2. **`PluginWidget` UI Base Class (`UserControl`):**
-   - Supports pinning (`IsPinned`) so widgets can remain permanently expanded.
-   - Provides `FadeClock` and `FadeDate` properties: when a widget opens, the lock screen clock/date automatically fades out to reduce visual clutter.
-   - **Gesture Pass-Through:** Forwards `LockscreenManipulationCompleted` up to the page `LockScreenAnimation`. This ensures users can still swipe up across interactive widgets to unlock their phone!
-   - **Date Override:** Enables widgets (such as Calendar) to temporarily override the lock screen's primary date display (`OverrideDate(appointmentTime)`) when scrubbing events.
-3. **Inter-Plugin Messaging Bus:**
-   Plugins can send strongly-typed messages without direct coupling:
+On HyperOS and iOS lock screens, users expect a camera button in the lower-right corner. However, Windows Phone 8.1 enforces strict security sandbox restrictions:
+
+#### The OS Security Sandbox Reality:
+- When the screen is locked (`SystemProtection.ScreenLocked == true`):
+  - The OS **completely blocks** external URI protocol launching (`Windows.System.Launcher.LaunchUriAsync`).
+  - The OS **silently suppresses** chooser tasks such as `Microsoft.Phone.Tasks.CameraCaptureTask`.
+  - There is no public URI scheme to open the native Microsoft Camera app from the lock screen. Only physical hardware shutter keys on high-end Lumias were allowed by OS firmware to trigger the default camera.
+
+#### The Live Lock Screen Solution (In-App Quick Viewfinder):
+Because the lock screen process has `ID_CAP_ISV_CAMERA` capability, the recommended architectural approach is hosting an **in-process camera preview surface**:
+1. Place a XAML `CaptureElement` inside an overlay panel on `LockView.xaml` with `Visibility="Collapsed"`.
+2. When the user taps or swipes the Camera button, animate the overlay open and attach `_mediaCapture`:
    ```csharp
-   // Calendar plugin requests GPS coordinates from Location plugin
-   SendPluginMessage("Location", "CalendarInfo", appointmentData);
-
-   // Location plugin replies after resolving coordinates
-   SendPluginMessage("Calendar", "AppointmentCoordinatesFound", coordinates);
+   QuickCameraViewfinder.Source = _mediaCapture;
+   await _mediaCapture.StartPreviewAsync();
    ```
-4. **Hardware Capability Isolation (`PluginCompatibility`):**
-   Plugins declare hardware prerequisites before being activated (e.g., Activity Tracker checks `StepCounter.IsSupportedAsync()`, Flashlight checks `Camera` capability), preventing crashes on unsupported devices.
+3. Users can snap instant photos to `KnownFolders.SavedPictures` without unlocking the phone, maintaining the fluid experience of modern mobile operating systems.
+
+### 8.7 Modular Plugin & Widget Architecture (The Tetra Architecture)
+
+Tetra Lockscreen (`SilverBullet`) introduced a modular plugin system where rich interactive tools live directly on the lock screen surface.
+
+#### 1. Core Base Classes & Gesture Pass-Through
+- **`Plugin` Class:** Manages lifecycle states, hardware dependencies, and declarative refresh flags:
+  ```csharp
+  [Flags]
+  public enum UpdateOn : short
+  {
+      None = 0,
+      Interval = 1,       // Periodic timer refresh
+      Initialization = 2, // When page loads (OnNavigatedTo)
+      Activation = 4,     // When user taps widget icon
+      Scheduled = 8,      // Precise scheduled alarm/event
+      Obscured = 0x10,    // Display turned off / Action Center pulled down
+      Unobscured = 0x20   // Display turned on / Action Center closed
+  }
+  ```
+- **`PluginWidget` UI Base Class (`UserControl`):**
+  - **Gesture Coexistence (`Gesture Pass-Through`):** Interactive widgets often contain sliders, maps, or buttons. To ensure users can still swipe up across interactive widgets to unlock their phone, `PluginWidget` captures unhandled manipulation events and re-dispatches them to the root page:
+    ```csharp
+    protected override void OnManipulationCompleted(ManipulationCompletedEventArgs e)
+    {
+        base.OnManipulationCompleted(e);
+        // Forward unhandled swipe gestures up to the parent page unlock coordinator
+        LockscreenPage.Current?.OnChildManipulationCompleted(e);
+    }
+    ```
+  - **Clock Fading:** When a widget expands, it sets `FadeClock = true`, firing a storyboard to fade the primary clock numerals to `Opacity = 0.1` so widget information remains legible.
+
+#### 2. Live Interactive Map Widget (`Microsoft.Phone.Maps.Controls.Map`)
+Tetra embedded a full interactive vector map on the lock screen showing the user's location and nearby events:
+- **Capabilities Required:** `<Capability Name="ID_CAP_MAP" />` and `<Capability Name="ID_CAP_LOCATION" />`.
+- **Gesture Coordination:** The map control is placed inside a container that intercepts horizontal pan and pinch gestures for map navigation, while vertical swipes with high velocity ($v_y < -800\text{ px/s}$) pass through to the unlock handler.
+
+#### 3. Activity Tracker & Pedometer Widget (Nokia SensorCore `Lumia.Sense`)
+Tetra integrated real-time step counting and weekly activity charts on supported Lumia hardware (Lumia 630, 730, 830, 930, 1520):
+- **Architecture:** Interfaced with Nokia SensorCore via `Lumia.Sense.StepCounter` and the native Hardware Message Bus client (`HMBServiceClient`):
+  ```csharp
+  using Lumia.Sense;
+
+  public async Task<int> GetTodayStepCountAsync()
+  {
+      // 1. Check if hardware SensorCore is supported on this device
+      if (!await StepCounter.IsSupportedAsync()) return 0;
+
+      // 2. Obtain default step counter instance
+      using (var counter = await StepCounter.GetDefaultAsync())
+      {
+          // 3. Query accumulated steps since midnight
+          DateTime midnight = DateTime.Today;
+          var count = await counter.GetStepCountAtAsync(midnight);
+          return (int)count.WalkSteps + (int)count.RunSteps;
+      }
+  }
+  ```
+- **Fallback Grace:** On devices lacking SensorCore hardware (or non-Lumia Windows Phones), the widget gracefully hides its sensor tab and displays standard calendar information instead.
 
 ---
 
@@ -1167,6 +1472,55 @@ If supporting dynamic Bing daily wallpapers (Live Lock Screen BETA & Tetra):
        store.DeleteFile("bingImageNext.jpg");
    }
    ```
+
+#### Rule 9: Re-Entrancy & Concurrency Locks (`_isProcessing`)
+Users frequently tap interactive buttons repeatedly in rapid succession (e.g., toggling the flashlight, cycling themes, or applying photographic filters).
+- **The Threat:** Launching overlapping asynchronous tasks for camera hardware or image processing causes:
+  1. Multiple `MediaCapture` initializations competing for the exclusive hardware pipeline, throwing native HRESULT exceptions.
+  2. Concurrent pixel matrix loops allocating multiple 10MB `WriteableBitmap` arrays simultaneously, immediately crashing 512MB RAM devices with Out-Of-Memory (OOM).
+- **The Solution:** Always encapsulate asynchronous or heavy compute methods behind re-entrancy flags:
+  ```csharp
+  private static bool _isProcessing = false;
+
+  public static async Task ExecuteSafeAsync()
+  {
+      if (_isProcessing) return;
+      _isProcessing = true;
+      try
+      {
+          // Exclusive hardware or pixel processing work
+      }
+      finally
+      {
+          _isProcessing = false;
+      }
+  }
+  ```
+
+#### Rule 10: Eliminating 16ms Carousel & Animation Timer Churn
+Smooth custom transitions (e.g., carousel snapping, page scrolling) frequently employ 16ms `DispatcherTimer` instances (targeting 60 FPS).
+- **The Bug:** If a user flicks multiple times or leaves the page while an animation is in flight, spawning a new timer without explicitly halting the previous timer causes multiple 16ms loops to run concurrently on the UI thread, causing severe frame drops and battery drain.
+- **The Solution:**
+  1. Always stop and nullify existing timers before starting a new animation:
+     ```csharp
+     if (animTimer != null) { animTimer.Stop(); animTimer = null; }
+     ```
+  2. Always explicitly stop animation timers in `OnNavigatedFrom` to prevent orphan timers running in the background.
+
+#### Rule 11: Visual Tree Recycling & Static Resource Caching
+In periodic snapshot routines (such as updating notification badges or lock screen widgets every 10–30s):
+- **Never call `Children.Clear()` and rebuild elements:** Destroying and re-instantiating dozens of `Border`, `StackPanel`, `Image`, and `TextBlock` controls every 30 seconds causes severe heap fragmentation and Gen-2 GC pauses.
+- **Pre-allocate and mutate:** Create a fixed pool of UI elements during initialization, and update their `.Text`, `.Source`, and `.Visibility` properties in-place.
+- **Cache Static Brushes and Fonts:** Do not call `new FontFamily(...)` or `new SolidColorBrush(...)` inside list or render loops. Maintain static, reusable brushes (e.g., `static readonly SolidColorBrush WhiteBrush = new SolidColorBrush(Colors.White);`).
+
+#### Rule 12: Suppressing Storyboards on Hidden Visual Elements
+If visual containers (such as top status panels or secondary widgets) are collapsed (`Visibility.Collapsed`):
+- Any active storyboards on child elements (e.g. charging pulse animations, indefinite looping fades) **continue to consume GPU compositor and CPU animation cycles** in Silverlight unless explicitly stopped.
+- Always check container visibility before launching storyboards:
+  ```csharp
+  if (PanelContainer == null || PanelContainer.Visibility != Visibility.Visible) return;
+  PulseAnimation.Begin();
+  ```
 
 ---
 
@@ -1493,6 +1847,12 @@ Review this checklist before deploying any Live Lock Screen project:
 | 12 | **Letterboxed Status Bar on Custom Wallpaper** | Black rectangular strip across the top of the screen. | Set `shell:SystemTray.Opacity="0"` and `shell:SystemTray.ForegroundColor="#FFFFFE"` on `PhoneApplicationPage`. |
 | 13 | **Overshooting Drag on PIN-Locked Devices** | Blank space beneath lock screen if pulled beyond PIN pad. | Query `ExtensibilityApp.GetLockPinpadHeight()` and clamp drag limit to the exact PIN pad height. |
 | 14 | **Creeping RAM Leak Over Extended Standby** | Lock screen process eventually crashes or lags after days of uptime. | Follow Tetra pattern: invoke `Application.Current.Terminate()` in `Application_Deactivated` when unlocked. |
+| 15 | **Attempting `SystemTray.IsVisible="False"`** | Black opaque bar forced onto top of screen by OS Shell. | Keep `IsVisible="True"`, but set `Opacity="0"` and `ForegroundColor="#FFFFFE"` for full-bleed wallpapers. |
+| 16 | **Launching External Camera or Apps when Locked** | `Launcher.LaunchUriAsync` or `CameraCaptureTask` fails silently. | When `ScreenLocked == true`, OS blocks external tasks. Embed an in-app viewfinder via `MediaCapture` + `CaptureElement`. |
+| 17 | **Unchecked Rapid Taps on Hardware or Filters** | `MediaCapture` HRESULT crash or OOM during pixel filtering. | Implement a concurrency flag (`_isProcessing`) to guard asynchronous hardware and imaging operations. |
+| 18 | **Orphan Animation Timers during Gestures** | CPU stays pegged at 100% and battery heats up after swipe. | Always `.Stop()` and set `animTimer = null` before starting a new timer, and halt all timers in `OnNavigatedFrom`. |
+| 19 | **Visual Tree Churn in Polling Loops** | Frequent GC freezes and stuttering every 10–30 seconds. | Recycle pre-allocated controls in-place rather than calling `Children.Clear()`; cache static `FontFamily` and `SolidColorBrush` instances. |
+| 20 | **MSBuild `<Link>` Warning for WinMD DLL** | Warning `Cannot add a link to the file... within project directory tree`. | Remove `<Link>` element in `.csproj`; use direct `<Content Include="Libs\LockScreen.Bridge.dll"><CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory></Content>`. |
 
 ---
 
