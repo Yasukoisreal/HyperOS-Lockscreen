@@ -546,15 +546,15 @@
             <!-- Live Viewfinder Canvas / Rectangle -->
             <Canvas Width="480" Height="800" HorizontalAlignment="Center" VerticalAlignment="Center"
                     Tap="CameraViewfinder_Tap">
-                <Rectangle x:Name="CameraViewfinderRect" Width="480" Height="800">
+                <Rectangle x:Name="CameraViewfinderRect" Width="800" Height="480"
+                           Canvas.Left="-160" Canvas.Top="160">
+                    <Rectangle.RenderTransform>
+                        <CompositeTransform x:Name="CameraViewfinderTransform"
+                                            CenterX="400" CenterY="240"
+                                            Rotation="90"/>
+                    </Rectangle.RenderTransform>
                     <Rectangle.Fill>
-                        <VideoBrush x:Name="CameraVideoBrush" Stretch="UniformToFill">
-                            <VideoBrush.RelativeTransform>
-                                <CompositeTransform x:Name="CameraBrushTransform"
-                                                    CenterX="0.5" CenterY="0.5"
-                                                    Rotation="90"/>
-                            </VideoBrush.RelativeTransform>
-                        </VideoBrush>
+                        <VideoBrush x:Name="CameraVideoBrush" Stretch="UniformToFill"/>
                     </Rectangle.Fill>
                 </Rectangle>
             </Canvas>

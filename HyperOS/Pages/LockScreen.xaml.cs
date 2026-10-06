@@ -1043,7 +1043,10 @@ namespace HyperOS.Pages
                 {
                     try
                     {
-                        CameraBrushTransform.Rotation = photoCamera.Orientation;
+                        if (CameraViewfinderTransform != null)
+                        {
+                            CameraViewfinderTransform.Rotation = photoCamera.Orientation;
+                        }
                         ApplyFlashMode();
                     }
                     catch { }
