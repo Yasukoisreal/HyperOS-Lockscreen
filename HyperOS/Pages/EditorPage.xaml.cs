@@ -67,6 +67,7 @@ namespace HyperOS.Pages
         // Filters
         private bool useMatte = false;
         private bool useRibbed = false;
+        private bool isApplyingFilter = false;
 
         // Font & size arrays — redirect to ClockRenderer shared data (RAM: avoids duplicate static arrays)
         private static string[] FontNames { get { return ClockRenderer.FontNames; } }
@@ -2533,76 +2534,89 @@ namespace HyperOS.Pages
 
         private async System.Threading.Tasks.Task ApplyFilterAsync()
         {
-            useMatte = MatteToggle?.IsChecked == true;
-            useRibbed = RibbedToggle?.IsChecked == true;
-            
-            Save("UseMatte", useMatte);
-            Save("UseRibbed", useRibbed);
+            if (isApplyingFilter) return;
+            isApplyingFilter = true;
 
-            if (!useMatte && !useRibbed)
-            {
-                // Delete filtered background when disabled
-                using (var store = System.IO.IsolatedStorage.IsolatedStorageFile.GetUserStoreForApplication())
-                {
-                    if (store.FileExists("Background_Filtered.jpg"))
-                        store.DeleteFile("Background_Filtered.jpg");
-                }
-                LoadPreviewImages();
-                return;
-            }
-
-            if (FilterProcessingText != null) FilterProcessingText.Visibility = Visibility.Visible;
-            
             try
             {
-                using (var store = System.IO.IsolatedStorage.IsolatedStorageFile.GetUserStoreForApplication())
+                useMatte = MatteToggle?.IsChecked == true;
+                useRibbed = RibbedToggle?.IsChecked == true;
+                
+                Save("UseMatte", useMatte);
+                Save("UseRibbed", useRibbed);
+
+                if (!useMatte && !useRibbed)
                 {
-                    if (!store.FileExists("Background.jpg")) return;
-
-                    // Load original
-                    WriteableBitmap wb = null;
-                    using (var stream = store.OpenFile("Background.jpg", System.IO.FileMode.Open, System.IO.FileAccess.Read))
+                    // Delete filtered background when disabled
+                    using (var store = System.IO.IsolatedStorage.IsolatedStorageFile.GetUserStoreForApplication())
                     {
-                        var bmp = new BitmapImage();
-                        bmp.SetSource(stream);
-                        wb = new WriteableBitmap(bmp);
+                        if (store.FileExists("Background_Filtered.jpg"))
+                            store.DeleteFile("Background_Filtered.jpg");
                     }
+                    LoadPreviewImages();
+                    return;
+                }
 
-                    int w = wb.PixelWidth;
-                    int h = wb.PixelHeight;
-                    int[] srcPixels = wb.Pixels;
-                    int[] destPixels = new int[srcPixels.Length];
-                    Array.Copy(srcPixels, destPixels, srcPixels.Length);
-
-                    // Process filter off UI thread
-                    await System.Threading.Tasks.Task.Run(() =>
+                if (FilterProcessingText != null) FilterProcessingText.Visibility = Visibility.Visible;
+                
+                try
+                {
+                    using (var store = System.IO.IsolatedStorage.IsolatedStorageFile.GetUserStoreForApplication())
                     {
-                        if (useMatte)
-                            destPixels = HyperOS.Helpers.FilterHelper.ApplyBoxBlur(destPixels, w, h, 15, 2);
-                        if (useRibbed)
-                            destPixels = HyperOS.Helpers.FilterHelper.ApplyRibbedFilter(destPixels, w, h, 0);
-                    });
+                        if (!store.FileExists("Background.jpg")) return;
 
-                    if (destPixels != null)
-                    {
-                        WriteableBitmap filtered = new WriteableBitmap(w, h);
-                        Array.Copy(destPixels, filtered.Pixels, destPixels.Length);
-
-                        // Save back to Background_Filtered.jpg
-                        if (store.FileExists("Background_Filtered.jpg")) store.DeleteFile("Background_Filtered.jpg");
-                        using (var stream = store.OpenFile("Background_Filtered.jpg", System.IO.FileMode.Create, System.IO.FileAccess.Write))
+                        // Load original
+                        WriteableBitmap wb = null;
+                        using (var stream = store.OpenFile("Background.jpg", System.IO.FileMode.Open, System.IO.FileAccess.Read))
                         {
-                            filtered.SaveJpeg(stream, w, h, 0, 95);
+                            var bmp = new BitmapImage();
+                            bmp.SetSource(stream);
+                            wb = new WriteableBitmap(bmp);
                         }
 
-                        // Reload Preview
-                        LoadPreviewImages();
+                        int w = wb.PixelWidth;
+                        int h = wb.PixelHeight;
+                        int[] srcPixels = wb.Pixels;
+                        int[] destPixels = new int[srcPixels.Length];
+                        Array.Copy(srcPixels, destPixels, srcPixels.Length);
+                        wb = null; // Free WriteableBitmap before heavy filter work
+
+                        // Process filter off UI thread
+                        await System.Threading.Tasks.Task.Run(() =>
+                        {
+                            if (useMatte)
+                                destPixels = HyperOS.Helpers.FilterHelper.ApplyBoxBlur(destPixels, w, h, 15, 2);
+                            if (useRibbed)
+                                destPixels = HyperOS.Helpers.FilterHelper.ApplyRibbedFilter(destPixels, w, h, 0);
+                        });
+
+                        if (destPixels != null)
+                        {
+                            WriteableBitmap filtered = new WriteableBitmap(w, h);
+                            Array.Copy(destPixels, filtered.Pixels, destPixels.Length);
+                            destPixels = null;
+
+                            // Save back to Background_Filtered.jpg
+                            if (store.FileExists("Background_Filtered.jpg")) store.DeleteFile("Background_Filtered.jpg");
+                            using (var stream = store.OpenFile("Background_Filtered.jpg", System.IO.FileMode.Create, System.IO.FileAccess.Write))
+                            {
+                                filtered.SaveJpeg(stream, w, h, 0, 95);
+                            }
+                            filtered = null;
+
+                            // Reload Preview
+                            LoadPreviewImages();
+                        }
                     }
                 }
+                catch { }
             }
-            catch { }
-            
-            if (FilterProcessingText != null) FilterProcessingText.Visibility = Visibility.Collapsed;
+            finally
+            {
+                if (FilterProcessingText != null) FilterProcessingText.Visibility = Visibility.Collapsed;
+                isApplyingFilter = false;
+                GC.Collect();
+            }
         }
 
         private async System.Threading.Tasks.Task RestoreOriginalBackgroundAsync(bool force = false)

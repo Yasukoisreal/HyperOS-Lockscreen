@@ -105,6 +105,7 @@ namespace HyperOS.Pages
         private static readonly SolidColorBrush DotInactive = new SolidColorBrush(Color.FromArgb(80, 255, 255, 255));
 
         private double offsetX; // current horizontal offset (positive = first card visible)
+        private System.Windows.Threading.DispatcherTimer animTimer;
 
         // Fonts/sizes now in ClockRenderer shared class
         private Dictionary<int, BitmapImage> presetWallpapers = new Dictionary<int, BitmapImage>();
@@ -499,6 +500,12 @@ namespace HyperOS.Pages
 
         private void GoToIndex(int index, bool animate)
         {
+            if (animTimer != null)
+            {
+                animTimer.Stop();
+                animTimer = null;
+            }
+
             currentIndex = Math.Max(0, Math.Min(Presets.Count - 1, index));
             double targetOff = -currentIndex * CARD_STEP;
 
@@ -507,10 +514,10 @@ namespace HyperOS.Pages
                 // Smooth animate offsetX → targetOff
                 int steps = 12;
                 double startOff = offsetX;
-                var timer = new System.Windows.Threading.DispatcherTimer();
-                timer.Interval = TimeSpan.FromMilliseconds(16);
+                animTimer = new System.Windows.Threading.DispatcherTimer();
+                animTimer.Interval = TimeSpan.FromMilliseconds(16);
                 int step = 0;
-                timer.Tick += (s, ev) =>
+                animTimer.Tick += (s, ev) =>
                 {
                     step++;
                     double t = (double)step / steps;
@@ -519,12 +526,16 @@ namespace HyperOS.Pages
                     LayoutCards();
                     if (step >= steps)
                     {
-                        timer.Stop();
+                        if (animTimer != null)
+                        {
+                            animTimer.Stop();
+                            animTimer = null;
+                        }
                         offsetX = targetOff;
                         LayoutCards();
                     }
                 };
-                timer.Start();
+                animTimer.Start();
             }
             else
             {
@@ -803,6 +814,12 @@ namespace HyperOS.Pages
         protected override void OnNavigatedFrom(NavigationEventArgs e)
         {
             base.OnNavigatedFrom(e);
+
+            if (animTimer != null)
+            {
+                animTimer.Stop();
+                animTimer = null;
+            }
             
             // AGENTS.md: Aggressively free image resources when not in use
             if (e.NavigationMode != NavigationMode.Back)

@@ -28,6 +28,7 @@ namespace HyperOS.Pages
         private DispatcherTimer timer;
         private DispatcherTimer minuteSyncTimer;
         private DispatcherTimer batteryTimer;
+        private DispatcherTimer msAnimTimer;
         private bool isUnlockingStarted = false;
 
         // Settings flags
@@ -48,8 +49,15 @@ namespace HyperOS.Pages
             System.Windows.Media.Color.FromArgb(0xAA, 0xFF, 0xCC, 0x00));
         private static readonly SolidColorBrush NormalBatteryBrush = new SolidColorBrush(
             System.Windows.Media.Color.FromArgb(0xAA, 0xFF, 0xFF, 0xFF));
+        private static readonly SolidColorBrush BadgeCounterBgBrush = new SolidColorBrush(
+            System.Windows.Media.Color.FromArgb(0x40, 0xFF, 0xFF, 0xFF));
+        private static readonly SolidColorBrush WhiteBrush = new SolidColorBrush(
+            System.Windows.Media.Colors.White);
         private Windows.Phone.Devices.Power.Battery cachedBattery;
         private string lastTimeText = "";
+        private string cachedCarrier = null;
+        private DateTime lastCarrierCheck = DateTime.MinValue;
+        private string lastBadgesSignature = null;
         private bool isFirstLoad = true;
         private bool backgroundLoaded = false;
 
@@ -195,6 +203,7 @@ namespace HyperOS.Pages
             StopClockTimer();
             if (batteryTimer != null) batteryTimer.Stop();
             if (weatherTimer != null) weatherTimer.Stop();
+            if (msAnimTimer != null) { msAnimTimer.Stop(); msAnimTimer = null; }
 
             StartButtonHelper.UnregisterStartKey(OnStartKeyPressed);
             FlashlightHelper.StateChanged -= FlashlightHelper_StateChanged;
@@ -561,14 +570,18 @@ namespace HyperOS.Pages
                     var now = DateTime.Now;
                     string stackDateStr = now.Day + "/" + now.Month;
                     string stackDayStr = now.ToString("ddd").ToUpper();
-                    string carrier = "";
-                    try
+                    if (cachedCarrier == null || (DateTime.Now - lastCarrierCheck).TotalMinutes >= 15)
                     {
-                        carrier = Microsoft.Phone.Net.NetworkInformation.DeviceNetworkInformation.CellularMobileOperator;
+                        try
+                        {
+                            cachedCarrier = Microsoft.Phone.Net.NetworkInformation.DeviceNetworkInformation.CellularMobileOperator;
+                        }
+                        catch { }
+                        if (string.IsNullOrWhiteSpace(cachedCarrier))
+                            cachedCarrier = "No Service";
+                        lastCarrierCheck = DateTime.Now;
                     }
-                    catch { }
-                    if (string.IsNullOrWhiteSpace(carrier))
-                        carrier = "No Service";
+                    string carrier = cachedCarrier;
 
                     if (clockLayout == 7)
                     {
@@ -1252,6 +1265,9 @@ namespace HyperOS.Pages
 
         private void UpdateBattery()
         {
+            if (TopStatusBarPanel == null || TopStatusBarPanel.Visibility != Visibility.Visible)
+                return;
+
             try
             {
                 if (cachedBattery == null)
@@ -1304,6 +1320,7 @@ namespace HyperOS.Pages
                 AlarmStatusIcon.Visibility = Visibility.Collapsed;
                 AlarmDateIcon.Visibility = Visibility.Collapsed;
                 NotificationContainer.Visibility = Visibility.Collapsed;
+                lastBadgesSignature = null;
                 return;
             }
 
@@ -1311,6 +1328,26 @@ namespace HyperOS.Pages
             {
                 var snapshot = LockScreenBridgeHelper.GetSnapshot();
                 if (snapshot == null) return;
+
+                // Build signature to avoid rebuilding visual tree if unchanged
+                System.Text.StringBuilder sb = new System.Text.StringBuilder();
+                sb.Append(snapshot.HasAlarm).Append('|').Append(snapshot.DetailedNotificationText).Append('|');
+                if (snapshot.Badges != null)
+                {
+                    sb.Append(snapshot.Badges.Count);
+                    for (int i = 0; i < snapshot.Badges.Count; i++)
+                    {
+                        var b = snapshot.Badges[i];
+                        if (b != null)
+                        {
+                            sb.Append(':').Append(b.Counter);
+                        }
+                    }
+                }
+                string sig = sb.ToString();
+                if (sig == lastBadgesSignature)
+                    return;
+                lastBadgesSignature = sig;
 
                 // 1. Alarm indicators
                 if (snapshot.HasAlarm)
@@ -1365,7 +1402,7 @@ namespace HyperOS.Pages
                         {
                             var countBorder = new Border
                             {
-                                Background = new SolidColorBrush(MC.FromArgb(0x40, 0xFF, 0xFF, 0xFF)),
+                                Background = BadgeCounterBgBrush,
                                 CornerRadius = new CornerRadius(7),
                                 Padding = new Thickness(4, 0, 4, 1),
                                 Margin = new Thickness(4, 0, 0, 0),
@@ -1376,7 +1413,7 @@ namespace HyperOS.Pages
                                 Text = badge.Counter,
                                 FontFamily = ClockRenderer.GetFont(1), // MiSans Demibold
                                 FontSize = 11,
-                                Foreground = new SolidColorBrush(Colors.White),
+                                Foreground = WhiteBrush,
                                 VerticalAlignment = VerticalAlignment.Center
                             };
                             countBorder.Child = countText;
@@ -2907,22 +2944,37 @@ namespace HyperOS.Pages
 
         private void MSGoToIndex(int index, bool animate)
         {
+            if (msAnimTimer != null)
+            {
+                msAnimTimer.Stop();
+                msAnimTimer = null;
+            }
+
             msCurrentIndex = Math.Max(0, Math.Min(msPresets.Count - 1, index));
             double target = -msCurrentIndex * MS_STEP;
 
             if (animate)
             {
                 int steps = 12; double startOff = msOffsetX; int step = 0;
-                var timer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(16) };
-                timer.Tick += (s2, ev2) =>
+                msAnimTimer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(16) };
+                msAnimTimer.Tick += (s2, ev2) =>
                 {
                     step++;
                     double t = 1 - Math.Pow(1 - (double)step / steps, 3);
                     msOffsetX = startOff + (target - startOff) * t;
                     MSLayoutCards();
-                    if (step >= steps) { timer.Stop(); msOffsetX = target; MSLayoutCards(); }
+                    if (step >= steps)
+                    {
+                        if (msAnimTimer != null)
+                        {
+                            msAnimTimer.Stop();
+                            msAnimTimer = null;
+                        }
+                        msOffsetX = target;
+                        MSLayoutCards();
+                    }
                 };
-                timer.Start();
+                msAnimTimer.Start();
             }
             else { msOffsetX = target; MSLayoutCards(); }
 
@@ -3067,6 +3119,12 @@ namespace HyperOS.Pages
             }
             catch { }
 
+            if (msAnimTimer != null)
+            {
+                msAnimTimer.Stop();
+                msAnimTimer = null;
+            }
+
             s.Save();
             MySetsOverlay.Visibility = Visibility.Collapsed;
 
@@ -3100,6 +3158,11 @@ namespace HyperOS.Pages
 
         private void MySets_Close_Tap(object sender, System.Windows.Input.GestureEventArgs e)
         {
+            if (msAnimTimer != null)
+            {
+                msAnimTimer.Stop();
+                msAnimTimer = null;
+            }
             MySetsOverlay.Visibility = Visibility.Collapsed;
         }
 

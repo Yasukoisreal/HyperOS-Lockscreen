@@ -48,6 +48,7 @@ namespace HyperOS.Helpers
     {
         private static bool _bridgeFailed = false;
         private static string _resolution = null;
+        private static readonly Dictionary<string, BitmapImage> _iconCache = new Dictionary<string, BitmapImage>();
 
         static LockScreenBridgeHelper()
         {
@@ -152,6 +153,10 @@ namespace HyperOS.Helpers
             if (string.IsNullOrEmpty(uri))
                 return null;
 
+            if (_iconCache.ContainsKey(uri))
+                return _iconCache[uri];
+
+            BitmapImage bmp = null;
             try
             {
                 if (uri.StartsWith("res:", StringComparison.OrdinalIgnoreCase))
@@ -167,17 +172,15 @@ namespace HyperOS.Helpers
                         byte[] bytes = LockScreen_Bridge.LockScreenInfoProvider.GetImageFromResource(dllPath, resourceId);
                         if (bytes != null && bytes.Length > 0)
                         {
-                            var bmp = new BitmapImage();
+                            bmp = new BitmapImage();
                             bmp.SetSource(new MemoryStream(bytes));
-                            return bmp;
                         }
                     }
                 }
                 else
                 {
-                    var bmp = new BitmapImage();
+                    bmp = new BitmapImage();
                     bmp.UriSource = new Uri(uri, UriKind.RelativeOrAbsolute);
-                    return bmp;
                 }
             }
             catch
@@ -185,16 +188,27 @@ namespace HyperOS.Helpers
             }
 
             // Default fallback icon
-            try
+            if (bmp == null)
             {
-                var fallback = new BitmapImage();
-                fallback.UriSource = new Uri("/Assets/DefaultLockImage.png", UriKind.Relative);
-                return fallback;
+                try
+                {
+                    const string defaultUri = "/Assets/DefaultLockImage.png";
+                    if (_iconCache.ContainsKey(defaultUri))
+                        return _iconCache[defaultUri];
+
+                    bmp = new BitmapImage();
+                    bmp.UriSource = new Uri(defaultUri, UriKind.Relative);
+                    _iconCache[defaultUri] = bmp;
+                    return bmp;
+                }
+                catch
+                {
+                    return null;
+                }
             }
-            catch
-            {
-                return null;
-            }
+
+            _iconCache[uri] = bmp;
+            return bmp;
         }
 
         private static void PopulateMockSnapshot(LockScreenSnapshotResult result)
@@ -204,15 +218,16 @@ namespace HyperOS.Helpers
 
             try
             {
+                var icon = LoadBadgeIcon("/Assets/DefaultLockImage.png");
                 result.Badges.Add(new NotificationBadgeItem
                 {
                     Counter = "2",
-                    Icon = new BitmapImage(new Uri("/Assets/DefaultLockImage.png", UriKind.Relative))
+                    Icon = icon
                 });
                 result.Badges.Add(new NotificationBadgeItem
                 {
                     Counter = "5",
-                    Icon = new BitmapImage(new Uri("/Assets/DefaultLockImage.png", UriKind.Relative))
+                    Icon = icon
                 });
             }
             catch

@@ -45,6 +45,9 @@ namespace HyperOS.Helpers
 
         public static readonly int[] SizeValues = { 80, 95, 105, 120, 140 };
 
+        public static readonly SolidColorBrush PreviewWeatherBrush = new SolidColorBrush(MC.FromArgb(187, 255, 255, 255));
+        public static readonly SolidColorBrush PreviewCountdownBrush = new SolidColorBrush(MC.FromArgb(153, 255, 255, 255));
+
         #endregion
 
         #region Analog Clock Drawing
@@ -126,7 +129,7 @@ namespace HyperOS.Helpers
                         Text = nums[i],
                         FontSize = diameter * 0.1,
                         Foreground = textBrush,
-                        FontFamily = new FontFamily("/Assets/Fonts/MiSans-Regular.ttf#MiSans"),
+                        FontFamily = Fonts[0],
                         Opacity = 0.8
                     };
                     double tw = nums[i].Length * diameter * 0.05;
@@ -342,9 +345,9 @@ namespace HyperOS.Helpers
                         var wBlock = new TextBlock
                         {
                             Text = "☀ 28°C",
-                            FontFamily = new FontFamily("/Assets/Fonts/MiSans-Regular.ttf#MiSans"),
+                            FontFamily = Fonts[0],
                             FontSize = Math.Max(10, 18 * scale),
-                            Foreground = new SolidColorBrush(MC.FromArgb(187, 255, 255, 255)),
+                            Foreground = PreviewWeatherBrush,
                             HorizontalAlignment = HorizontalAlignment.Left,
                             VerticalAlignment = VerticalAlignment.Top,
                             Margin = new Thickness(wX * scale, wY * (cardH / 800.0), 0, 0)
@@ -362,9 +365,9 @@ namespace HyperOS.Helpers
                         var cBlock = new TextBlock
                         {
                             Text = "2 Days Left",
-                            FontFamily = new FontFamily("/Assets/Fonts/MiSans-Regular.ttf#MiSans"),
+                            FontFamily = Fonts[0],
                             FontSize = Math.Max(10, 16 * scale),
-                            Foreground = new SolidColorBrush(MC.FromArgb(153, 255, 255, 255)),
+                            Foreground = PreviewCountdownBrush,
                             HorizontalAlignment = HorizontalAlignment.Left,
                             VerticalAlignment = VerticalAlignment.Top,
                             Margin = new Thickness(cX * scale, cY * (cardH / 800.0), 0, 0)
@@ -386,7 +389,7 @@ namespace HyperOS.Helpers
                 stack.Children.Add(new TextBlock
                 {
                     Text = DateTime.Now.DayOfWeek.ToString() + " \u00b7 " + DateTime.Now.ToString("MMMM d"),
-                    FontFamily = new FontFamily("/Assets/Fonts/MiSans-Regular.ttf#MiSans"),
+                    FontFamily = Fonts[0],
                     FontSize = Math.Max(8, 20 * scale),
                     Foreground = dateBrush,
                     HorizontalAlignment = dateHAlign,
@@ -487,7 +490,7 @@ namespace HyperOS.Helpers
                 if (dateHAlign == HorizontalAlignment.Left) ta = TextAlignment.Left;
                 else if (dateHAlign == HorizontalAlignment.Right) ta = TextAlignment.Right;
 
-                var carrier = new TextBlock { Text = carrierName, FontSize = sz * 0.20, Foreground = new SolidColorBrush(MC.FromArgb(187, 255, 255, 255)), FontFamily = new FontFamily("/Assets/Fonts/MiSans-Regular.ttf#MiSans"), TextAlignment = ta, HorizontalAlignment = HorizontalAlignment.Stretch };
+                var carrier = new TextBlock { Text = carrierName, FontSize = sz * 0.20, Foreground = PreviewWeatherBrush, FontFamily = Fonts[0], TextAlignment = ta, HorizontalAlignment = HorizontalAlignment.Stretch };
                 Grid.SetRow(carrier, 0);
 
                 var timeStr = DateTime.Now.ToString("HH:mm");
@@ -497,7 +500,7 @@ namespace HyperOS.Helpers
                 var dateP = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = dateHAlign, Margin = new Thickness(0, (int)(-sz * 0.30), 0, 0) };
                 Grid.SetRow(dateP, 2);
                 var date = new TextBlock { Text = DateTime.Now.Day + "/" + DateTime.Now.Month, FontSize = sz * 0.72, Foreground = dateBrush, FontFamily = Fonts[fi] };
-                var day = new TextBlock { Text = DateTime.Now.ToString("ddd").ToUpper(), FontSize = sz * 0.22, Foreground = new SolidColorBrush(MC.FromArgb(153, 255, 255, 255)), FontFamily = new FontFamily("/Assets/Fonts/MiSans-Regular.ttf#MiSans"), VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness((int)(sz * 0.08), (int)(sz * 0.18), 0, 0) };
+                var day = new TextBlock { Text = DateTime.Now.ToString("ddd").ToUpper(), FontSize = sz * 0.22, Foreground = PreviewCountdownBrush, FontFamily = Fonts[0], VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness((int)(sz * 0.08), (int)(sz * 0.18), 0, 0) };
                 dateP.Children.Add(date);
                 dateP.Children.Add(day);
 
