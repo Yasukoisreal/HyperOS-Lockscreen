@@ -42,9 +42,6 @@ namespace HyperOS.Pages
         private int dateAlign = 1;      // 0=Left, 1=Center, 2=Right
         private int clockLayout = 0;    // 0=Horiz, 1=Vert, 2=Analog Minimal, 3=Classic, 4=Swiss
 
-        // Swipe threshold
-        private double yToUnlock = 250;
-
         // Cached resources (CPU optimization)
         private static readonly SolidColorBrush ChargingBrush = new SolidColorBrush(
             System.Windows.Media.Color.FromArgb(0xAA, 0xFF, 0xCC, 0x00));
@@ -321,6 +318,20 @@ namespace HyperOS.Pages
             if (batteryTimer != null) batteryTimer.Stop();
             if (weatherTimer != null) weatherTimer.Stop();
             FlashlightHelper.TurnOff();
+
+            try
+            {
+                if (currentUnlockStory != null)
+                {
+                    currentUnlockStory.Stop();
+                    currentUnlockStory = null;
+                }
+                var t = (CompositeTransform)LockScreenPanel.RenderTransform;
+                if (t != null) t.TranslateY = 0;
+                ExtensibilityHelper.EndUnlock();
+                isUnlockingStarted = false;
+            }
+            catch { }
         }
 
         private void RootFrame_Unobscured(object sender, EventArgs e)
@@ -335,24 +346,7 @@ namespace HyperOS.Pages
         {
             Dispatcher.BeginInvoke(() =>
             {
-
-                var t = (CompositeTransform)OverlayInformationPanel.RenderTransform;
-                if (t != null && t.TranslateY != 0)
-                {
-                    var anim = new DoubleAnimation
-                    {
-                        To = 0,
-                        Duration = TimeSpan.FromMilliseconds(250),
-                        EasingFunction = new CircleEase { EasingMode = EasingMode.EaseOut }
-                    };
-                    var sb = new Storyboard();
-                    Storyboard.SetTarget(anim, t);
-                    Storyboard.SetTargetProperty(anim, new PropertyPath("TranslateY"));
-                    sb.Children.Add(anim);
-                    sb.Begin();
-                }
-                ExtensibilityHelper.EndUnlock();
-                isUnlockingStarted = false;
+                AnimateBackToNormal(forced: true);
             });
         }
 
@@ -576,142 +570,147 @@ namespace HyperOS.Pages
 
         #region Swipe to Unlock
 
-        private void OverlayInformationPanel_ManipulationStarted(
-            object sender, ManipulationStartedEventArgs e)
+        private Storyboard currentUnlockStory;
+
+        private void AnimateTo(double targetY, EventHandler completedHandler = null, double durationMs = 280)
         {
-            // Record start point and stop any ongoing snap back animation
-            try 
+            if (currentUnlockStory != null)
             {
-                Storyboard snapBack = (Storyboard)Resources["SnapBackAnim"];
-                var state = snapBack.GetCurrentState();
-                if (state == System.Windows.Media.Animation.ClockState.Active || state == System.Windows.Media.Animation.ClockState.Filling)
+                try { currentUnlockStory.Stop(); } catch { }
+                currentUnlockStory = null;
+            }
+
+            var t = (CompositeTransform)LockScreenPanel.RenderTransform;
+            if (t == null) return;
+
+            if (!bIsAnimOn || durationMs <= 0)
+            {
+                t.TranslateY = targetY;
+                if (completedHandler != null) completedHandler(this, EventArgs.Empty);
+                return;
+            }
+
+            currentUnlockStory = new Storyboard();
+            var da = new DoubleAnimation
+            {
+                To = targetY,
+                Duration = TimeSpan.FromMilliseconds(durationMs),
+                EasingFunction = new CubicEase { EasingMode = (targetY < -400) ? EasingMode.EaseIn : EasingMode.EaseOut }
+            };
+            Storyboard.SetTarget(da, t);
+            Storyboard.SetTargetProperty(da, new PropertyPath("TranslateY"));
+            currentUnlockStory.Children.Add(da);
+
+            currentUnlockStory.Completed += (s, e) =>
+            {
+                currentUnlockStory = null;
+                t.TranslateY = targetY;
+                if (completedHandler != null)
                 {
-                    // Attempt to grab current animated values before stopping
-                    var t = (CompositeTransform)OverlayInformationPanel.RenderTransform;
-                    var tb = (CompositeTransform)BehindForegroundGrid.RenderTransform;
-                    double currentY = t.TranslateY;
-                    double currentOpacity = OverlayInformationPanel.Opacity;
-
-                    snapBack.Stop();
-
-                    // Apply the captured values as the new base values
-                    t.TranslateY = currentY;
-                    tb.TranslateY = currentY;
-                    OverlayInformationPanel.Opacity = currentOpacity;
-                    BehindForegroundGrid.Opacity = currentOpacity;
+                    completedHandler(s, e);
                 }
-            } 
-            catch { }
+            };
+
+            currentUnlockStory.Begin();
         }
 
-        private void OverlayInformationPanel_ManipulationDelta(
+        private void AnimateBackToNormal(bool forced = false)
+        {
+            var t = (CompositeTransform)LockScreenPanel.RenderTransform;
+            if (t == null) return;
+            if (!forced && t.TranslateY == 0) return;
+
+            ExtensibilityHelper.EndUnlock();
+            isUnlockingStarted = false;
+
+            AnimateTo(0, null, 260);
+        }
+
+        private void LockScreenPanel_ManipulationStarted(
+            object sender, ManipulationStartedEventArgs e)
+        {
+            if (MySetsOverlay.Visibility == Visibility.Visible) return;
+
+            if (currentUnlockStory != null)
+            {
+                try { currentUnlockStory.Stop(); } catch { }
+                currentUnlockStory = null;
+            }
+
+            if (!isUnlockingStarted)
+            {
+                isUnlockingStarted = true;
+                ExtensibilityHelper.BeginUnlock();
+            }
+        }
+
+        private void LockScreenPanel_ManipulationDelta(
             object sender, ManipulationDeltaEventArgs e)
         {
+            if (MySetsOverlay.Visibility == Visibility.Visible) return;
+
             if (!isUnlockingStarted)
             {
                 isUnlockingStarted = true;
                 ExtensibilityHelper.BeginUnlock();
             }
 
-            var t = (CompositeTransform)OverlayInformationPanel.RenderTransform;
+            double pinpadHeight = ExtensibilityHelper.GetPinpadHeightDips();
+            bool isPinLocked = pinpadHeight > 0;
+            double maxDrag = isPinLocked ? -pinpadHeight : -800.0;
+
+            var t = (CompositeTransform)LockScreenPanel.RenderTransform;
+            if (t == null) return;
+
             double newY = t.TranslateY + e.DeltaManipulation.Translation.Y;
-            if (newY <= 0)
-            {
-                t.TranslateY = newY;
-                // Sync behind layer
-                var tb = (CompositeTransform)BehindForegroundGrid.RenderTransform;
-                tb.TranslateY = newY;
-                // Fade opacity based on swipe distance
-                double opacity = Math.Max(0, 1 + newY / 500);
-                OverlayInformationPanel.Opacity = opacity;
-                BehindForegroundGrid.Opacity = opacity;
-            }
+            if (newY > 0) newY = 0;
+            if (newY < maxDrag) newY = maxDrag;
+
+            t.TranslateY = newY;
         }
 
-        private void OverlayInformationPanel_ManipulationCompleted(
+        private void LockScreenPanel_ManipulationCompleted(
             object sender, ManipulationCompletedEventArgs e)
         {
-            var t = (CompositeTransform)OverlayInformationPanel.RenderTransform;
-            bool isFlick = e.FinalVelocities.LinearVelocity.Y < -1500.0;
-            if (Math.Abs(t.TranslateY) > yToUnlock || isFlick)
+            if (MySetsOverlay.Visibility == Visibility.Visible) return;
+
+            double pinpadHeight = ExtensibilityHelper.GetPinpadHeightDips();
+            bool isPinLocked = pinpadHeight > 0;
+            double maxDrag = isPinLocked ? -pinpadHeight : -800.0;
+
+            var t = (CompositeTransform)LockScreenPanel.RenderTransform;
+            if (t == null) return;
+
+            double currentY = t.TranslateY;
+            bool isFlickUp = e.FinalVelocities.LinearVelocity.Y < -1200.0;
+            bool isFlickDown = e.FinalVelocities.LinearVelocity.Y > 1200.0;
+
+            double threshold = isPinLocked ? (maxDrag * 0.4) : -220.0;
+            bool shouldProceed = (currentY <= threshold || isFlickUp) && !isFlickDown;
+
+            if (shouldProceed)
             {
-                isUnlockingStarted = false;
-                RequestScreenUnlock();
+                if (isPinLocked)
+                {
+                    // Animate up to reveal native PIN pad, stay there and DO NOT request unlock.
+                    // Native PIN pad will take input and OS will unlock automatically.
+                    AnimateTo(maxDrag, null, 260);
+                }
+                else
+                {
+                    // No PIN: animate completely off screen and unlock device
+                    AnimateTo(-800.0, (s, args) => DoActualUnlock(), 280);
+                }
             }
             else
             {
-                isUnlockingStarted = false;
-                ExtensibilityHelper.EndUnlock();
-
-                // Snap back with animation
-                try
-                {
-                    Storyboard snapBack = (Storyboard)Resources["SnapBackAnim"];
-                    // MUST STOP the storyboard first to modify its keyframes, otherwise it throws InvalidOperationException if it's already completed.
-                    snapBack.Stop();
-
-                    // Need to reset the from values so they start from the current positions
-                    var t2 = (CompositeTransform)OverlayInformationPanel.RenderTransform;
-                    var tb2 = (CompositeTransform)BehindForegroundGrid.RenderTransform;
-
-                    foreach (var timeline in snapBack.Children)
-                    {
-                        var doubleAnim = timeline as DoubleAnimationUsingKeyFrames;
-                        if (doubleAnim != null)
-                        {
-                            string targetName = Storyboard.GetTargetName(doubleAnim);
-                            string targetProp = Storyboard.GetTargetProperty(doubleAnim).Path;
-
-                            double targetValue = (targetProp.Contains("TranslateY")) ? 0.0 : 1.0;
-                            double currentValue = 0;
-
-                            if (targetName == "OverlayInformationPanel")
-                                currentValue = targetProp.Contains("TranslateY") ? t2.TranslateY : OverlayInformationPanel.Opacity;
-                            else if (targetName == "BehindForegroundGrid")
-                                currentValue = targetProp.Contains("TranslateY") ? tb2.TranslateY : BehindForegroundGrid.Opacity;
-
-                            doubleAnim.KeyFrames.Clear();
-                            doubleAnim.KeyFrames.Add(new EasingDoubleKeyFrame { KeyTime = TimeSpan.Zero, Value = currentValue });
-                            doubleAnim.KeyFrames.Add(new EasingDoubleKeyFrame 
-                            { 
-                                KeyTime = TimeSpan.FromSeconds(0.3), 
-                                Value = targetValue, 
-                                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } 
-                            });
-                        }
-                    }
-                    snapBack.Begin();
-                }
-                catch
-                {
-                    // Fallback if animation fails
-                    var tb2 = (CompositeTransform)BehindForegroundGrid.RenderTransform;
-                    t.TranslateY = 0;
-                    OverlayInformationPanel.Opacity = 1;
-                    tb2.TranslateY = 0;
-                    BehindForegroundGrid.Opacity = 1;
-                }
+                AnimateBackToNormal();
             }
         }
 
         #endregion
 
         #region Unlock Methods
-
-        private void RequestScreenUnlock()
-        {
-            // Play unlock animation first if animations enabled
-            if (bIsAnimOn)
-            {
-                try { UnlockAnim.Begin(); return; } catch { }
-            }
-            DoActualUnlock();
-        }
-
-        private void UnlockAnim_Completed(object sender, EventArgs e)
-        {
-            DoActualUnlock();
-        }
 
         private void DoActualUnlock()
         {
@@ -736,8 +735,20 @@ namespace HyperOS.Pages
 
         private void CameraShortcut_Tap(object sender, System.Windows.Input.GestureEventArgs e)
         {
-            // Unlock screen — WP8.1 doesn't allow direct camera launch from lock
-            RequestScreenUnlock();
+            double pinpadHeight = ExtensibilityHelper.GetPinpadHeightDips();
+            if (pinpadHeight > 0)
+            {
+                if (!isUnlockingStarted)
+                {
+                    isUnlockingStarted = true;
+                    ExtensibilityHelper.BeginUnlock();
+                }
+                AnimateTo(-pinpadHeight, null, 260);
+            }
+            else
+            {
+                AnimateTo(-800.0, (s, args) => DoActualUnlock(), 280);
+            }
         }
 
         #endregion
@@ -1915,14 +1926,18 @@ namespace HyperOS.Pages
         private void PhoneApplicationPage_BackKeyPress(
             object sender, System.ComponentModel.CancelEventArgs e)
         {
-            var t = (CompositeTransform)OverlayInformationPanel.RenderTransform;
+            if (MySetsOverlay.Visibility == Visibility.Visible)
+            {
+                e.Cancel = true;
+                MySetsOverlay.Visibility = Visibility.Collapsed;
+                return;
+            }
+
+            var t = (CompositeTransform)LockScreenPanel.RenderTransform;
             if (t != null && t.TranslateY != 0)
             {
                 e.Cancel = true;
-                t.TranslateY = 0;
-                OverlayInformationPanel.Opacity = 1;
-                ExtensibilityHelper.EndUnlock();
-                isUnlockingStarted = false;
+                AnimateBackToNormal();
                 return;
             }
 
@@ -2008,8 +2023,8 @@ namespace HyperOS.Pages
             if (MySetsOverlay.Visibility == Visibility.Visible)
                 return;
 
-            var t = (CompositeTransform)OverlayInformationPanel.RenderTransform;
-            if (Math.Abs(t.TranslateY) > 20) return; // mid-swipe
+            var t = (CompositeTransform)LockScreenPanel.RenderTransform;
+            if (t != null && Math.Abs(t.TranslateY) > 20) return; // mid-swipe or at PIN pad
 
             ShowMySetsOverlay();
         }

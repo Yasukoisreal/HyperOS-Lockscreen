@@ -37,38 +37,6 @@
             </DoubleAnimationUsingKeyFrames>
         </Storyboard>
 
-        <!-- Unlock slide-up animation (no From — starts from current swipe position) -->
-        <Storyboard x:Name="UnlockAnim" Completed="UnlockAnim_Completed">
-            <DoubleAnimation Storyboard.TargetName="OverlayInformationPanel"
-                Storyboard.TargetProperty="Opacity"
-                To="0" Duration="0:0:0.35">
-                <DoubleAnimation.EasingFunction>
-                    <CubicEase EasingMode="EaseIn"/>
-                </DoubleAnimation.EasingFunction>
-            </DoubleAnimation>
-            <DoubleAnimation Storyboard.TargetName="OverlayInformationPanel"
-                Storyboard.TargetProperty="(UIElement.RenderTransform).(CompositeTransform.TranslateY)"
-                To="-800" Duration="0:0:0.35">
-                <DoubleAnimation.EasingFunction>
-                    <CubicEase EasingMode="EaseIn"/>
-                </DoubleAnimation.EasingFunction>
-            </DoubleAnimation>
-            <!-- Behind layer follows the same slide-up -->
-            <DoubleAnimation Storyboard.TargetName="BehindForegroundGrid"
-                Storyboard.TargetProperty="Opacity"
-                To="0" Duration="0:0:0.35">
-                <DoubleAnimation.EasingFunction>
-                    <CubicEase EasingMode="EaseIn"/>
-                </DoubleAnimation.EasingFunction>
-            </DoubleAnimation>
-            <DoubleAnimation Storyboard.TargetName="BehindForegroundGrid"
-                Storyboard.TargetProperty="(UIElement.RenderTransform).(CompositeTransform.TranslateY)"
-                To="-800" Duration="0:0:0.35">
-                <DoubleAnimation.EasingFunction>
-                    <CubicEase EasingMode="EaseIn"/>
-                </DoubleAnimation.EasingFunction>
-            </DoubleAnimation>
-        </Storyboard>
 
         <!-- Clock fade-in animation -->
         <Storyboard x:Key="TimeAnim">
@@ -218,57 +186,18 @@
 
         <!-- DateAnim removed — duplicate of DayAnim -->
 
-        <!-- Snap back animation when swipe is cancelled -->
-        <Storyboard x:Key="SnapBackAnim">
-            <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.RenderTransform).(CompositeTransform.TranslateY)" Storyboard.TargetName="OverlayInformationPanel">
-                <EasingDoubleKeyFrame KeyTime="0:0:0.3" Value="0">
-                    <EasingDoubleKeyFrame.EasingFunction><CubicEase EasingMode="EaseOut"/></EasingDoubleKeyFrame.EasingFunction>
-                </EasingDoubleKeyFrame>
-            </DoubleAnimationUsingKeyFrames>
-            <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.Opacity)" Storyboard.TargetName="OverlayInformationPanel">
-                <EasingDoubleKeyFrame KeyTime="0:0:0.3" Value="1">
-                    <EasingDoubleKeyFrame.EasingFunction><CubicEase EasingMode="EaseOut"/></EasingDoubleKeyFrame.EasingFunction>
-                </EasingDoubleKeyFrame>
-            </DoubleAnimationUsingKeyFrames>
-            <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.RenderTransform).(CompositeTransform.TranslateY)" Storyboard.TargetName="BehindForegroundGrid">
-                <EasingDoubleKeyFrame KeyTime="0:0:0.3" Value="0">
-                    <EasingDoubleKeyFrame.EasingFunction><CubicEase EasingMode="EaseOut"/></EasingDoubleKeyFrame.EasingFunction>
-                </EasingDoubleKeyFrame>
-            </DoubleAnimationUsingKeyFrames>
-            <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.Opacity)" Storyboard.TargetName="BehindForegroundGrid">
-                <EasingDoubleKeyFrame KeyTime="0:0:0.3" Value="1">
-                    <EasingDoubleKeyFrame.EasingFunction><CubicEase EasingMode="EaseOut"/></EasingDoubleKeyFrame.EasingFunction>
-                </EasingDoubleKeyFrame>
-            </DoubleAnimationUsingKeyFrames>
-        </Storyboard>
     </phone:PhoneApplicationPage.Resources>
 
     <Grid x:Name="LayoutRoot" Background="Black" Hold="LayoutRoot_Hold">
-        <VisualStateManager.VisualStateGroups>
-            <VisualStateGroup x:Name="VisualStateGroup">
-                <VisualStateGroup.Transitions>
-                    <VisualTransition GeneratedDuration="0:0:0.3">
-                        <VisualTransition.GeneratedEasingFunction>
-                            <CubicEase EasingMode="EaseInOut"/>
-                        </VisualTransition.GeneratedEasingFunction>
-                    </VisualTransition>
-                </VisualStateGroup.Transitions>
-                <VisualState x:Name="PassEnter">
-                    <Storyboard>
-                        <DoubleAnimation Duration="0:0:0.3" To="0"
-                            Storyboard.TargetProperty="(UIElement.Opacity)"
-                            Storyboard.TargetName="OverlayInformationPanel"/>
-                        <DoubleAnimation Duration="0:0:0.3" To="0"
-                            Storyboard.TargetProperty="(UIElement.Opacity)"
-                            Storyboard.TargetName="BehindForegroundGrid"/>
-                    </Storyboard>
-                </VisualState>
-                <VisualState x:Name="PassClose"/>
-            </VisualStateGroup>
-        </VisualStateManager.VisualStateGroups>
 
         <!-- ============ LOCK SCREEN PANEL ============ -->
-        <Grid x:Name="LockScreenPanel">
+        <Grid x:Name="LockScreenPanel" Background="Transparent"
+              ManipulationStarted="LockScreenPanel_ManipulationStarted"
+              ManipulationDelta="LockScreenPanel_ManipulationDelta"
+              ManipulationCompleted="LockScreenPanel_ManipulationCompleted">
+            <Grid.RenderTransform>
+                <CompositeTransform/>
+            </Grid.RenderTransform>
 
             <!-- Background Image — Full screen -->
             <Border x:Name="BackgroundImage" CacheMode="BitmapCache">
@@ -379,11 +308,7 @@
 
 
             <!-- ═══ FRONT LAYER — all widgets IN FRONT of foreground ═══ -->
-            <Grid x:Name="OverlayInformationPanel"
-                  Background="Transparent"
-                  ManipulationStarted="OverlayInformationPanel_ManipulationStarted"
-                  ManipulationDelta="OverlayInformationPanel_ManipulationDelta"
-                  ManipulationCompleted="OverlayInformationPanel_ManipulationCompleted">
+            <Grid x:Name="OverlayInformationPanel">
                 <Grid.RenderTransform><CompositeTransform/></Grid.RenderTransform>
 
                 <!-- HyperOS Clock & Info -->
