@@ -536,6 +536,93 @@
                 <StackPanel x:Name="MySetsDotsPanel" Orientation="Horizontal" HorizontalAlignment="Center"/>
             </StackPanel>
         </Grid>
+
+        <!-- ============ QUICK CAMERA VIEWFINDER OVERLAY ============ -->
+        <Grid x:Name="CameraOverlay" Visibility="Collapsed" Background="Black">
+            <Grid.RenderTransform>
+                <CompositeTransform x:Name="CameraOverlayTransform" TranslateX="0"/>
+            </Grid.RenderTransform>
+
+            <!-- Live Viewfinder Canvas / Rectangle -->
+            <Canvas Width="480" Height="800" HorizontalAlignment="Center" VerticalAlignment="Center"
+                    Tap="CameraViewfinder_Tap">
+                <Rectangle x:Name="CameraViewfinderRect" Width="480" Height="800">
+                    <Rectangle.Fill>
+                        <VideoBrush x:Name="CameraVideoBrush" Stretch="UniformToFill">
+                            <VideoBrush.RelativeTransform>
+                                <CompositeTransform x:Name="CameraBrushTransform"
+                                                    CenterX="0.5" CenterY="0.5"
+                                                    Rotation="90"/>
+                            </VideoBrush.RelativeTransform>
+                        </VideoBrush>
+                    </Rectangle.Fill>
+                </Rectangle>
+            </Canvas>
+
+            <!-- Focus indicator ring -->
+            <Canvas IsHitTestVisible="False">
+                <Ellipse x:Name="CameraFocusRing" Width="60" Height="60"
+                         Stroke="#EEFFFFFF" StrokeThickness="1.5"
+                         Visibility="Collapsed"
+                         Canvas.Left="210" Canvas.Top="370"/>
+            </Canvas>
+
+            <!-- Flash effect when snapping photo -->
+            <Rectangle x:Name="CameraFlashEffect" Fill="White" Opacity="0" IsHitTestVisible="False"/>
+
+            <!-- Top Header Bar: Close (Exit), Title, Flash Mode -->
+            <Grid VerticalAlignment="Top" Height="70" Margin="16,10,16,0">
+                <!-- Back / Close Button -->
+                <Border Width="40" Height="40" CornerRadius="20" Background="#55000000"
+                        HorizontalAlignment="Left" VerticalAlignment="Center"
+                        Tap="CameraClose_Tap">
+                    <TextBlock Text="✕" FontSize="18" Foreground="White"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+
+                <!-- Status / Title -->
+                <TextBlock x:Name="CameraStatusText" Text="PHOTO"
+                           FontFamily="/Assets/Fonts/MiSans-Demibold.ttf#MiSans"
+                           FontSize="14" Foreground="#CCFFFFFF"
+                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+                <!-- Flash Mode Button -->
+                <Border x:Name="CameraFlashButton" Width="40" Height="40" CornerRadius="20"
+                        Background="#55000000" HorizontalAlignment="Right" VerticalAlignment="Center"
+                        Tap="CameraFlash_Tap">
+                    <TextBlock x:Name="CameraFlashIcon" Text="⚡A" FontSize="13" Foreground="White"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+            </Grid>
+
+            <!-- Bottom Control Panel: Switch Camera, Big Shutter Button, Last Photo Thumbnail -->
+            <Grid VerticalAlignment="Bottom" Height="130" Background="#88000000">
+                <!-- Switch Camera Button (Front / Rear) -->
+                <Border x:Name="CameraSwitchBtn" Width="46" Height="46" CornerRadius="23"
+                        Background="#33FFFFFF" HorizontalAlignment="Left" VerticalAlignment="Center"
+                        Margin="36,0,0,0" Tap="CameraSwitch_Tap">
+                    <TextBlock Text="🔄" FontSize="18" Foreground="White"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+
+                <!-- HyperOS / iOS Style Shutter Button -->
+                <Border Width="72" Height="72" CornerRadius="36"
+                        BorderBrush="White" BorderThickness="4"
+                        Background="Transparent" HorizontalAlignment="Center" VerticalAlignment="Center"
+                        Tap="CameraShutter_Tap">
+                    <Ellipse x:Name="CameraShutterInner" Width="56" Height="56" Fill="White"
+                             HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+
+                <!-- Last Captured Photo Thumbnail / Indicator -->
+                <Border x:Name="CameraThumbnailBorder" Width="46" Height="46" CornerRadius="23"
+                        BorderBrush="#88FFFFFF" BorderThickness="1.5"
+                        Background="#22FFFFFF" HorizontalAlignment="Right" VerticalAlignment="Center"
+                        Margin="0,0,36,0">
+                    <Image x:Name="CameraThumbnailImage" Stretch="UniformToFill"/>
+                </Border>
+            </Grid>
+        </Grid>
     </Grid>
 
 </phone:PhoneApplicationPage>

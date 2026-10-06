@@ -18,6 +18,7 @@ using HyperOS.Helpers;
 using System.Net;
 using System.Device.Location;
 using System.Windows.Shapes;
+using Microsoft.Devices;
 
 namespace HyperOS.Pages
 {
@@ -95,6 +96,12 @@ namespace HyperOS.Pages
         private int sigHue = -1;
         private double signatureX = 0;
         private double signatureY = 0;
+
+        // Quick Camera Viewfinder
+        private Microsoft.Devices.PhotoCamera photoCamera;
+        private Microsoft.Devices.CameraType currentCameraType = Microsoft.Devices.CameraType.Primary;
+        private int currentFlashIndex = 0; // 0=Auto, 1=On, 2=Off
+        private bool isCameraCapturing = false;
 
         // Font families now shared from ClockRenderer.Fonts
 
@@ -189,6 +196,7 @@ namespace HyperOS.Pages
             FlashlightHelper.StateChanged -= FlashlightHelper_StateChanged;
             FlashlightHelper.TurnOff();
             UpdateFlashlightVisual(false);
+            CloseCameraOverlay(true);
         }
 
         protected override void OnNavigatedTo(System.Windows.Navigation.NavigationEventArgs e)
@@ -329,6 +337,7 @@ namespace HyperOS.Pages
             if (batteryTimer != null) batteryTimer.Stop();
             if (weatherTimer != null) weatherTimer.Stop();
             FlashlightHelper.TurnOff();
+            CloseCameraOverlay(true);
 
             try
             {
@@ -985,22 +994,240 @@ namespace HyperOS.Pages
 
         private void CameraShortcut_Tap(object sender, System.Windows.Input.GestureEventArgs e)
         {
-            double pinpadHeight = ExtensibilityHelper.GetPinpadHeightDips();
-            if (pinpadHeight > 0)
+            try { Microsoft.Devices.VibrateController.Default.Start(TimeSpan.FromMilliseconds(25)); } catch { }
+            OpenQuickCamera();
+        }
+
+        private void OpenQuickCamera()
+        {
+            if (CameraOverlay == null || CameraOverlay.Visibility == Visibility.Visible) return;
+
+            FlashlightHelper.TurnOff();
+            CameraOverlay.Visibility = Visibility.Visible;
+            CameraOverlayTransform.TranslateX = 480;
+
+            var sb = new Storyboard();
+            var anim = new DoubleAnimation
             {
-                if (!isUnlockingStarted)
+                To = 0,
+                Duration = TimeSpan.FromMilliseconds(250),
+                EasingFunction = new CircleEase { EasingMode = EasingMode.EaseOut }
+            };
+            Storyboard.SetTarget(anim, CameraOverlayTransform);
+            Storyboard.SetTargetProperty(anim, new PropertyPath("TranslateX"));
+            sb.Children.Add(anim);
+            sb.Begin();
+
+            InitializeCamera();
+        }
+
+        private void InitializeCamera()
+        {
+            try
+            {
+                DisposeCamera();
+                photoCamera = new Microsoft.Devices.PhotoCamera(currentCameraType);
+                photoCamera.CaptureImageAvailable += PhotoCamera_CaptureImageAvailable;
+                photoCamera.CaptureThumbnailAvailable += PhotoCamera_CaptureThumbnailAvailable;
+                photoCamera.Initialized += PhotoCamera_Initialized;
+                CameraVideoBrush.SetSource(photoCamera);
+            }
+            catch { }
+        }
+
+        private void PhotoCamera_Initialized(object sender, Microsoft.Devices.CameraOperationCompletedEventArgs e)
+        {
+            Dispatcher.BeginInvoke(() =>
+            {
+                if (photoCamera != null)
                 {
-                    isUnlockingStarted = true;
-                    ExtensibilityHelper.BeginUnlock();
+                    try
+                    {
+                        CameraBrushTransform.Rotation = photoCamera.Orientation;
+                        ApplyFlashMode();
+                    }
+                    catch { }
                 }
-                AnimatePanelTo(-pinpadHeight, null, 280);
-                AnimateWidgetsOpacity(0, 200);
-            }
-            else
+            });
+        }
+
+        private void PhotoCamera_CaptureImageAvailable(object sender, Microsoft.Devices.ContentReadyEventArgs e)
+        {
+            try
             {
-                AnimatePanelTo(-800.0, (s, args) => DoActualUnlock(), 300);
-                AnimateWidgetsOpacity(0, 200);
+                using (var ml = new Microsoft.Xna.Framework.Media.MediaLibrary())
+                {
+                    string fileName = string.Format("HyperOS_{0:yyyyMMdd_HHmmss}.jpg", DateTime.Now);
+                    ml.SavePictureToCameraRoll(fileName, e.ImageStream);
+                }
             }
+            catch { }
+            finally
+            {
+                isCameraCapturing = false;
+            }
+        }
+
+        private void PhotoCamera_CaptureThumbnailAvailable(object sender, Microsoft.Devices.ContentReadyEventArgs e)
+        {
+            Dispatcher.BeginInvoke(() =>
+            {
+                try
+                {
+                    var bmp = new System.Windows.Media.Imaging.BitmapImage();
+                    bmp.SetSource(e.ImageStream);
+                    CameraThumbnailImage.Source = bmp;
+                }
+                catch { }
+            });
+        }
+
+        private void CameraShutter_Tap(object sender, System.Windows.Input.GestureEventArgs e)
+        {
+            if (photoCamera == null || isCameraCapturing) return;
+            isCameraCapturing = true;
+
+            try { Microsoft.Devices.VibrateController.Default.Start(TimeSpan.FromMilliseconds(40)); } catch { }
+            PlayCameraFlashEffect();
+
+            try
+            {
+                photoCamera.CaptureImage();
+            }
+            catch
+            {
+                isCameraCapturing = false;
+            }
+        }
+
+        private void PlayCameraFlashEffect()
+        {
+            try
+            {
+                CameraFlashEffect.Opacity = 0.85;
+                var sb = new Storyboard();
+                var anim = new DoubleAnimation
+                {
+                    To = 0,
+                    Duration = TimeSpan.FromMilliseconds(200)
+                };
+                Storyboard.SetTarget(anim, CameraFlashEffect);
+                Storyboard.SetTargetProperty(anim, new PropertyPath("Opacity"));
+                sb.Children.Add(anim);
+                sb.Begin();
+            }
+            catch { }
+        }
+
+        private void CameraViewfinder_Tap(object sender, System.Windows.Input.GestureEventArgs e)
+        {
+            if (photoCamera != null && photoCamera.IsFocusSupported)
+            {
+                try
+                {
+                    var pos = e.GetPosition(CameraOverlay);
+                    Canvas.SetLeft(CameraFocusRing, pos.X - 30);
+                    Canvas.SetTop(CameraFocusRing, pos.Y - 30);
+                    CameraFocusRing.Visibility = Visibility.Visible;
+                    photoCamera.Focus();
+                }
+                catch { }
+            }
+        }
+
+        private void CameraSwitch_Tap(object sender, System.Windows.Input.GestureEventArgs e)
+        {
+            if (Microsoft.Devices.PhotoCamera.IsCameraTypeSupported(Microsoft.Devices.CameraType.FrontFacing))
+            {
+                currentCameraType = (currentCameraType == Microsoft.Devices.CameraType.Primary)
+                    ? Microsoft.Devices.CameraType.FrontFacing
+                    : Microsoft.Devices.CameraType.Primary;
+                InitializeCamera();
+            }
+        }
+
+        private void CameraFlash_Tap(object sender, System.Windows.Input.GestureEventArgs e)
+        {
+            currentFlashIndex = (currentFlashIndex + 1) % 3;
+            ApplyFlashMode();
+        }
+
+        private void ApplyFlashMode()
+        {
+            if (photoCamera == null) return;
+            try
+            {
+                switch (currentFlashIndex)
+                {
+                    case 0:
+                        if (photoCamera.IsFlashModeSupported(Microsoft.Devices.FlashMode.Auto))
+                            photoCamera.FlashMode = Microsoft.Devices.FlashMode.Auto;
+                        CameraFlashIcon.Text = "⚡A";
+                        break;
+                    case 1:
+                        if (photoCamera.IsFlashModeSupported(Microsoft.Devices.FlashMode.On))
+                            photoCamera.FlashMode = Microsoft.Devices.FlashMode.On;
+                        CameraFlashIcon.Text = "⚡ON";
+                        break;
+                    case 2:
+                        if (photoCamera.IsFlashModeSupported(Microsoft.Devices.FlashMode.Off))
+                            photoCamera.FlashMode = Microsoft.Devices.FlashMode.Off;
+                        CameraFlashIcon.Text = "⚡OFF";
+                        break;
+                }
+            }
+            catch { }
+        }
+
+        private void CameraClose_Tap(object sender, System.Windows.Input.GestureEventArgs e)
+        {
+            CloseCameraOverlay();
+        }
+
+        private void CloseCameraOverlay(bool immediate = false)
+        {
+            if (CameraOverlay == null || CameraOverlay.Visibility == Visibility.Collapsed) return;
+
+            if (immediate)
+            {
+                CameraOverlay.Visibility = Visibility.Collapsed;
+                DisposeCamera();
+                return;
+            }
+
+            var sb = new Storyboard();
+            var anim = new DoubleAnimation
+            {
+                To = 480,
+                Duration = TimeSpan.FromMilliseconds(200),
+                EasingFunction = new CircleEase { EasingMode = EasingMode.EaseIn }
+            };
+            Storyboard.SetTarget(anim, CameraOverlayTransform);
+            Storyboard.SetTargetProperty(anim, new PropertyPath("TranslateX"));
+            sb.Children.Add(anim);
+            sb.Completed += (s, e) =>
+            {
+                CameraOverlay.Visibility = Visibility.Collapsed;
+                DisposeCamera();
+            };
+            sb.Begin();
+        }
+
+        private void DisposeCamera()
+        {
+            if (photoCamera != null)
+            {
+                try
+                {
+                    photoCamera.CaptureImageAvailable -= PhotoCamera_CaptureImageAvailable;
+                    photoCamera.CaptureThumbnailAvailable -= PhotoCamera_CaptureThumbnailAvailable;
+                    photoCamera.Initialized -= PhotoCamera_Initialized;
+                    photoCamera.Dispose();
+                }
+                catch { }
+                photoCamera = null;
+            }
+            if (CameraFocusRing != null) CameraFocusRing.Visibility = Visibility.Collapsed;
         }
 
         #endregion
@@ -2178,6 +2405,13 @@ namespace HyperOS.Pages
         private void PhoneApplicationPage_BackKeyPress(
             object sender, System.ComponentModel.CancelEventArgs e)
         {
+            if (CameraOverlay != null && CameraOverlay.Visibility == Visibility.Visible)
+            {
+                e.Cancel = true;
+                CloseCameraOverlay();
+                return;
+            }
+
             if (MySetsOverlay.Visibility == Visibility.Visible)
             {
                 e.Cancel = true;
