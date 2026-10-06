@@ -454,18 +454,18 @@
 
                 <!-- Quick shortcuts — bottom corners (HyperOS style) -->
                 <!-- Flashlight (left) -->
-                <Border VerticalAlignment="Bottom" HorizontalAlignment="Left"
+                <Border x:Name="FlashlightButton" VerticalAlignment="Bottom" HorizontalAlignment="Left"
                         Margin="24,0,0,24" Width="44" Height="44"
                         CornerRadius="22" Background="#22FFFFFF"
                         Tap="FlashlightShortcut_Tap">
                     <Canvas Width="16" Height="20" HorizontalAlignment="Center" VerticalAlignment="Center">
-                        <Rectangle Canvas.Left="2" Canvas.Top="0" Width="12" Height="7"
+                        <Rectangle x:Name="FlashlightHead" Canvas.Left="2" Canvas.Top="0" Width="12" Height="7"
                                    RadiusX="2" RadiusY="2"
                                    Stroke="White" StrokeThickness="1.3" Fill="Transparent"/>
-                        <Rectangle Canvas.Left="4" Canvas.Top="7" Width="8" Height="10"
+                        <Rectangle x:Name="FlashlightBody" Canvas.Left="4" Canvas.Top="7" Width="8" Height="10"
                                    RadiusX="1" RadiusY="1"
                                    Stroke="White" StrokeThickness="1.3" Fill="Transparent"/>
-                        <Ellipse Canvas.Left="6.5" Canvas.Top="10" Width="3" Height="3"
+                        <Ellipse x:Name="FlashlightBeam" Canvas.Left="6.5" Canvas.Top="10" Width="3" Height="3"
                                  Fill="White"/>
                     </Canvas>
                 </Border>

@@ -15,6 +15,9 @@ namespace HyperOS.Helpers
     {
         private static MediaCapture _mediaCapture;
         private static bool _isOn = false;
+        private static bool _isProcessing = false;
+
+        public static event Action<bool> StateChanged;
 
         public static bool IsOn
         {
@@ -28,6 +31,9 @@ namespace HyperOS.Helpers
 
         public static async Task<bool> SetTorchAsync(bool state)
         {
+            if (_isProcessing) return _isOn;
+            _isProcessing = true;
+
             try
             {
                 if (state)
@@ -35,15 +41,18 @@ namespace HyperOS.Helpers
                     if (_mediaCapture == null)
                     {
                         var devices = await DeviceInformation.FindAllAsync(DeviceClass.VideoCapture);
-                        var backCamera = devices.FirstOrDefault(x => x.EnclosureLocation != null && x.EnclosureLocation.Panel == Windows.Devices.Enumeration.Panel.Back);
+                        var backCamera = devices.FirstOrDefault(x => x.EnclosureLocation != null && x.EnclosureLocation.Panel == Windows.Devices.Enumeration.Panel.Back)
+                                        ?? devices.FirstOrDefault();
                         if (backCamera == null)
                         {
+                            _isProcessing = false;
                             return false;
                         }
 
                         var settings = new MediaCaptureInitializationSettings
                         {
                             VideoDeviceId = backCamera.Id,
+                            AudioDeviceId = string.Empty, // Avoid requesting microphone access
                             StreamingCaptureMode = StreamingCaptureMode.Video,
                             PhotoCaptureSource = PhotoCaptureSource.VideoPreview
                         };
@@ -61,11 +70,14 @@ namespace HyperOS.Helpers
                         }
                         torchControl.Enabled = true;
                         _isOn = true;
+                        NotifyStateChanged(true);
                         return true;
                     }
                     else
                     {
                         DisposeMediaCapture();
+                        _isOn = false;
+                        NotifyStateChanged(false);
                         return false;
                     }
                 }
@@ -81,6 +93,7 @@ namespace HyperOS.Helpers
                         DisposeMediaCapture();
                     }
                     _isOn = false;
+                    NotifyStateChanged(false);
                     return true;
                 }
             }
@@ -88,7 +101,12 @@ namespace HyperOS.Helpers
             {
                 DisposeMediaCapture();
                 _isOn = false;
+                NotifyStateChanged(false);
                 return false;
+            }
+            finally
+            {
+                _isProcessing = false;
             }
         }
 
@@ -109,8 +127,31 @@ namespace HyperOS.Helpers
             finally
             {
                 DisposeMediaCapture();
-                _isOn = false;
+                if (_isOn)
+                {
+                    _isOn = false;
+                    NotifyStateChanged(false);
+                }
             }
+        }
+
+        private static void NotifyStateChanged(bool isOn)
+        {
+            try
+            {
+                if (System.Windows.Deployment.Current != null && System.Windows.Deployment.Current.Dispatcher != null)
+                {
+                    System.Windows.Deployment.Current.Dispatcher.BeginInvoke(() =>
+                    {
+                        try { StateChanged?.Invoke(isOn); } catch { }
+                    });
+                }
+                else
+                {
+                    StateChanged?.Invoke(isOn);
+                }
+            }
+            catch { }
         }
 
         private static void DisposeMediaCapture()

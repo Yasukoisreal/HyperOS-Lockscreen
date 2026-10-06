@@ -157,6 +157,11 @@ namespace HyperOS.Pages
             ApplyDepthLayers();
             UpdateCountdown();
 
+            // Flashlight state sync
+            FlashlightHelper.StateChanged -= FlashlightHelper_StateChanged;
+            FlashlightHelper.StateChanged += FlashlightHelper_StateChanged;
+            UpdateFlashlightVisual(FlashlightHelper.IsOn);
+
             // Play animations on first load (must be after ApplyDepthLayers)
             PlayEntryAnimations();
 
@@ -181,7 +186,9 @@ namespace HyperOS.Pages
             if (weatherTimer != null) weatherTimer.Stop();
 
             StartButtonHelper.UnregisterStartKey(OnStartKeyPressed);
+            FlashlightHelper.StateChanged -= FlashlightHelper_StateChanged;
             FlashlightHelper.TurnOff();
+            UpdateFlashlightVisual(false);
         }
 
         protected override void OnNavigatedTo(System.Windows.Navigation.NavigationEventArgs e)
@@ -251,6 +258,10 @@ namespace HyperOS.Pages
                 var tb = (CompositeTransform)BehindForegroundGrid.RenderTransform;
                 tb.TranslateY = 0;
                 BehindForegroundGrid.Opacity = 1;
+
+                FlashlightHelper.StateChanged -= FlashlightHelper_StateChanged;
+                FlashlightHelper.StateChanged += FlashlightHelper_StateChanged;
+                UpdateFlashlightVisual(FlashlightHelper.IsOn);
             }
         }
 
@@ -918,7 +929,58 @@ namespace HyperOS.Pages
 
         private async void FlashlightShortcut_Tap(object sender, System.Windows.Input.GestureEventArgs e)
         {
+            try { Microsoft.Devices.VibrateController.Default.Start(TimeSpan.FromMilliseconds(25)); } catch { }
             await FlashlightHelper.ToggleAsync();
+        }
+
+        private void FlashlightHelper_StateChanged(bool isOn)
+        {
+            Dispatcher.BeginInvoke(() => UpdateFlashlightVisual(isOn));
+        }
+
+        private void UpdateFlashlightVisual(bool isOn)
+        {
+            try
+            {
+                if (FlashlightButton == null) return;
+                if (isOn)
+                {
+                    FlashlightButton.Background = new SolidColorBrush(Colors.White);
+                    if (FlashlightHead != null)
+                    {
+                        FlashlightHead.Stroke = new SolidColorBrush(Colors.Black);
+                        FlashlightHead.Fill = new SolidColorBrush(Colors.Black);
+                    }
+                    if (FlashlightBody != null)
+                    {
+                        FlashlightBody.Stroke = new SolidColorBrush(Colors.Black);
+                        FlashlightBody.Fill = new SolidColorBrush(Colors.Black);
+                    }
+                    if (FlashlightBeam != null)
+                    {
+                        FlashlightBeam.Fill = new SolidColorBrush(Colors.White);
+                    }
+                }
+                else
+                {
+                    FlashlightButton.Background = new SolidColorBrush(System.Windows.Media.Color.FromArgb(34, 255, 255, 255));
+                    if (FlashlightHead != null)
+                    {
+                        FlashlightHead.Stroke = new SolidColorBrush(Colors.White);
+                        FlashlightHead.Fill = new SolidColorBrush(Colors.Transparent);
+                    }
+                    if (FlashlightBody != null)
+                    {
+                        FlashlightBody.Stroke = new SolidColorBrush(Colors.White);
+                        FlashlightBody.Fill = new SolidColorBrush(Colors.Transparent);
+                    }
+                    if (FlashlightBeam != null)
+                    {
+                        FlashlightBeam.Fill = new SolidColorBrush(Colors.White);
+                    }
+                }
+            }
+            catch { }
         }
 
         private void CameraShortcut_Tap(object sender, System.Windows.Input.GestureEventArgs e)
