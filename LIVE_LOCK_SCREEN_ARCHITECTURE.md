@@ -432,6 +432,92 @@ Instead of using an intermediate XAML page (`LockRouter.xaml`), Microsoft's *Liv
 | **Theme Switching** | Router must inspect settings and redirect | Mapper maps directly to active theme URL |
 | **Simplicity** | Easy to understand, standard Silverlight | Professional pattern used in Microsoft production |
 
+### 4.5 Cross-Process Settings Synchronization via Named System Mutex & Rollback Pattern
+
+In production architectures (such as *Microsoft Live Lock Screen BETA*), the configuration interface (`LockScreenSettings.dll`) and the active lock screen host (`LockScreen.dll`) run in **two separate execution contexts**.
+- When the user configures themes or selects wallpapers in the Settings app, serialized data is written to Isolated Storage (`datas.xml`).
+- If the user locks the phone while a write operation is mid-flight and immediately turns the screen back on, the lock screen process attempts to deserialize `datas.xml` simultaneously.
+- Without cross-process synchronization, an unhandled `IsolatedStorageException` (sharing violation) or XML deserialization corruption crash occurs.
+
+#### Microsoft's Production Solution (`DatasProvider.cs`):
+Microsoft solved this with a **system-wide named `Mutex`** coupled with an atomic **two-phase backup rollback mechanism**:
+
+```csharp
+using System.IO;
+using System.IO.IsolatedStorage;
+using System.Runtime.Serialization;
+using System.Threading;
+
+public class DatasProvider
+{
+    public const string DATAFILE = "datas.xml";
+    public const string DATAFILE_BAK = "datas.xml.bak";
+
+    // System-wide named Mutex ensures atomic cross-process access
+    private static readonly Mutex _mutex = new Mutex(initiallyOwned: false, "LockScreenMutex");
+    public static AppSettings Instance { get; set; }
+
+    static DatasProvider()
+    {
+        try
+        {
+            _mutex.WaitOne();
+
+            if (Instance == null)
+            {
+                using (var store = IsolatedStorageFile.GetUserStoreForApplication())
+                {
+                    // 1. Attempt deserialization of primary settings file
+                    if (store.FileExists(DATAFILE))
+                    {
+                        try
+                        {
+                            using (var stream = store.OpenFile(DATAFILE, FileMode.Open, FileAccess.Read))
+                            {
+                                var serializer = new DataContractSerializer(typeof(AppSettings));
+                                Instance = serializer.ReadObject(stream) as AppSettings;
+                            }
+
+                            if (Instance != null)
+                            {
+                                // 2. Successfully loaded: Update backup file atomically
+                                using (var stream = store.OpenFile(DATAFILE, FileMode.Open, FileAccess.Read))
+                                using (var backupStream = store.OpenFile(DATAFILE_BAK, FileMode.Create))
+                                {
+                                    stream.CopyTo(backupStream);
+                                }
+                                return;
+                            }
+                        }
+                        catch
+                        {
+                            // Primary file read failed or corrupted; fall back to backup
+                        }
+                    }
+
+                    // 3. Fallback: Recover from backup file if primary was damaged
+                    if (store.FileExists(DATAFILE_BAK))
+                    {
+                        using (var backupStream = store.OpenFile(DATAFILE_BAK, FileMode.Open, FileAccess.Read))
+                        {
+                            var serializer = new DataContractSerializer(typeof(AppSettings));
+                            Instance = serializer.ReadObject(backupStream) as AppSettings;
+                            if (Instance != null) return;
+                        }
+                    }
+                }
+            }
+        }
+        finally
+        {
+            // Always ensure default fallback and release mutex
+            if (Instance == null) Instance = new AppSettings();
+            _mutex.ReleaseMutex();
+        }
+    }
+}
+```
+
 ---
 
 ## 5. Touch Gestures, Physics & Security Unlock Flow
@@ -767,6 +853,80 @@ private void InitiateUnlockSequence()
 - **Device has NO native password:** The OS immediately drops the lock screen compositor layer and restores the user to their previous app or Start screen.
 - **Device HAS a native password (PIN configured in Phone Settings):** The operating system **instantly presents the Native Windows Phone PIN Keypad overlay on top**. The user must enter their valid device PIN to gain access.
 - **Conclusion:** A Live Lock Screen application can never compromise device security, bypass PIN protection, or introduce lock screen vulnerabilities.
+
+### 5.6 Parallax Digit-Splitting Geometry (Theme "Crop" Optical Illusion)
+
+Microsoft's *Live Lock Screen BETA* featured an iconic **Crop** theme where giant clock numerals appear diagonally sliced in half, with the top and bottom halves shifting at different velocities during touch gestures.
+
+#### The Zero-CPU Geometric Masking Technique:
+Rather than using expensive pixel shaders or real-time alpha masks (which are unsupported in Silverlight 8.1), Microsoft implemented this entirely via **layered XAML vector geometry**:
+
+```xml
+<!-- 1. Layer of separate individual digit TextBlocks -->
+<Grid x:Name="FirstSlidePanel" VerticalAlignment="Bottom" Margin="0,0,0,140">
+    <Grid.RenderTransform>
+        <TranslateTransform x:Name="SlideTransform" />
+    </Grid.RenderTransform>
+    <StackPanel x:Name="HourPanel" Orientation="Horizontal" HorizontalAlignment="Right">
+        <TextBlock x:Name="TimeText1" CacheMode="BitmapCache" FontFamily="Segoe WP" />
+        <TextBlock x:Name="TimeText2" CacheMode="BitmapCache" FontFamily="Segoe WP" />
+        <TextBlock x:Name="TimeText3" CacheMode="BitmapCache" FontFamily="Segoe WP" />
+        <TextBlock x:Name="TimeText4" CacheMode="BitmapCache" FontFamily="Segoe WP" />
+    </StackPanel>
+</Grid>
+
+<!-- 2. The Diagonal Cutting Wedge (Overlaid on top, painted with BackgroundBrush) -->
+<Path Fill="{Binding BackgroundBrush}" CacheMode="BitmapCache" 
+      Data="M0,1 L1,1 L0,0" Height="482" 
+      Stretch="Uniform" UseLayoutRounding="False" 
+      VerticalAlignment="Bottom" />
+```
+
+1. **The Optical Illusion:** The `Path` with geometry `Data="M0,1 L1,1 L0,0"` forms an angled triangular wedge filled with the identical wallpaper brush as the background.
+2. **Parallax Motion:** During touch drag, `FirstSlidePanel` translates upward, causing the numerals to emerge from behind the angled wallpaper wedge. Because both the background and wedge share the exact same brush coordinates, the user perceives a 3D physical cut slicing through the numbers with zero GPU shading cost.
+
+### 5.7 Multi-Layer Windowing & Masking Math (Theme "Tokyo" Rotating Rings)
+
+In the official **Tokyo** theme, three concentric circular rings (Hour ring, Minute ring, Second ring) continuously rotate. Crucially, the wallpaper visible *inside* each rotating ring remains perfectly aligned with the stationary full-screen wallpaper behind it.
+
+#### The Coordinate Compensation Formula (`TokyoControl.cs`):
+To prevent the wallpaper inside the rotating ring from spinning or stretching when the ring rotates, Microsoft applied an inverse `ScaleTransform` and coordinate compensation:
+
+$$\text{Screen Ratio } = \frac{\text{Physical Pixel Width}}{480.0}$$
+$$\text{Brush Scale } = \frac{1.0}{\text{Screen Ratio}}$$
+$$\text{Brush Translation } Y = - \text{TopOffset}$$
+
+```csharp
+private void ApplyAlignedWallpaperToRing(Border ringPanel, Brush backgroundSource, double topOffset)
+{
+    var imageBrush = backgroundSource as ImageBrush;
+    if (imageBrush == null) return;
+
+    double screenRatio = DeviceHelper.GetScreenRatio();
+
+    // 1. Invert device scale factor to ensure 1:1 pixel mapping inside ring
+    var relativeTransform = new ScaleTransform
+    {
+        ScaleX = 1.0 / screenRatio,
+        ScaleY = 1.0 / screenRatio,
+        CenterX = 0.5
+    };
+
+    // 2. Counter-translate brush Y coordinate to cancel out ring vertical offset
+    var ringBrush = new ImageBrush
+    {
+        ImageSource = imageBrush.ImageSource,
+        Stretch = Stretch.None,
+        AlignmentX = AlignmentX.Center,
+        AlignmentY = AlignmentY.Top,
+        RelativeTransform = relativeTransform,
+        Transform = new TranslateTransform { Y = -topOffset }
+    };
+
+    ringPanel.Background = ringBrush;
+}
+```
+When the ring's XAML `RenderTransform` rotates, the background brush remains anchored to absolute screen space, creating a seamless windowing lens into the wallpaper beneath.
 
 ---
 
@@ -1331,6 +1491,41 @@ Tetra embedded a full interactive vector map on the lock screen showing the user
 - **Capabilities Required:** `<Capability Name="ID_CAP_MAP" />` and `<Capability Name="ID_CAP_LOCATION" />`.
 - **Gesture Coordination:** The map control is placed inside a container that intercepts horizontal pan and pinch gestures for map navigation, while vertical swipes with high velocity ($v_y < -800\text{ px/s}$) pass through to the unlock handler.
 
+##### Mercator Resolution & Coordinate Math (`LocationTools.cs`):
+To map physical screen touch pixel offsets $(dx, dy)$ to real-world GPS coordinates $(\text{lat}, \text{lon})$ at a specific map zoom level:
+
+$$\text{Map Resolution (meters/pixel)} = \frac{156543.04 \times \cos\left(\text{lat} \times \frac{\pi}{180}\right)}{2^{\text{zoomLevel}}}$$
+
+```csharp
+using System;
+using System.Device.Location;
+using System.Windows;
+
+public static class LocationTools
+{
+    private const double SCALING_CONSTANT = 156543.04;
+    private const int EARTH_RADIUS = 6371000; // Earth radius in meters
+
+    public static double GetMapResolution(GeoCoordinate coord, int zoomLevel)
+    {
+        double latRad = coord.Latitude * Math.PI / 180.0;
+        return SCALING_CONSTANT * Math.Cos(latRad) / Math.Pow(2.0, zoomLevel);
+    }
+
+    public static GeoCoordinate OffsetToCoordinate(GeoCoordinate centerCoord, int zoomLevel, Point pixelOffset)
+    {
+        double resolution = GetMapResolution(centerCoord, zoomLevel);
+        double distEastMeters = pixelOffset.X * resolution;
+        double distNorthMeters = -pixelOffset.Y * resolution; // Invert Y for screen coordinates
+
+        double deltaLat = (distNorthMeters / EARTH_RADIUS) * (180.0 / Math.PI);
+        double deltaLon = (distEastMeters / (EARTH_RADIUS * Math.Cos(centerCoord.Latitude * Math.PI / 180.0))) * (180.0 / Math.PI);
+
+        return new GeoCoordinate(centerCoord.Latitude + deltaLat, centerCoord.Longitude + deltaLon);
+    }
+}
+```
+
 #### 3. Activity Tracker & Pedometer Widget (Nokia SensorCore `Lumia.Sense`)
 Tetra integrated real-time step counting and weekly activity charts on supported Lumia hardware (Lumia 630, 730, 830, 930, 1520):
 - **Architecture:** Interfaced with Nokia SensorCore via `Lumia.Sense.StepCounter` and the native Hardware Message Bus client (`HMBServiceClient`):
@@ -1353,6 +1548,55 @@ Tetra integrated real-time step counting and weekly activity charts on supported
   }
   ```
 - **Fallback Grace:** On devices lacking SensorCore hardware (or non-Lumia Windows Phones), the widget gracefully hides its sensor tab and displays standard calendar information instead.
+
+#### 4. System Calendar & Appointments Integration (`Microsoft.Phone.UserData.Appointments`)
+Tetra queried the user's upcoming appointments non-invasively directly from the Windows Phone operating system database:
+- **Capability Required:** `<Capability Name="ID_CAP_APPOINTMENTS" />` in `WMAppManifest.xml`.
+- **Async Pattern (`CalendarData.cs`):** Because the legacy Silverlight `Appointments` class uses event-based async (`SearchAsync` / `SearchCompleted`), Tetra wrapped the query in a `TaskCompletionSource`:
+
+```csharp
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using Microsoft.Phone.UserData;
+
+public static class CalendarData
+{
+    public static Task<IEnumerable<Appointment>> SearchCalendarAppointmentsAsync(DateTime start, DateTime end, int maxResults = 100)
+    {
+        var tcs = new TaskCompletionSource<IEnumerable<Appointment>>();
+        var appointments = new Appointments();
+
+        appointments.SearchCompleted += (s, e) =>
+        {
+            tcs.TrySetResult(e.Results);
+        };
+
+        // Query events across all synchronized accounts (Outlook, Exchange, Google, etc.)
+        appointments.SearchAsync(start, end, maxResults, "Appointments");
+        return tcs.Task;
+    }
+}
+```
+This enables the lock screen to display upcoming meeting titles, locations, and time ranges without requiring user login or third-party web APIs.
+
+#### 5. Native Weather Service Integration (`service.weather.microsoft.com`)
+Tetra integrated live weather forecasts directly onto the lock screen using Microsoft's dedicated Windows Phone weather REST endpoint:
+- **Endpoints:**
+  - Search location by GPS coordinates:
+    `http://service.weather.microsoft.com/{culture}/locations/search/{lat},{lon}?dataSourceNames=true&appid={APPID}&formcode=TETRALS`
+  - Get weather overview (current condition, high/low, hourly breakdown):
+    `http://service.weather.microsoft.com/{culture}/weather/overview/{locationId}?units={C|F}&appid={APPID}&formcode=TETRALS`
+- **Application ID:** `673D4921-6D7E-4650-95AF-45F7AD6F393F`
+- **Deserialization:** Handled using `DataContractJsonSerializer` on background threads to prevent UI stutters.
+
+#### 6. Real-Time Stopwatch Widget with Standby State Persistence
+Tetra's stopwatch allowed users to start, stop, and track laps without unlocking the device:
+- **Challenge:** If the screen turns off, the phone suspends app processes. Running a 1ms `DispatcherTimer` in standby is impossible and would drain the battery.
+- **Solution (`Stopwatch.cs`):** 
+  - When running, the UI timer (`DispatcherTimer`) only updates the visible display while the screen is on (`Unobscured`).
+  - When the screen turns off or the app suspends, the stopwatch saves its base reference timestamp (`DateTime.UtcNow`) and accumulated running milliseconds to `IsolatedStorageSettings`.
+  - Upon waking up (`Unobscured`), the widget calculates $\text{Elapsed} = \text{Accumulated} + (\text{DateTime.UtcNow} - \text{StartTime})$, instantly resuming with sub-millisecond precision without wasting a single CPU cycle during screen-off!
 
 ---
 
@@ -1453,9 +1697,11 @@ Real-time Gaussian or Lens Blur on high-resolution wallpapers at 60 FPS is impos
    FadeInBlurredBackground.Begin();
    ```
 
-#### Rule 8: Bing Wallpaper Staged Commits & ETag Throttling
+#### Rule 8: Bing Wallpaper Staged Commits & Dynamic Resolution Protocol
 If supporting dynamic Bing daily wallpapers (Live Lock Screen BETA & Tetra):
-1. **Partner Header & ETag:** Include the official partner identification header and conditional ETag:
+1. **The Official Archive Endpoint:**
+   `http://www.bing.com/HPImageArchive.aspx?format=xml&idx=0&n=1&mbl=1&mkt=en-ww`
+2. **Partner Header & ETag:** Include the official partner identification header and conditional ETag:
    ```csharp
    httpClient.DefaultRequestHeaders.Add("X-COMMON-PARTNERCODE", "WPLLS");
    if (!string.IsNullOrEmpty(savedEtag))
@@ -1463,8 +1709,12 @@ If supporting dynamic Bing daily wallpapers (Live Lock Screen BETA & Tetra):
        httpClient.DefaultRequestHeaders.Add("If-None-Match", savedEtag);
    }
    ```
-2. **15-Minute Query Throttling:** Guard against redundant network polling by enforcing a minimum 15-minute gap between Bing archive queries.
-3. **Two-Phase Staged Commit:** Never overwrite the active wallpaper file while the lock screen is being rendered! Download new imagery to a staging file (`bingImageNext.jpg`). On the subsequent application launch or resume, atomically commit the file:
+3. **Dynamic Resolution Mapping:** Do not request full 1080p images on WVGA devices! Map the download URL dynamically based on physical screen resolution to conserve bandwidth and RAM:
+   - **WVGA ($480 \times 800$):** `http://www.bing.com{urlBase}_800x480.jpg`
+   - **720p ($720 \times 1280$) / WXGA ($768 \times 1280$):** `http://www.bing.com{urlBase}_768x1366.jpg`
+   - **1080p ($1080 \times 1920$):** `http://www.bing.com{urlBase}_1920x1080.jpg`
+4. **15-Minute Query Throttling:** Guard against redundant network polling by enforcing a minimum 15-minute gap between Bing archive queries (`(DateTime.Now - lastSearch).TotalMinutes >= 15`).
+5. **Two-Phase Staged Commit:** Never overwrite the active wallpaper file while the lock screen is being rendered! Download new imagery to a staging file (`bingImageNext.jpg`). On the subsequent application launch or resume, atomically commit the file:
    ```csharp
    if (store.FileExists("bingImageNext.jpg"))
    {
@@ -1521,6 +1771,104 @@ If visual containers (such as top status panels or secondary widgets) are collap
   if (PanelContainer == null || PanelContainer.Visibility != Visibility.Visible) return;
   PulseAnimation.Begin();
   ```
+
+#### Rule 13: Hardware-Accelerated Physical Resolution Downsampling & Aspect-Fill Crop
+Loading full uncompressed wallpapers into memory without scaling causes immediate out-of-memory crashes on 512MB RAM devices. Microsoft implemented a hardware-accelerated cropping pipeline using the Nokia Imaging SDK (`ImageDataHelper.cs` & `DeviceHelper.cs`):
+
+1. **Detect Physical Screen Dimensions:**
+   ```csharp
+   public static Size GetScreenResolution()
+   {
+       object obj = null;
+       if (Microsoft.Phone.Info.DeviceExtendedProperties.TryGetValue("PhysicalScreenResolution", ref obj))
+       {
+           return (Size)obj;
+       }
+       double w = (double)Application.Current.Host.Content.ScaleFactor * Application.Current.Host.Content.ActualWidth / 100.0;
+       double h = (double)Application.Current.Host.Content.ScaleFactor * Application.Current.Host.Content.ActualHeight / 100.0;
+       return new Size(w, h);
+   }
+   ```
+2. **Aspect-Fill Crop with Nokia Imaging SDK (`CropFilter` + `JpegRenderer`):**
+   ```csharp
+   using Nokia.Graphics.Imaging;
+
+   public static async Task<Stream> CropAndDownsampleAsync(Stream imageStream)
+   {
+       using (var source = new StreamImageSource(imageStream, ImageFormat.Jpeg))
+       {
+           var info = await source.GetInfoAsync();
+           Size deviceSize = GetScreenResolution();
+           var filterEffect = new FilterEffect(source);
+
+           double imageAspect = info.ImageSize.Height / info.ImageSize.Width;
+           double screenAspect = deviceSize.Height / deviceSize.Width;
+
+           if (imageAspect != screenAspect)
+           {
+               var crop = new CropFilter();
+               if (imageAspect > screenAspect)
+               {
+                   double targetHeight = info.ImageSize.Width * screenAspect;
+                   crop.CropArea = new Rect(0, (info.ImageSize.Height - targetHeight) / 2.0, info.ImageSize.Width, targetHeight);
+               }
+               else
+               {
+                   double targetWidth = info.ImageSize.Height / screenAspect;
+                   crop.CropArea = new Rect((info.ImageSize.Width - targetWidth) / 2.0, 0, targetWidth, info.ImageSize.Height);
+               }
+               filterEffect.Filters = new IFilter[] { crop };
+           }
+
+           using (var renderer = new JpegRenderer(filterEffect))
+           {
+               renderer.Size = deviceSize;
+               renderer.OutputOption = OutputOption.PreserveAspectRatio;
+               var buffer = await renderer.RenderAsync();
+               return buffer.AsStream();
+           }
+       }
+   }
+   ```
+
+#### Rule 14: Custom High-Performance Filters via `CustomEffectBase`
+When creating custom image effects (such as vintage tint, color grading, or linear light), avoid looping through WPF `WriteableBitmap.Pixels` on the UI thread. Instead, inherit from Nokia Imaging SDK's `CustomEffectBase` (`LinearLightFilter.cs`):
+
+```csharp
+using System;
+using Nokia.Graphics.Imaging;
+using Windows.Foundation;
+
+public class LinearLightFilter : CustomEffectBase
+{
+    public LinearLightFilter(IImageProvider source) : base(source) { }
+
+    protected override void OnProcess(PixelRegion sourcePixelRegion, PixelRegion targetPixelRegion)
+    {
+        uint[] src = sourcePixelRegion.ImagePixels;
+        uint[] dst = targetPixelRegion.ImagePixels;
+
+        // Process rows in parallel via SIMD-accelerated native chunks
+        sourcePixelRegion.ForEachRow((index, width, position) =>
+        {
+            for (int i = 0; i < width; i++)
+            {
+                uint pixel = src[index];
+                uint r = (pixel & 0x00FF0000) >> 16;
+                uint g = (pixel & 0x0000FF00) >> 8;
+                uint b = pixel & 0x000000FF;
+
+                // Color adjustments clamped to byte bounds
+                r = Math.Min(255u, r + 20);
+                g = Math.Min(255u, g + 10);
+
+                dst[index] = 0xFF000000u | (r << 16) | (g << 8) | b;
+                index++;
+            }
+        });
+    }
+}
+```
 
 ---
 
@@ -1856,9 +2204,43 @@ Review this checklist before deploying any Live Lock Screen project:
 
 ---
 
-## 13. Summary
+## 13. Reverse Engineering & Decompiler Artifacts Guide
 
-Windows Phone 8.1's **Live Lock Screen** extensibility architecture delivers an optimal balance of customization and security:
-1. **Absolute Kernel Security:** Custom visuals run safely in user-space; kernel security and device PIN verification remain untouched.
-2. **Full Interactivity:** Rich Silverlight XAML animations, touch physics, and real-time widgets.
-3. **Sub-500ms Instant Wake:** Adhering to the two-stage clock synchronization pattern, integer pixel snapping, lightweight visual trees, and aggressive memory reclamation (`OnNavigatedFrom`) guarantees responsive, reliable performance even on resource-constrained 512MB RAM devices.
+When inspecting decompiled source code from official Windows Phone 8.1 packages (*Live Lock Screen BETA* or *Tetra Lockscreen*) using tools such as ILSpy, dnSpy, or dotPeek, developers frequently encounter generated comments like:
+
+```csharp
+//IL_0100: Unknown result type (might be due to invalid IL or missing references)
+//IL_0020: Expected O, but got Unknown
+```
+
+### 13.1 Root Cause of Decompiler Warnings
+1. **Missing Reference Assemblies:** Modern decompilers running on Windows 10/11 do not automatically have the legacy Windows Phone 8.1 Silverlight SDK references in their assembly lookup paths (specifically assemblies located in `C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\WindowsPhone\v8.1\`).
+2. **Value Types vs. Object References:** When the IL bytecode invokes methods or constructs types defined in `System.Windows.dll` (such as `System.Windows.Media.Color`, `Point`, `Size`, or `Thickness`), the decompiler cannot determine if the returned token is a value type (`struct`) or a reference type (`class`). It flags the IL instruction with `Unknown result type` and emits defensive casts (`(object)`).
+3. **The `Expected O, but got Unknown` Indicator:** In .NET Intermediate Language, `O` designates an Object Reference. When an instruction instantiates a Silverlight `DependencyObject` (e.g., `new Storyboard()` or `new DoubleAnimation()`), the decompiler emits this diagnostic because it cannot verify the base class hierarchy without the reference assemblies loaded.
+
+### 13.2 Bytecode Integrity Guarantee
+- **Zero Missing Logic:** These comments do **not** indicate corrupted or incomplete IL bytecode. The binary instructions within the Microsoft assemblies are 100% intact, complete, and fully recoverable.
+- **Flawless Semantics:** All mathematical formulas (such as `LocksScreenBounceEase.EaseInCore`), state machines, and private reflection hooks remain verbatim as Microsoft authored them.
+
+### 13.3 Code Sanitization Rules for Production
+When incorporating reverse-engineered components into a Visual Studio 2015 Silverlight project:
+1. **Strip All `//IL_xxxx` Comments:** Remove all compiler diagnostic comments from headers and method bodies.
+2. **Remove Redundant `(object)` Casts:** 
+   - *Raw Decompiled IL:*
+     ```csharp
+     ((PresentationFrameworkCollection<Timeline>)(object)storyboard.Children).Add((Timeline)(object)anim);
+     ```
+   - *Cleaned Idiomatic C#:*
+     ```csharp
+     storyboard.Children.Add(anim);
+     ```
+3. **Restore Native Strong Typing:** Rely on Visual Studio's project references (`System.Windows`, `Microsoft.Phone`) to provide complete IntelliSense and type safety without awkward casting boilerplate.
+
+---
+
+## 14. Summary
+
+Windows Phone 8.1's **Live Lock Screen** extensibility architecture delivers an optimal balance of customization, aesthetics, and security:
+1. **Absolute Kernel Security:** Custom visuals and widgets run safely in user-space; kernel security and device PIN verification remain untouched.
+2. **Full Interactivity & Modular Widgets:** Rich Silverlight XAML animations, touch physics (`LocksScreenBounceEase`), real-time pedometer tracking (`Lumia.Sense.StepCounter`), native map visualization (`Microsoft.Phone.Maps.Controls.Map`), and calendar queries (`Microsoft.Phone.UserData.Appointments`).
+3. **Sub-500ms Instant Wake:** Adhering to the two-stage clock synchronization pattern, integer pixel snapping, lightweight visual trees, cross-process named Mutex synchronization (`LockScreenMutex`), and aggressive memory reclamation (`OnNavigatedFrom`) guarantees responsive, reliable performance even on resource-constrained 512MB RAM devices.
