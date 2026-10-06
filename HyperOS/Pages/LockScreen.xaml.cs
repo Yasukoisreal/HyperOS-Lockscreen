@@ -321,13 +321,25 @@ namespace HyperOS.Pages
 
             try
             {
-                if (currentUnlockStory != null)
+                if (currentPanelStory != null)
                 {
-                    currentUnlockStory.Stop();
-                    currentUnlockStory = null;
+                    currentPanelStory.Stop();
+                    currentPanelStory = null;
                 }
-                var t = (CompositeTransform)LockScreenPanel.RenderTransform;
-                if (t != null) t.TranslateY = 0;
+                if (currentWidgetsStory != null)
+                {
+                    currentWidgetsStory.Stop();
+                    currentWidgetsStory = null;
+                }
+                var tp = (CompositeTransform)LockScreenPanel.RenderTransform;
+                if (tp != null) tp.TranslateY = 0;
+                var tw = (CompositeTransform)OverlayInformationPanel.RenderTransform;
+                if (tw != null) tw.TranslateY = 0;
+                var tb = (CompositeTransform)BehindForegroundGrid.RenderTransform;
+                if (tb != null) tb.TranslateY = 0;
+                OverlayInformationPanel.Opacity = 1;
+                BehindForegroundGrid.Opacity = 1;
+
                 ExtensibilityHelper.EndUnlock();
                 isUnlockingStarted = false;
             }
@@ -570,14 +582,15 @@ namespace HyperOS.Pages
 
         #region Swipe to Unlock
 
-        private Storyboard currentUnlockStory;
+        private Storyboard currentPanelStory;
+        private Storyboard currentWidgetsStory;
 
-        private void AnimateTo(double targetY, EventHandler completedHandler = null, double durationMs = 280)
+        private void AnimatePanelTo(double targetY, EventHandler completedHandler = null, double durationMs = 280)
         {
-            if (currentUnlockStory != null)
+            if (currentPanelStory != null)
             {
-                try { currentUnlockStory.Stop(); } catch { }
-                currentUnlockStory = null;
+                try { currentPanelStory.Stop(); } catch { }
+                currentPanelStory = null;
             }
 
             var t = (CompositeTransform)LockScreenPanel.RenderTransform;
@@ -590,7 +603,7 @@ namespace HyperOS.Pages
                 return;
             }
 
-            currentUnlockStory = new Storyboard();
+            currentPanelStory = new Storyboard();
             var da = new DoubleAnimation
             {
                 To = targetY,
@@ -599,11 +612,11 @@ namespace HyperOS.Pages
             };
             Storyboard.SetTarget(da, t);
             Storyboard.SetTargetProperty(da, new PropertyPath("TranslateY"));
-            currentUnlockStory.Children.Add(da);
+            currentPanelStory.Children.Add(da);
 
-            currentUnlockStory.Completed += (s, e) =>
+            currentPanelStory.Completed += (s, e) =>
             {
-                currentUnlockStory = null;
+                currentPanelStory = null;
                 t.TranslateY = targetY;
                 if (completedHandler != null)
                 {
@@ -611,19 +624,151 @@ namespace HyperOS.Pages
                 }
             };
 
-            currentUnlockStory.Begin();
+            currentPanelStory.Begin();
+        }
+
+        private void AnimateWidgetsOpacity(double targetOpacity, double durationMs = 200)
+        {
+            if (!bIsAnimOn || durationMs <= 0)
+            {
+                OverlayInformationPanel.Opacity = targetOpacity;
+                BehindForegroundGrid.Opacity = targetOpacity;
+                return;
+            }
+
+            var sb = new Storyboard();
+            var animOp = new DoubleAnimation
+            {
+                To = targetOpacity,
+                Duration = TimeSpan.FromMilliseconds(durationMs),
+                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+            };
+            Storyboard.SetTarget(animOp, OverlayInformationPanel);
+            Storyboard.SetTargetProperty(animOp, new PropertyPath("Opacity"));
+
+            var animOpb = new DoubleAnimation
+            {
+                To = targetOpacity,
+                Duration = TimeSpan.FromMilliseconds(durationMs),
+                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+            };
+            Storyboard.SetTarget(animOpb, BehindForegroundGrid);
+            Storyboard.SetTargetProperty(animOpb, new PropertyPath("Opacity"));
+
+            sb.Children.Add(animOp);
+            sb.Children.Add(animOpb);
+            sb.Begin();
+        }
+
+        private void SnapWidgetsBack()
+        {
+            ExtensibilityHelper.EndUnlock();
+            isUnlockingStarted = false;
+
+            if (currentWidgetsStory != null)
+            {
+                try { currentWidgetsStory.Stop(); } catch { }
+                currentWidgetsStory = null;
+            }
+
+            var t = (CompositeTransform)OverlayInformationPanel.RenderTransform;
+            var tb = (CompositeTransform)BehindForegroundGrid.RenderTransform;
+            if (t == null) return;
+
+            if (!bIsAnimOn)
+            {
+                t.TranslateY = 0;
+                if (tb != null) tb.TranslateY = 0;
+                OverlayInformationPanel.Opacity = 1;
+                BehindForegroundGrid.Opacity = 1;
+                return;
+            }
+
+            currentWidgetsStory = new Storyboard();
+
+            var animY = new DoubleAnimation
+            {
+                To = 0,
+                Duration = TimeSpan.FromMilliseconds(250),
+                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+            };
+            Storyboard.SetTarget(animY, t);
+            Storyboard.SetTargetProperty(animY, new PropertyPath("TranslateY"));
+
+            var animOp = new DoubleAnimation
+            {
+                To = 1,
+                Duration = TimeSpan.FromMilliseconds(250),
+                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+            };
+            Storyboard.SetTarget(animOp, OverlayInformationPanel);
+            Storyboard.SetTargetProperty(animOp, new PropertyPath("Opacity"));
+
+            currentWidgetsStory.Children.Add(animY);
+            currentWidgetsStory.Children.Add(animOp);
+
+            if (tb != null)
+            {
+                var animYb = new DoubleAnimation
+                {
+                    To = 0,
+                    Duration = TimeSpan.FromMilliseconds(250),
+                    EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+                };
+                Storyboard.SetTarget(animYb, tb);
+                Storyboard.SetTargetProperty(animYb, new PropertyPath("TranslateY"));
+
+                var animOpb = new DoubleAnimation
+                {
+                    To = 1,
+                    Duration = TimeSpan.FromMilliseconds(250),
+                    EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+                };
+                Storyboard.SetTarget(animOpb, BehindForegroundGrid);
+                Storyboard.SetTargetProperty(animOpb, new PropertyPath("Opacity"));
+
+                currentWidgetsStory.Children.Add(animYb);
+                currentWidgetsStory.Children.Add(animOpb);
+            }
+
+            currentWidgetsStory.Completed += (s, e) =>
+            {
+                currentWidgetsStory = null;
+                t.TranslateY = 0;
+                if (tb != null) tb.TranslateY = 0;
+                OverlayInformationPanel.Opacity = 1;
+                BehindForegroundGrid.Opacity = 1;
+            };
+
+            currentWidgetsStory.Begin();
         }
 
         private void AnimateBackToNormal(bool forced = false)
         {
-            var t = (CompositeTransform)LockScreenPanel.RenderTransform;
-            if (t == null) return;
-            if (!forced && t.TranslateY == 0) return;
+            var panelTransform = (CompositeTransform)LockScreenPanel.RenderTransform;
+            if (panelTransform == null) return;
+            if (!forced && panelTransform.TranslateY == 0) return;
 
             ExtensibilityHelper.EndUnlock();
             isUnlockingStarted = false;
 
-            AnimateTo(0, null, 260);
+            if (currentWidgetsStory != null)
+            {
+                try { currentWidgetsStory.Stop(); } catch { }
+                currentWidgetsStory = null;
+            }
+
+            var t = (CompositeTransform)OverlayInformationPanel.RenderTransform;
+            var tb = (CompositeTransform)BehindForegroundGrid.RenderTransform;
+            if (t != null) t.TranslateY = 0;
+            if (tb != null) tb.TranslateY = 0;
+            OverlayInformationPanel.Opacity = 1;
+            BehindForegroundGrid.Opacity = 1;
+
+            if (panelTransform.TranslateY != 0)
+            {
+                AnimatePanelTo(0, null, 260);
+            }
         }
 
         private void LockScreenPanel_ManipulationStarted(
@@ -631,13 +776,21 @@ namespace HyperOS.Pages
         {
             if (MySetsOverlay.Visibility == Visibility.Visible) return;
 
-            if (currentUnlockStory != null)
+            if (currentPanelStory != null)
             {
-                try { currentUnlockStory.Stop(); } catch { }
-                currentUnlockStory = null;
+                try { currentPanelStory.Stop(); } catch { }
+                currentPanelStory = null;
+            }
+            if (currentWidgetsStory != null)
+            {
+                try { currentWidgetsStory.Stop(); } catch { }
+                currentWidgetsStory = null;
             }
 
-            if (!isUnlockingStarted)
+            var panelTransform = (CompositeTransform)LockScreenPanel.RenderTransform;
+            bool isPanelSlidUp = (panelTransform != null && panelTransform.TranslateY < -20);
+
+            if (!isPanelSlidUp && !isUnlockingStarted)
             {
                 isUnlockingStarted = true;
                 ExtensibilityHelper.BeginUnlock();
@@ -649,24 +802,39 @@ namespace HyperOS.Pages
         {
             if (MySetsOverlay.Visibility == Visibility.Visible) return;
 
+            double pinpadHeight = ExtensibilityHelper.GetPinpadHeightDips();
+            var panelTransform = (CompositeTransform)LockScreenPanel.RenderTransform;
+            bool isPanelSlidUp = (panelTransform != null && panelTransform.TranslateY < -20);
+
+            // If PIN pad is already open, dragging down moves the wallpaper panel back towards 0
+            if (isPanelSlidUp)
+            {
+                double newPanelY = panelTransform.TranslateY + e.DeltaManipulation.Translation.Y;
+                if (newPanelY > 0) newPanelY = 0;
+                if (newPanelY < -pinpadHeight) newPanelY = -pinpadHeight;
+                panelTransform.TranslateY = newPanelY;
+                return;
+            }
+
+            // Normal state: wallpaper stays static! Only widgets slide up and fade!
             if (!isUnlockingStarted)
             {
                 isUnlockingStarted = true;
                 ExtensibilityHelper.BeginUnlock();
             }
 
-            double pinpadHeight = ExtensibilityHelper.GetPinpadHeightDips();
-            bool isPinLocked = pinpadHeight > 0;
-            double maxDrag = isPinLocked ? -pinpadHeight : -800.0;
-
-            var t = (CompositeTransform)LockScreenPanel.RenderTransform;
-            if (t == null) return;
+            var t = (CompositeTransform)OverlayInformationPanel.RenderTransform;
+            var tb = (CompositeTransform)BehindForegroundGrid.RenderTransform;
 
             double newY = t.TranslateY + e.DeltaManipulation.Translation.Y;
             if (newY > 0) newY = 0;
-            if (newY < maxDrag) newY = maxDrag;
 
             t.TranslateY = newY;
+            if (tb != null) tb.TranslateY = newY;
+
+            double opacity = Math.Max(0, 1.0 + newY / 400.0);
+            OverlayInformationPanel.Opacity = opacity;
+            if (BehindForegroundGrid != null) BehindForegroundGrid.Opacity = opacity;
         }
 
         private void LockScreenPanel_ManipulationCompleted(
@@ -676,35 +844,55 @@ namespace HyperOS.Pages
 
             double pinpadHeight = ExtensibilityHelper.GetPinpadHeightDips();
             bool isPinLocked = pinpadHeight > 0;
-            double maxDrag = isPinLocked ? -pinpadHeight : -800.0;
+            var panelTransform = (CompositeTransform)LockScreenPanel.RenderTransform;
+            bool isPanelSlidUp = (panelTransform != null && panelTransform.TranslateY < -20);
 
-            var t = (CompositeTransform)LockScreenPanel.RenderTransform;
-            if (t == null) return;
-
-            double currentY = t.TranslateY;
-            bool isFlickUp = e.FinalVelocities.LinearVelocity.Y < -1200.0;
-            bool isFlickDown = e.FinalVelocities.LinearVelocity.Y > 1200.0;
-
-            double threshold = isPinLocked ? (maxDrag * 0.4) : -220.0;
-            bool shouldProceed = (currentY <= threshold || isFlickUp) && !isFlickDown;
-
-            if (shouldProceed)
+            // If PIN pad was already open and user was dragging it
+            if (isPanelSlidUp)
             {
-                if (isPinLocked)
+                bool isFlickDown = e.FinalVelocities.LinearVelocity.Y > 1000.0;
+                bool isFlickUp = e.FinalVelocities.LinearVelocity.Y < -1000.0;
+                bool shouldClosePin = (panelTransform.TranslateY > -pinpadHeight * 0.6 || isFlickDown) && !isFlickUp;
+
+                if (shouldClosePin)
                 {
-                    // Animate up to reveal native PIN pad, stay there and DO NOT request unlock.
-                    // Native PIN pad will take input and OS will unlock automatically.
-                    AnimateTo(maxDrag, null, 260);
+                    AnimateBackToNormal();
                 }
                 else
                 {
-                    // No PIN: animate completely off screen and unlock device
-                    AnimateTo(-800.0, (s, args) => DoActualUnlock(), 280);
+                    AnimatePanelTo(-pinpadHeight, null, 200);
+                }
+                return;
+            }
+
+            // Normal state: user just released their finger after swiping widgets up
+            var t = (CompositeTransform)OverlayInformationPanel.RenderTransform;
+            double currentY = t.TranslateY;
+            bool flickUp = e.FinalVelocities.LinearVelocity.Y < -1200.0;
+            bool flickDown = e.FinalVelocities.LinearVelocity.Y > 1200.0;
+
+            bool shouldProceed = (currentY <= -180.0 || flickUp) && !flickDown;
+
+            if (shouldProceed)
+            {
+                // USER FINISHED SWIPE: NOW AND ONLY NOW does the wallpaper slide up!
+                if (isPinLocked)
+                {
+                    // Animate wallpaper up to reveal the native PIN pad underneath!
+                    AnimatePanelTo(-pinpadHeight, null, 280);
+                    AnimateWidgetsOpacity(0, 200);
+                }
+                else
+                {
+                    // No PIN: animate wallpaper all the way off screen and unlock
+                    AnimatePanelTo(-800.0, (s, args) => DoActualUnlock(), 300);
+                    AnimateWidgetsOpacity(0, 200);
                 }
             }
             else
             {
-                AnimateBackToNormal();
+                // Swipe cancelled / not far enough: snap widgets back down, wallpaper stays at 0
+                SnapWidgetsBack();
             }
         }
 
@@ -743,11 +931,13 @@ namespace HyperOS.Pages
                     isUnlockingStarted = true;
                     ExtensibilityHelper.BeginUnlock();
                 }
-                AnimateTo(-pinpadHeight, null, 260);
+                AnimatePanelTo(-pinpadHeight, null, 280);
+                AnimateWidgetsOpacity(0, 200);
             }
             else
             {
-                AnimateTo(-800.0, (s, args) => DoActualUnlock(), 280);
+                AnimatePanelTo(-800.0, (s, args) => DoActualUnlock(), 300);
+                AnimateWidgetsOpacity(0, 200);
             }
         }
 
