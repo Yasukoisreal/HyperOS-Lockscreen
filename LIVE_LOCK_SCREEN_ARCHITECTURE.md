@@ -19,19 +19,28 @@ Prior to Windows Phone 8.1, the lock screen on Windows Phone 8.0 was strictly st
 Announced at **Microsoft Build 2014**, Windows Phone 8.1 introduced the **Live Lock Screen Extensibility Framework**. This platform capability enables registered applications to take over the active lock screen visual surface, rendering rich XAML typography, dynamic animations, and responsive multi-touch gestures when the user turns on the device.
 
 ### 1.2 Official Reference Implementations
-This technical architecture is derived directly from in-depth reverse-engineering and empirical testing of the **two official Microsoft Live Lock Screen implementations** released during the Windows Phone 8.1 era:
+This technical architecture is derived directly from in-depth decompilation, reverse-engineering, and empirical testing of the **two official Microsoft Live Lock Screen implementations** released during the Windows Phone 8.1 era:
 
 1. **Microsoft Live Lock Screen BETA (Microsoft Corporation, Build 2014):**
-   - The foundational proof-of-concept that debuted the framework.
-   - Introduced the core OS contracts: `LockScreen_Application` (Consumer ID `{CD4601F6-351B-43C7-9087-6B12BD98ED63}`), `Extensions\LockAppExtension.xml` (`urn:LockApp`), `ActivationPolicy="Resume"`, and programmatic activation via `ExtensibilityApp`.
-   - Demonstrated the dual-role routing architecture (`LockRouter.xaml`) and preset theme carousel (Centric, Stripe, Timeline, Classic, Circular, Slide).
-   - Revealed the critical real-world lessons regarding the gray *"Resuming..."* delay and uncompressed bitmap allocations on 512MB RAM hardware.
+   - **Internal Architecture:** Composed of `LockScreen.dll` (main runtime & themes), `LockScreen.Common.dll` (shared models, Bing wallpaper provider, custom Lumia imaging filters), `LockScreenSettings.dll` (configuration UI), and native C++/CX bridge `LockScreen.Bridge.dll` (`LockScreen_Bridge.winmd`).
+   - **Extension & Routing:** Debuted the `LockScreen_Application` contract (`{CD4601F6-351B-43C7-9087-6B12BD98ED63}`) with `Extensions\LockAppExtension.xml` (`urn:LockApp`). Implemented dynamic routing via a custom Silverlight `UriMapper` registered on `RootFrame.UriMapper`.
+   - **Theme Engine:** Included 6 distinct themes: **Tokyo** (3 concentric rotating time rings), **Crop** (split large numerals with parallax), **Diagonal** (angled typography layout), **Overlay** (semi-transparent backdrop), **ExtraLight** (ultra-thin minimal typography), and **Typographic** (algorithmic text-based clock using `NumberToText` converter).
+   - **System Interop:** Utilized non-public reflection hooks on `Microsoft.Devices.StartButton` to handle hardware Windows key events, and queried `ExtensibilityApp.GetLockPinpadHeight()` to coordinate unlock gestures with the OS PIN pad.
+   - **Wallpaper Engine:** Integrated daily Bing wallpaper downloading with HTTP ETag caching, partner identification header (`X-COMMON-PARTNERCODE: WPLLS`), and staged two-phase commits (`bingImageNext.jpg` -> `bingImage.jpg`).
 
-2. **Tetra Lockscreen (Microsoft Mobile / Microsoft Garage, late 2014):**
-   - The most advanced, feature-complete, and performance-optimized Live Lock Screen application developed for Windows Phone 8.1.
-   - Introduced the native WinMD bridge architecture (**`LockScreen_Bridge`** via `LockScreenInfoProvider`) to read system notifications, unread badges, calendar agendas, and alarm indicators directly from Windows Phone 8.1 shell libraries (`system32\shellres.*.dll`).
-   - Perfected the **Two-Stage Minute Boundary Synchronization Pattern** to eliminate battery drain from 1-second timers.
-   - Integrated hardware-accelerated touch physics, native flashlight/torch hardware control via `MediaCapture.VideoDeviceController.TorchControl`, and seamless unlock handoff via `SystemProtection.RequestScreenUnlock()`.
+2. **Tetra Lockscreen (Microsoft Mobile / Microsoft Foundry, late 2014 — Codename: `SilverBullet`):**
+   - **Internal Architecture:** Built as an enterprise-grade modular system comprising `SilverBullet.dll`, next-generation native bridge `Facet_Lockscreen_Bridge.dll` (`Facet_Lockscreen_Bridge.winmd`), hardware sensor pipeline `Lumia.Sense.dll` + `Lumia.Internal.HMBClient.dll` (Hardware Message Bus), and `Microsoft.Foundry.Globalization.dll`.
+   - **Manifest Strategy:** Declared `<DefaultTask Name="_default" ActivationPolicy="Resume" />` without any hardcoded `NavigationPage`, controlling initial view navigation purely programmatically in `Application_Launching`.
+   - **Modular Plugin Architecture:** Introduced a plug-and-play widget system (`Plugin`, `PluginWidget`, `PluginManager`) hosting live, interactive tools directly on the lock screen:
+     - **Flashlight Widget:** Native LED flash control via `Windows.Media.Devices.TorchControl`.
+     - **Stopwatch Widget:** Interactive real-time timer with lap tracking directly on the lock screen.
+     - **Location & Map Widget:** Live interactive pan/zoom map using `Microsoft.Phone.Maps.Controls.Map` with GPS coordinate tracking.
+     - **Activity Tracker Widget:** Pedometer and weekly step chart visualization powered by Nokia SensorCore (`Lumia.Sense.StepCounter`).
+     - **Calendar & Weather Widgets:** Interactive timeline gauge (`LinearGaugeControl`) and live weather forecasting.
+   - **Physics & Inertia Model:** Implemented an exact mathematical physics deceleration model ($a = 2000 \text{ px/s}^2$) for inertia gestures, with dynamic threshold calculation based on PIN pad height.
+   - **Pre-rendered Lens Blur:** Background worker (`ImageProcessor`) pre-filters wallpapers into `Blurred_Background.jpg` using `Nokia.Graphics.Imaging.LensBlurEffect` (radius 25), smoothly fading in upon widget interaction without real-time GPU strain.
+   - **Zero-Footprint Memory Lifecycle:** Implemented proactive process termination (`Application.Current.Terminate()`) on lock screen deactivation, completely purging the process from RAM on unlock to eliminate background memory leaks on 512MB/1GB devices.
+   - **Gen-2 Native Bridge:** `Facet_Lockscreen_Bridge` enhanced system notification retrieval by returning pre-decoded `byte[] BadgeIcon` directly from C++, supporting `DoNotDisturbIcon` (Quiet Hours), and providing fallback icons via `PreservedBadgeDictionary`.
 
 ### 1.3 OS-Level Architectural Reality
 A critical architectural question for developers: **Does a Live Lock Screen replace the secure Windows Phone lock screen kernel?**
@@ -240,34 +249,57 @@ Create a folder named `Extensions` at the project root, and add an XML file name
 </x:Extension>
 ```
 
+> [!NOTE]
+> **Namespace Nuances:** In Microsoft's reference packages:
+> - *Live Lock Screen BETA* used `<x:Extension xmlns:x="urn:LockApp"><AppID>LockScreen</AppID></x:Extension>`.
+> - *Tetra Lockscreen* used `<x:Extension xmlns:x="urn:SilverBullet"><AppID>App</AppID></x:Extension>`.
+> Both formats are valid descriptors. The standard convention is `xmlns:x="urn:LockApp"`.
+
 > **Visual Studio File Properties:**
 > - **Build Action:** `Content`
 > - **Copy to Output Directory:** `Copy if newer`
 
-### 3.3 Programmatic Registration: `ExtensibilityApp`
+### 3.3 Programmatic Registration & Control: `ExtensibilityApp`
 
 > [!IMPORTANT]
 > **Key Architectural Distinction:**
 > Windows Phone 8.1 system settings (**Settings > lock screen > Background**) only allows selecting *static image providers* (e.g., Bing or Photo). There is **no menu option in the phone settings** to activate a Live Lock Screen!
 > 
-> Instead, Live Lock Screen applications **must be activated programmatically** from inside the application using `ExtensibilityApp`:
+> Instead, Live Lock Screen applications **must be activated and coordinated programmatically** from inside the application using `Windows.Phone.System.LockScreenExtensibility.ExtensibilityApp`.
+
+#### Complete `ExtensibilityApp` API Reference:
+
+| Method | Return Type | Description & Usage |
+|---|---|---|
+| `IsLockScreenApplicationRegistered()` | `bool` | Returns `true` if the current application is currently registered as the active OS Live Lock Screen. |
+| `RegisterLockScreenApplication()` | `void` | Registers the app as the active Live Lock Screen provider in the OS registry without requiring user confirmation dialogs. |
+| `UnregisterLockScreenApplication()` | `void` | Revokes registration and immediately reverts the device to the default static OS lock screen. |
+| `GetLockPinpadHeight()` | `int` | **Returns the exact pixel height of the native OS PIN Keypad.** Returns `0` if device has no PIN lock. Critical for calculating the unlock upward drag limit. |
+| `BeginUnlock()` | `void` | Notifies the OS Shell that the user has started a touch drag gesture (`ManipulationDelta`). Prepares the OS compositor and lifts the PIN pad. |
+| `EndUnlock()` | `void` | Notifies the OS Shell that the drag gesture was aborted or snapped back. Drops the PIN pad back into hiding. |
 
 ```csharp
 using Windows.Phone.System.LockScreenExtensibility;
 
-// Check if currently registered as the active live lock screen
-bool isRegistered = ExtensibilityApp.IsLockScreenApplicationRegistered();
-
-// Programmatically register as the active live lock screen
-if (!isRegistered)
+// 1. Check & register on settings page load
+if (!ExtensibilityApp.IsLockScreenApplicationRegistered())
 {
     ExtensibilityApp.RegisterLockScreenApplication();
 }
 
-// Programmatically unregister (reverts to default OS lock screen)
-if (isRegistered)
+// 2. Unregister when disabled by user
+if (ExtensibilityApp.IsLockScreenApplicationRegistered())
 {
     ExtensibilityApp.UnregisterLockScreenApplication();
+}
+
+// 3. Inspect PIN status and calculate drag threshold
+int pinpadHeight = ExtensibilityApp.GetLockPinpadHeight();
+if (pinpadHeight > 0)
+{
+    // Device is PIN-locked: limit drag displacement to reveal PIN pad
+    double scaleFactor = (double)Application.Current.Host.Content.ScaleFactor / 100.0;
+    double pinpadPhysicalHeight = (double)pinpadHeight / scaleFactor;
 }
 ```
 
@@ -355,13 +387,60 @@ protected override void OnNavigatedTo(NavigationEventArgs e)
 }
 ```
 
+### 4.4 The Dynamic `UriMapper` Pattern (Official Live Lock Screen BETA Pattern)
+Instead of using an intermediate XAML page (`LockRouter.xaml`), Microsoft's *Live Lock Screen BETA* utilized a custom Silverlight `UriMapper` registered on `RootFrame.UriMapper`.
+
+#### How it Works:
+1. In `WMAppManifest.xml`, the default task points directly to the configuration page: `<DefaultTask Name="_default" NavigationPage="Pages/Settings/SettingsPage.xaml" />`.
+2. In `App.xaml.cs`, register the custom mapper during frame initialization:
+   ```csharp
+   RootFrame = new PhoneApplicationFrame();
+   RootFrame.UriMapper = new LockScreenUriMapper();
+   ```
+3. Whenever navigation is requested, the mapper intercepts the incoming URI before the page visual is created:
+   ```csharp
+   using System;
+   using System.Windows.Navigation;
+   using Windows.Phone.System;
+
+   public class LockScreenUriMapper : UriMapperBase
+   {
+       public override Uri MapUri(Uri uri)
+       {
+           string originalUri = uri.ToString();
+           
+           // Allow internal XAML component resource loads
+           if (originalUri.Contains(";component/")) return uri;
+
+           // If device is locked, map directly to the active theme/lock screen view
+           if (SystemProtection.ScreenLocked)
+           {
+               return new Uri("/Pages/LockView.xaml", UriKind.Relative);
+           }
+
+           // Device is unlocked -> proceed to SettingsPage
+           return uri;
+       }
+   }
+   ```
+
+#### Comparison: Trampoline Router vs. Dynamic UriMapper:
+| Criteria | Trampoline `LockRouter.xaml` | Dynamic `UriMapper` |
+|---|---|---|
+| **Page Allocations** | Allocates router page, navigates twice | Direct navigation, 0 intermediate pages |
+| **Back-Stack State** | Requires manual back-entry purging | Back-stack remains clean by default |
+| **Theme Switching** | Router must inspect settings and redirect | Mapper maps directly to active theme URL |
+| **Simplicity** | Easy to understand, standard Silverlight | Professional pattern used in Microsoft production |
+
 ---
 
 ## 5. Touch Gestures, Physics & Security Unlock Flow
 
 When authoring the active lock screen page (`LockView.xaml`), three critical interaction requirements must be met:
 
-### 5.1 Intercepting the Hardware Back Key
+### 5.1 Intercepting Hardware Buttons
+
+#### Hardware Back Key
 If the hardware back button is not intercepted, pressing Back will immediately exit the page or suspend the app, exposing the user's Start screen without unlocking.
 
 ```csharp
@@ -373,76 +452,168 @@ protected override void OnBackKeyPress(System.ComponentModel.CancelEventArgs e)
 }
 ```
 
-#### What about Hardware Start and Search Buttons?
-- The Windows Phone 8.1 OS kernel **inherently disables** the Start (Windows key) and Search (Cortana/Bing key) buttons whenever `SystemProtection.ScreenLocked == true`.
-- Third-party applications do not need to (and cannot) intercept Start or Search keys—the kernel guarantees that pressing them will not bypass the lock screen.
+#### Hardware Start (Windows Key) Hook: `Microsoft.Devices.StartButton`
+The OS kernel prevents the Start key from navigating away while the screen is locked. However, if the user presses the Start key **while dragging or while the PIN pad is partially revealed**, the UI could remain frozen in a half-dragged state unless intercepted.
 
-### 5.2 Touch Manipulation & Snap-Back Physics
-Smooth lock screens track the user's touch displacement in real-time. If the drag is released before reaching the unlock threshold, the UI must smoothly snap back:
+Both *Live Lock Screen BETA* and *Tetra Lockscreen* hooked an internal non-public OS event via reflection:
 
 ```csharp
-private double dragDeltaY = 0;
-private const double UNLOCK_THRESHOLD = -150.0; // Dragging up beyond -150px triggers unlock
-private bool isUnlockingStarted = false;
+using System;
+using System.Reflection;
+using Microsoft.Phone.Shell;
 
-private void LayoutRoot_ManipulationDelta(object sender, ManipulationDeltaEventArgs e)
+public static class StartButtonHook
 {
-    if (isUnlockingStarted) return;
-
-    dragDeltaY += e.DeltaManipulation.Translation.Y;
-    
-    // Clamp: Only allow upward dragging
-    if (dragDeltaY > 0) dragDeltaY = 0;
-
-    // Follow finger (compositor accelerated transform)
-    ContentTransform.TranslateY = dragDeltaY;
-
-    // Fade content proportionally as dragged up
-    double opacity = 1.0 - Math.Min(1.0, Math.Abs(dragDeltaY) / 450.0);
-    ContentPanel.Opacity = opacity;
-}
-
-private void LayoutRoot_ManipulationCompleted(object sender, ManipulationCompletedEventArgs e)
-{
-    if (isUnlockingStarted) return;
-
-    // Unlock condition: Exceeded distance threshold OR flicked with high upward velocity
-    if (dragDeltaY < UNLOCK_THRESHOLD || e.FinalVelocities.LinearVelocity.Y < -800)
+    public static void Register(EventHandler handler)
     {
-        InitiateUnlockSequence();
+        try
+        {
+            Assembly assembly = ((object)PhoneApplicationService.Current).GetType().Assembly;
+            Type type = assembly.GetType("Microsoft.Devices.StartButton");
+            EventInfo evt = type.GetEvent("StartKeyPressed");
+            MethodInfo addMethod = evt.GetAddMethod(nonPublic: true);
+            addMethod.Invoke(AppDomain.CurrentDomain, new object[] { new EventHandler(handler.Invoke) });
+        }
+        catch { }
+    }
+
+    public static void Unregister(EventHandler handler)
+    {
+        try
+        {
+            Assembly assembly = ((object)PhoneApplicationService.Current).GetType().Assembly;
+            Type type = assembly.GetType("Microsoft.Devices.StartButton");
+            EventInfo evt = type.GetEvent("StartKeyPressed");
+            MethodInfo removeMethod = evt.GetRemoveMethod(nonPublic: true);
+            removeMethod.Invoke(AppDomain.CurrentDomain, new object[] { new EventHandler(handler.Invoke) });
+        }
+        catch { }
+    }
+}
+```
+**Handling Start Button Pressed:**
+```csharp
+private void OnStartKeyPressed(object sender, EventArgs e)
+{
+    // User pressed Windows key: immediately cancel drag and spring lock screen back to 0
+    Deployment.Current.Dispatcher.BeginInvoke(() =>
+    {
+        ExtensibilityApp.EndUnlock();
+        PlaySnapBackAnimation();
+    });
+}
+```
+
+### 5.2 Touch Manipulation, Dynamic PIN Threshold & Inertia Physics
+
+Smooth lock screens track the user's touch displacement in real-time. In production implementations (such as Tetra), unlock gestures integrate OS-level PIN pad detection and physics equations:
+
+#### Dynamic PIN Threshold Calculation:
+```csharp
+private double unlockThreshold;
+private bool isPinLocked;
+
+private void OnManipulationStarted(object sender, ManipulationStartedEventArgs e)
+{
+    if (!SystemProtection.ScreenLocked) return;
+
+    // 1. Notify OS to prepare unlock & lift native PIN pad if present
+    ExtensibilityApp.BeginUnlock();
+
+    // 2. Query OS PIN Pad height
+    int pinpadHeight = ExtensibilityApp.GetLockPinpadHeight();
+    double scale = (double)Application.Current.Host.Content.ScaleFactor / 100.0;
+
+    if (pinpadHeight > 0)
+    {
+        isPinLocked = true;
+        // Limit upward drag strictly to the height of the PIN pad
+        unlockThreshold = 0.0 - (pinpadHeight / scale);
     }
     else
     {
-        // Insufficient drag -> Snap back with cubic ease
-        PlaySnapBackAnimation();
+        isPinLocked = false;
+        // Half-screen threshold for devices without PIN
+        unlockThreshold = 0.0 - (Application.Current.RootVisual.RenderSize.Height / 2.0);
+    }
+}
+```
+
+#### Real-Time Manipulation Drag:
+```csharp
+private void OnManipulationDelta(object sender, ManipulationDeltaEventArgs e)
+{
+    if (!SystemProtection.ScreenLocked) return;
+
+    double currentY = ContentTransform.TranslateY;
+    double newY = currentY + e.DeltaManipulation.Translation.Y;
+
+    // Clamp: Do not drag downward past 0, and if PIN locked, don't drag past PIN pad
+    if (newY <= 0.0 && (!isPinLocked || newY >= unlockThreshold))
+    {
+        ContentTransform.TranslateY = newY;
+    }
+}
+```
+
+#### Quota & Deceleration Inertia Model (from Tetra Lockscreen):
+When the user releases touch (`ManipulationCompleted`), Tetra evaluates whether the gesture meets the unlock threshold using an **exact physical deceleration formula**:
+
+$$\text{Deceleration } a = 2000 \text{ px/s}^2$$
+$$\text{Time to stop } t = \frac{|v|}{a}$$
+$$\text{Inertia distance } s = v \cdot t + \frac{1}{2} a \cdot t^2$$
+
+```csharp
+private Tuple<double, double> CalculateInertia(double velocityY, double startY)
+{
+    double a = 2000.0; // 2000 px/s² deceleration
+    double t = Math.Abs((0.0 - velocityY) / a);
+    double s = velocityY * t + 0.5 * a * t * t;
+    return new Tuple<double, double>(t, s + startY);
+}
+
+private void OnManipulationCompleted(object sender, ManipulationCompletedEventArgs e)
+{
+    if (!SystemProtection.ScreenLocked) return;
+
+    double vy = e.FinalVelocities.LinearVelocity.Y;
+    var inertia = CalculateInertia(vy, ContentTransform.TranslateY);
+    double predictedStopY = inertia.Item2;
+
+    // Condition 1: Projected stopping position passes the unlock threshold, OR high-speed upward flick
+    if (predictedStopY <= unlockThreshold || vy < -1500.0)
+    {
+        if (isPinLocked)
+        {
+            // Slide to PIN Pad boundary
+            AnimateToPosition(unlockThreshold, TimeSpan.FromMilliseconds(300), new CircleEase { EasingMode = EasingMode.EaseOut });
+        }
+        else
+        {
+            // Complete unlock sequence
+            InitiateUnlockSequence();
+        }
+    }
+    else
+    {
+        // Cancel unlock, inform OS, and bounce back to 0
+        ExtensibilityApp.EndUnlock();
+        PlayBounceBackAnimation();
     }
 }
 
-private void PlaySnapBackAnimation()
+private void PlayBounceBackAnimation()
 {
     var sb = new Storyboard();
-    
-    var animY = new DoubleAnimation
+    var bounce = new DoubleAnimation
     {
-        To = 0,
-        Duration = TimeSpan.FromMilliseconds(220),
-        EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+        To = 0.0,
+        Duration = TimeSpan.FromSeconds(1.5),
+        EasingFunction = new BounceEase { Bounces = 2, Bounciness = 1.9 }
     };
-    Storyboard.SetTarget(animY, ContentTransform);
-    Storyboard.SetTargetProperty(animY, new PropertyPath("TranslateY"));
-    
-    var animOp = new DoubleAnimation
-    {
-        To = 1.0,
-        Duration = TimeSpan.FromMilliseconds(220)
-    };
-    Storyboard.SetTarget(animOp, ContentPanel);
-    Storyboard.SetTargetProperty(animOp, new PropertyPath("Opacity"));
-
-    sb.Children.Add(animY);
-    sb.Children.Add(animOp);
-    
-    dragDeltaY = 0;
+    Storyboard.SetTarget(bounce, ContentTransform);
+    Storyboard.SetTargetProperty(bounce, new PropertyPath("TranslateY"));
+    sb.Children.Add(bounce);
     sb.Begin();
 }
 ```
@@ -532,50 +703,76 @@ On devices without capacitive buttons (e.g., Lumia 530, 630, 730), Windows Phone
 
 ---
 
-## 7. System Notifications, Badges & Alarm Integration (`LockScreen_Bridge`)
+## 7. System Notifications, Badges & Alarm Integration (Native WinMD Bridges)
 
-Official Silverlight public SDK APIs do not expose other applications' unread counters or the system alarm state. However, the internal native platform component **`LockScreen_Bridge`** provides read access to lock screen notifications.
+Official Silverlight public SDK APIs do not expose other applications' unread counters, Quiet Hours status, or the system alarm state. However, Microsoft created specialized native WinMD components providing read access to the OS shell notifications.
 
-### 7.1 Architecture of `LockScreen_Bridge`
-Microsoft's official *Live Lock Screen BETA* and *Tetra Lockscreen* utilized a native WinMD component (`LockScreen_Bridge.winmd` backed by `LockScreen.Bridge.dll`):
+Two distinct generations of native bridges exist in Microsoft's official packages:
+1. **Generation 1: `LockScreen_Bridge.winmd` / `LockScreen.Bridge.dll`** (from *Live Lock Screen BETA*)
+2. **Generation 2: `Facet_Lockscreen_Bridge.winmd` / `Facet_Lockscreen_Bridge.dll`** (from *Tetra Lockscreen*)
+
+### 7.1 Architecture Comparison: Gen 1 vs. Gen 2 Bridge
+
+| Architectural Feature | Gen 1: `LockScreen_Bridge` (Build 2014) | Gen 2: `Facet_Lockscreen_Bridge` (Tetra) |
+|---|---|---|
+| **Snapshot Instantiation** | `provider.GetSnapshot(snapshot)` (Pass pre-allocated object) | `new LockScreenSnapshot(width, height)` (Direct constructor with device dimensions) |
+| **Badge Icon Extraction** | Returns string URI (`res://...`). Managed C# must call `GetImageFromResource(...)` to load DLL bytes. | **Direct `byte[] BadgeIcon` array!** Native C++ automatically extracts and decodes the bitmap buffer. |
+| **Quiet Hours / Do Not Disturb** | `string DoNotDisturbModeIconUri` | `Badge DoNotDisturbIcon` (Full Badge object with icon & status) |
+| **Driving Mode Icon** | `string DrivingModeIcon` | `Badge DrivingModeIcon` (Full Badge object) |
+| **Alarm Indicator** | `string AlarmIconUri` | `Badge AlarmIcon` (Full Badge object) |
+| **Tray Status Query** | Not supported | `bool HasTrayBadges` (Instant tray state check) |
+| **Fallback Asset System** | Fallback to `/Assets/DefaultLockImage.png` | `PreservedIcons` system mapping shell app names to local assets (`dot.png`, phone, mail) |
 
 ```
-┌─────────────────────────────────────────┐
-│     Live Lock Screen Silverlight App    │
-└────────────────────┬────────────────────┘
-                     │ (Managed C# Call)
-                     ▼
-┌─────────────────────────────────────────┐
-│       LockScreen_Bridge.winmd           │
-│   - LockScreenInfoProvider              │
-│   - DeviceLockscreenSnapshot            │
-└────────────────────┬────────────────────┘
-                     │ (Native C++ Runtime)
-                     ▼
-┌─────────────────────────────────────────┐
-│   Windows Phone 8.1 Shell Registry &    │
-│   System Resources (system32\*.dll)     │
-└─────────────────────────────────────────┘
+[Gen 1 Architecture: Managed Resource Extraction]
+Silverlight App ──> LockScreenInfoProvider.GetSnapshot() ──> Returns URI ("res://shellres.480x800.dll!LockScreenSms")
+         │
+         └──> LockScreenInfoProvider.GetImageFromResource("c:\windows\system32\...", ...) ──> Returns byte[]
+
+[Gen 2 Architecture: Native In-Process Decoding (Tetra)]
+Silverlight App ──> new LockScreenSnapshot(width, height) ──> Directly returns Badge.BadgeIcon (byte[])
 ```
 
-### 7.2 Reading Lock Screen Snapshot Data
-The snapshot exposes:
-- **`AlarmIconUri`**: Path to the system alarm icon (non-empty if an alarm is active).
-- **`DetailedTexts`**: System calendar appointment summary or incoming email preview.
-- **`Badges`**: Up to 5 quick status badge slots with `BadgeIconUri` and `BadgeValue` (unread count).
-
-### 7.3 Extracting Badge Resource Bitmaps
-Badge icon URIs follow the format:
-`res://shellres.<resolution>!LockScreenCall` or `res://shellres.480x800.dll!LockScreenSms`
+### 7.2 Consuming Gen 1 Bridge (`LockScreen_Bridge`)
+If your project consumes the original `LockScreen_Bridge.winmd`:
 
 ```csharp
-public static BitmapImage LoadBadgeIcon(string uri)
+using LockScreen_Bridge;
+
+var provider = new LockScreenInfoProvider();
+var snapshot = new DeviceLockscreenSnapshot();
+provider.GetSnapshot(snapshot);
+
+bool hasAlarm = !string.IsNullOrEmpty(snapshot.AlarmIconUri);
+bool hasDriving = !string.IsNullOrEmpty(snapshot.DrivingModeIcon);
+bool hasQuietHours = !string.IsNullOrEmpty(snapshot.DoNotDisturbModeIconUri);
+
+// Extract detailed text (calendar/email preview)
+if (snapshot.DetailedTexts != null)
+{
+    var texts = snapshot.DetailedTexts
+        .Where(t => !string.IsNullOrEmpty(t.Text))
+        .Select(t => t.Text);
+    string summary = string.Join("\n", texts);
+}
+
+// Extract quick status badges
+foreach (Badge badge in snapshot.Badges)
+{
+    string count = badge.BadgeValue;
+    string uri = badge.BadgeIconUri;
+    BitmapImage icon = LoadGen1BadgeIcon(uri);
+}
+```
+
+#### Extracting Resource Bitmaps in Gen 1:
+```csharp
+public static BitmapImage LoadGen1BadgeIcon(string uri)
 {
     if (string.IsNullOrEmpty(uri)) return null;
 
     if (uri.StartsWith("res:", StringComparison.OrdinalIgnoreCase))
     {
-        // Format: res://<dll>!<resource_id>
         string[] parts = uri.Substring(4).TrimStart('/').Split(new char[] { '!' }, 2);
         if (parts.Length == 2)
         {
@@ -583,22 +780,78 @@ public static BitmapImage LoadBadgeIcon(string uri)
             string dllName = parts[0].Replace("{ScreenResolution}", "480x800");
             string dllPath = "c:\\windows\\system32\\" + dllName + ".dll";
 
-            byte[] bytes = LockScreen_Bridge.LockScreenInfoProvider.GetImageFromResource(dllPath, resourceId);
+            byte[] bytes = LockScreenInfoProvider.GetImageFromResource(dllPath, resourceId);
             if (bytes != null && bytes.Length > 0)
             {
                 var bmp = new BitmapImage();
-                bmp.SetSource(new System.IO.MemoryStream(bytes));
+                bmp.SetSource(new MemoryStream(bytes));
                 return bmp;
             }
         }
     }
-    return new BitmapImage(new Uri(uri, UriKind.RelativeOrAbsolute));
+    return new BitmapImage(new Uri("/Assets/DefaultLockImage.png", UriKind.Relative));
 }
 ```
 
-### 7.4 Performance Rules for Badges
-1. **In-Memory Icon Caching:** Never re-extract and decode badge icon bytes on every polling tick. Store decoded `BitmapImage` instances in a static dictionary `Dictionary<string, BitmapImage>`.
-2. **Snapshot Dirty Checking:** Compare the snapshot hash (alarm state + badge counters) before calling `BadgesPanel.Children.Clear()`. Rebuilding the visual tree every 30 seconds triggers Gen-0 GC pauses on low-end hardware.
+### 7.3 Consuming Gen 2 Bridge (`Facet_Lockscreen_Bridge`)
+Tetra's Gen-2 bridge eliminates managed DLL resource parsing by delivering `byte[]` arrays natively:
+
+```csharp
+using Facet_Lockscreen_Bridge;
+
+// Instantiated with screen dimensions
+var snapshot = new LockScreenSnapshot(480, 800);
+
+bool hasAlarm = snapshot.AlarmIcon != null && !string.IsNullOrEmpty(snapshot.AlarmIcon.BadgeIconURI);
+bool hasDnd = snapshot.DoNotDisturbIcon != null;
+
+foreach (Badge badge in snapshot.Badges)
+{
+    string value = badge.BadgeValue;
+    BitmapImage icon = null;
+
+    if (badge.BadgeIcon != null && badge.BadgeIcon.Length > 0)
+    {
+        icon = new BitmapImage();
+        icon.SetSource(new MemoryStream(badge.BadgeIcon));
+    }
+    else if (!string.IsNullOrEmpty(value))
+    {
+        // Fallback to Preserved Icons (e.g. Badges/PreservedIcons/dot.png)
+        icon = new BitmapImage(new Uri("Badges/PreservedIcons/dot.png", UriKind.Relative));
+    }
+}
+```
+
+### 7.4 Obscured / Unobscured Lifecycle Polling
+Badges and notifications change dynamically while the lock screen is active. However, polling while the display is off or while the Action Center is pulled down wastes CPU.
+
+Both Microsoft reference apps hooked the frame's `Obscured` and `Unobscured` events:
+
+```csharp
+public void InitializeBadgeLifecycle()
+{
+    var rootFrame = (PhoneApplicationFrame)Application.Current.RootVisual;
+    rootFrame.Unobscured += (s, e) =>
+    {
+        // Screen turned on / Action Center closed: update immediately and start 10s timer
+        UpdateBadgesAsync();
+        badgeTimer.Interval = TimeSpan.FromSeconds(10);
+        badgeTimer.Start();
+    };
+
+    rootFrame.Obscured += (s, e) =>
+    {
+        // Screen turned off / Action Center pulled down: halt polling immediately
+        badgeTimer.Stop();
+    };
+}
+```
+
+### 7.5 Performance Rules for Badges
+1. **Snapshot Equality Dirty Checking:** Compare the snapshot hash (alarm state + badge counters + detailed text) before invoking UI thread updates. If unchanged, skip visual tree updates entirely.
+2. **In-Memory Icon Caching:** Store decoded `BitmapImage` instances in a static dictionary keyed by URI. Do not re-allocate bitmap streams every 10 seconds.
+3. **Dispatcher Throttling:** Always execute the native bridge query on a background thread (`Task.Run`), then dispatch only the final data snapshot to the UI thread.
 
 ---
 
@@ -759,6 +1012,43 @@ public static class FlashlightController
 > [!IMPORTANT]
 > Always turn off the flashlight and dispose `MediaCapture` in `OnNavigatedFrom` when the lock screen suspends, otherwise hardware camera access remains locked and battery drains rapidly.
 
+### 8.5 Modular Plugin & Widget Architecture (The Tetra Architecture)
+Tetra Lockscreen implemented a modular, decoupled plugin architecture where rich interactive tools live directly on the lock screen surface.
+
+#### Architectural Components:
+1. **`Plugin` Abstract Base Class:**
+   - Defines plugin metadata (`GetName`, `GetDisplayName`, `GetIcon`).
+   - Declares lifecycle refresh triggers via `UpdateOn` bitwise flags:
+     ```csharp
+     [Flags]
+     public enum UpdateOn : short
+     {
+         None = 0,
+         Interval = 1,       // Periodic timer refresh
+         Initialization = 2, // When page loads (OnNavigatedTo)
+         Activation = 4,     // When user taps widget icon
+         Scheduled = 8,      // Precise scheduled alarm/event
+         Obscured = 0x10,    // Display turned off / Action Center pulled down
+         Unobscured = 0x20   // Display turned on / Action Center closed
+     }
+     ```
+2. **`PluginWidget` UI Base Class (`UserControl`):**
+   - Supports pinning (`IsPinned`) so widgets can remain permanently expanded.
+   - Provides `FadeClock` and `FadeDate` properties: when a widget opens, the lock screen clock/date automatically fades out to reduce visual clutter.
+   - **Gesture Pass-Through:** Forwards `LockscreenManipulationCompleted` up to the page `LockScreenAnimation`. This ensures users can still swipe up across interactive widgets to unlock their phone!
+   - **Date Override:** Enables widgets (such as Calendar) to temporarily override the lock screen's primary date display (`OverrideDate(appointmentTime)`) when scrubbing events.
+3. **Inter-Plugin Messaging Bus:**
+   Plugins can send strongly-typed messages without direct coupling:
+   ```csharp
+   // Calendar plugin requests GPS coordinates from Location plugin
+   SendPluginMessage("Location", "CalendarInfo", appointmentData);
+
+   // Location plugin replies after resolving coordinates
+   SendPluginMessage("Calendar", "AppointmentCoordinatesFound", coordinates);
+   ```
+4. **Hardware Capability Isolation (`PluginCompatibility`):**
+   Plugins declare hardware prerequisites before being activated (e.g., Activity Tracker checks `StepCounter.IsSupportedAsync()`, Flashlight checks `Camera` capability), preventing crashes on unsupported devices.
+
 ---
 
 ## 9. Performance Engineering: Surviving on 512MB RAM Devices
@@ -822,6 +1112,61 @@ TimeText.Text = now.ToString("HH:mm");
 // SLOW: Complex DataBinding with INotifyPropertyChanged & Expression Trees
 ```
 Direct assignment bypasses reflection, expression trees, and boxed values, executing orders of magnitude faster during the critical 500ms startup window.
+
+#### Rule 6: The Process Termination Pattern (Tetra Zero-Leak Strategy)
+In standard Windows Phone Silverlight apps, deactivation keeps the process suspended in RAM. On 512MB RAM hardware, running a live lock screen that remains in memory while the user is actively using heavy games or social media apps frequently leads to OS memory thrashing.
+
+Tetra solved this with an aggressive, highly effective lifecycle pattern in `App.cs`:
+```csharp
+private bool isOnLockScreen;
+
+private void Application_Deactivated(object sender, DeactivatedEventArgs e)
+{
+    // If the app was suspended because the user UNLOCKED the device:
+    if (isOnLockScreen)
+    {
+        // Forcefully terminate the process immediately!
+        Application.Current.Terminate();
+    }
+}
+```
+**Why this works brilliantly:**
+1. **Zero Background RAM Footprint:** The second the phone is unlocked, the lock screen process terminates and surrenders 100% of its memory to the active foreground application.
+2. **Elimination of Creeping Leaks:** Over days of locking/unlocking, Silverlight bitmap texture handles and fragmented Gen-2 GC heaps can accumulate. A clean restart on each wake-up ensures a pristine memory state.
+3. **Instant Launch via Shell:** The OS Shell is specifically optimized to launch registered Live Lock Screen applications with high thread priority upon display power-on.
+
+#### Rule 7: Pre-rendered Background Lens Blur (Lumia Imaging SDK)
+Real-time Gaussian or Lens Blur on high-resolution wallpapers at 60 FPS is impossible on mobile GPUs from 2014. If interactive widgets require a frosted/blurred wallpaper backdrop:
+
+**The Production Solution (Tetra Pattern):**
+1. Never blur dynamically on the UI thread or inside `ManipulationDelta`.
+2. Asynchronously pre-generate a cached blurred file (`Blurred_Background.jpg`) using `Nokia.Graphics.Imaging.LensBlurEffect` (radius 25) in a background worker task upon wallpaper selection.
+3. Verify cache validity using timestamp comparison (`store.GetLastWriteTime("Blurred_Background.jpg") < backgroundModifyTime`).
+4. In the XAML visual tree, place a second `ImageBrush` on a canvas with `Opacity="0"`. When a widget opens, simply cross-fade the pre-rendered blurred image via a `DoubleAnimation` on `Opacity`:
+   ```csharp
+   // Smooth 60 FPS cross-fade without GPU compute load
+   FadeInBlurredBackground.Begin();
+   ```
+
+#### Rule 8: Bing Wallpaper Staged Commits & ETag Throttling
+If supporting dynamic Bing daily wallpapers (Live Lock Screen BETA & Tetra):
+1. **Partner Header & ETag:** Include the official partner identification header and conditional ETag:
+   ```csharp
+   httpClient.DefaultRequestHeaders.Add("X-COMMON-PARTNERCODE", "WPLLS");
+   if (!string.IsNullOrEmpty(savedEtag))
+   {
+       httpClient.DefaultRequestHeaders.Add("If-None-Match", savedEtag);
+   }
+   ```
+2. **15-Minute Query Throttling:** Guard against redundant network polling by enforcing a minimum 15-minute gap between Bing archive queries.
+3. **Two-Phase Staged Commit:** Never overwrite the active wallpaper file while the lock screen is being rendered! Download new imagery to a staging file (`bingImageNext.jpg`). On the subsequent application launch or resume, atomically commit the file:
+   ```csharp
+   if (store.FileExists("bingImageNext.jpg"))
+   {
+       store.CopyFile("bingImageNext.jpg", "bingImage.jpg", overwrite: true);
+       store.DeleteFile("bingImageNext.jpg");
+   }
+   ```
 
 ---
 
@@ -1144,6 +1489,10 @@ Review this checklist before deploying any Live Lock Screen project:
 | 8 | **No Reciprocal State Check** | Tapping app icon while unlocked opens lock screen view. | Check `!SystemProtection.ScreenLocked` in `LockView` and redirect to `MainPage`. |
 | 9 | **Setting `DecodePixelWidth` on Main Wallpaper** | Blurry wallpaper on 720p/1080p high-DPI screens. | Load main lock screen wallpaper at full resolution; only thumbnail preview cards. |
 | 10 | **Calling `RequestScreenUnlock()` Concurrently** | Unhandled platform exceptions or frozen compositor. | Guard unlock calls with an `isUnlockingStarted` boolean flag. |
+| 11 | **Lock Screen Freezing on Hardware Start Key** | UI left half-lifted if user taps Windows key while dragging. | Hook `Microsoft.Devices.StartButton` via reflection to call `ExtensibilityApp.EndUnlock()` and snap back. |
+| 12 | **Letterboxed Status Bar on Custom Wallpaper** | Black rectangular strip across the top of the screen. | Set `shell:SystemTray.Opacity="0"` and `shell:SystemTray.ForegroundColor="#FFFFFE"` on `PhoneApplicationPage`. |
+| 13 | **Overshooting Drag on PIN-Locked Devices** | Blank space beneath lock screen if pulled beyond PIN pad. | Query `ExtensibilityApp.GetLockPinpadHeight()` and clamp drag limit to the exact PIN pad height. |
+| 14 | **Creeping RAM Leak Over Extended Standby** | Lock screen process eventually crashes or lags after days of uptime. | Follow Tetra pattern: invoke `Application.Current.Terminate()` in `Application_Deactivated` when unlocked. |
 
 ---
 
