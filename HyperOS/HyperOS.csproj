@@ -103,6 +103,7 @@
     <Compile Include="Helpers\FlashlightHelper.cs" />
     <Compile Include="Helpers\BingWallpaperHelper.cs" />
     <Compile Include="Helpers\CalendarHelper.cs" />
+    <Compile Include="Helpers\LockScreenBridgeHelper.cs" />
     <Compile Include="LocalizedStrings.cs" />
     <Compile Include="LockScreenPage.xaml.cs">
       <DependentUpon>LockScreenPage.xaml</DependentUpon>
@@ -232,6 +233,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Assets\BadgeLogo.png" />
+    <Content Include="Assets\DefaultLockImage.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="Assets\Logo.png" />
     <Content Include="Assets\SplashScreen.png" />
     <Content Include="Assets\SquareTile150x150.png" />
@@ -361,6 +365,20 @@
     <Reference Include="System.Net.Http.Primitives">
       <HintPath>..\packages\Microsoft.Net.Http.2.2.29\lib\portable-net40+sl4+win8+wp71+wpa81\System.Net.Http.Primitives.dll</HintPath>
     </Reference>
+
+    <!-- LockScreen Bridge WinMD (Decompiled from MS Live Lock Screen BETA) -->
+    <Reference Include="LockScreen_Bridge">
+      <HintPath>Libs\LockScreen_Bridge.winmd</HintPath>
+      <Implementation>LockScreen.Bridge.dll</Implementation>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Native InProcessServer DLL placed in root of XAP for runtime activation -->
+    <Content Include="Libs\LockScreen.Bridge.dll">
+      <Link>LockScreen.Bridge.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
   <!-- ============ BUILD IMPORTS ============ -->

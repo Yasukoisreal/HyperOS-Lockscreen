@@ -25,6 +25,9 @@ namespace HyperOS.Pages
             // Lock screen
             LockToggle.IsChecked = ExtensibilityHelper.IsRegistered();
 
+            // System Badges & Alarm
+            BadgesToggle.IsChecked = Get(s, "ShowBadges", true);
+
             // Owner info
             OwnerInfoBox.Text = Get<string>(s, "OwnerInfo", "");
 
@@ -101,6 +104,12 @@ namespace HyperOS.Pages
             {
                 MessageBox.Show("Error: " + ex.Message, "Error", MessageBoxButton.OK);
             }
+        }
+
+        private void BadgesToggle_Changed(object sender, RoutedEventArgs e)
+        {
+            if (isLoading) return;
+            Save("ShowBadges", BadgesToggle.IsChecked == true);
         }
 
         #endregion

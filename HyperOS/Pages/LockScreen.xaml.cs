@@ -67,6 +67,9 @@ namespace HyperOS.Pages
         private DateTime countdownTarget;
         private string countdownName = "";
 
+        // System Badges & Alarm
+        private bool showBadges = true;
+
         // Depth effect
         private bool useDepthEffect = false;
         private bool depthHourBehind = true;
@@ -148,6 +151,7 @@ namespace HyperOS.Pages
             batteryTimer.Tick += batteryTimer_Tick;
             batteryTimer.Start();
             UpdateBattery();
+            UpdateLockScreenSnapshot();
 
             // Weather timer (every 30 min) — only start if weather is enabled
             weatherTimer = new DispatcherTimer { Interval = TimeSpan.FromMinutes(30) };
@@ -224,6 +228,7 @@ namespace HyperOS.Pages
                     UpdateTime();
                     UpdateBattery();
                     UpdateCountdown();
+                    UpdateLockScreenSnapshot();
                     if (showWeather)
                     {
                         if (!weatherTimer.IsEnabled) weatherTimer.Start();
@@ -252,6 +257,7 @@ namespace HyperOS.Pages
                     UpdateTime();
                     UpdateBattery();
                     UpdateCountdown();
+                    UpdateLockScreenSnapshot();
                     if (showWeather)
                     {
                         LoadCachedWeather();
@@ -372,6 +378,7 @@ namespace HyperOS.Pages
             if (batteryTimer != null) batteryTimer.Start();
             if (weatherTimer != null && showWeather) weatherTimer.Start();
             UpdateBattery();
+            UpdateLockScreenSnapshot();
         }
 
         private void OnStartKeyPressed(object sender, EventArgs e)
@@ -1240,6 +1247,7 @@ namespace HyperOS.Pages
         private void batteryTimer_Tick(object sender, EventArgs e)
         {
             UpdateBattery();
+            UpdateLockScreenSnapshot();
         }
 
         private void UpdateBattery()
@@ -1283,6 +1291,120 @@ namespace HyperOS.Pages
                 catch { }
             }
             catch { }
+        }
+
+        #endregion
+
+        #region LockScreen Bridge (Badges & Alarm)
+
+        private void UpdateLockScreenSnapshot()
+        {
+            if (!showBadges)
+            {
+                AlarmStatusIcon.Visibility = Visibility.Collapsed;
+                AlarmDateIcon.Visibility = Visibility.Collapsed;
+                NotificationContainer.Visibility = Visibility.Collapsed;
+                return;
+            }
+
+            try
+            {
+                var snapshot = LockScreenBridgeHelper.GetSnapshot();
+                if (snapshot == null) return;
+
+                // 1. Alarm indicators
+                if (snapshot.HasAlarm)
+                {
+                    AlarmStatusIcon.Visibility = Visibility.Visible;
+                    AlarmDateIcon.Visibility = Visibility.Visible;
+                }
+                else
+                {
+                    AlarmStatusIcon.Visibility = Visibility.Collapsed;
+                    AlarmDateIcon.Visibility = Visibility.Collapsed;
+                }
+
+                // 2. Detailed notification card
+                bool hasDetailedText = !string.IsNullOrEmpty(snapshot.DetailedNotificationText);
+                if (hasDetailedText)
+                {
+                    DetailedNotificationText.Text = snapshot.DetailedNotificationText;
+                    DetailedNotificationCard.Visibility = Visibility.Visible;
+                }
+                else
+                {
+                    DetailedNotificationCard.Visibility = Visibility.Collapsed;
+                }
+
+                // 3. Quick status badges
+                BadgesPanel.Children.Clear();
+                if (snapshot.HasBadges)
+                {
+                    foreach (var badge in snapshot.Badges)
+                    {
+                        if (badge == null || badge.Icon == null) continue;
+
+                        var badgeItemPanel = new StackPanel
+                        {
+                            Orientation = System.Windows.Controls.Orientation.Horizontal,
+                            VerticalAlignment = VerticalAlignment.Center,
+                            Margin = new Thickness(5, 0, 5, 0)
+                        };
+
+                        var img = new Image
+                        {
+                            Width = 22,
+                            Height = 22,
+                            Stretch = Stretch.Uniform,
+                            VerticalAlignment = VerticalAlignment.Center,
+                            Source = badge.Icon
+                        };
+                        badgeItemPanel.Children.Add(img);
+
+                        if (badge.HasCounter)
+                        {
+                            var countBorder = new Border
+                            {
+                                Background = new SolidColorBrush(MC.FromArgb(0x40, 0xFF, 0xFF, 0xFF)),
+                                CornerRadius = new CornerRadius(7),
+                                Padding = new Thickness(4, 0, 4, 1),
+                                Margin = new Thickness(4, 0, 0, 0),
+                                VerticalAlignment = VerticalAlignment.Center
+                            };
+                            var countText = new TextBlock
+                            {
+                                Text = badge.Counter,
+                                FontFamily = ClockRenderer.GetFont(1), // MiSans Demibold
+                                FontSize = 11,
+                                Foreground = new SolidColorBrush(Colors.White),
+                                VerticalAlignment = VerticalAlignment.Center
+                            };
+                            countBorder.Child = countText;
+                            badgeItemPanel.Children.Add(countBorder);
+                        }
+
+                        BadgesPanel.Children.Add(badgeItemPanel);
+                    }
+                    BadgesTray.Visibility = Visibility.Visible;
+                }
+                else
+                {
+                    BadgesTray.Visibility = Visibility.Collapsed;
+                }
+
+                // Show container if either detailed text or badges are visible
+                if (hasDetailedText || snapshot.HasBadges)
+                {
+                    NotificationContainer.Visibility = Visibility.Visible;
+                }
+                else
+                {
+                    NotificationContainer.Visibility = Visibility.Collapsed;
+                }
+            }
+            catch
+            {
+            }
         }
 
         #endregion
@@ -1350,6 +1472,9 @@ namespace HyperOS.Pages
                 countdownTarget = (DateTime)s["CountdownTarget"];
             if (s.Contains("CountdownName"))
                 countdownName = (string)s["CountdownName"];
+
+            // System Badges & Alarm
+            showBadges = s.Contains("ShowBadges") ? (bool)s["ShowBadges"] : true;
 
 
             // Depth effect

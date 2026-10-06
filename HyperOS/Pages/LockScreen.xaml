@@ -327,6 +327,11 @@
                         <TextBlock x:Name="DatePanel" Text="June 21"
                             FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"
                             FontSize="20" Foreground="#CCFFFFFF"/>
+                        <!-- Alarm icon in date info line -->
+                        <Path x:Name="AlarmDateIcon"
+                              Data="F1M8.643,2.107C7.176,0.058 4.922,-0.85 2.209,1.015 -0.496,2.875 -0.464,5.334 0.95,7.451 2.659,4.748 5.409,2.769 8.643,2.107 M15.586,14.966C16.227,14.966 16.745,14.449 16.745,13.81 16.745,13.171 16.227,12.656 15.586,12.656L12.198,12.656 12.198,8.421C12.198,7.783 11.68,7.263 11.041,7.263 10.403,7.263 9.885,7.783 9.885,8.421L9.885,13.81C9.885,14.449,10.403,14.966,11.041,14.966z M11.041,5.662C15.534,5.662 19.19,9.318 19.19,13.81 19.19,18.304 15.534,21.957 11.041,21.957 6.549,21.957 2.897,18.304 2.897,13.81 2.897,9.318 6.549,5.662 11.041,5.662 M11.041,24.269C16.809,24.269 21.502,19.578 21.502,13.81 21.502,8.044 16.809,3.351 11.041,3.351 5.274,3.351 0.584,8.044 0.584,13.81 0.584,19.578 5.274,24.269 11.041,24.269 M12.916,2.027C14.385,0.037 16.61,-0.825 19.288,1.015 21.795,2.738 21.942,4.974 20.827,6.978 19.006,4.378 16.178,2.543 12.916,2.027"
+                              Fill="#CCFFFFFF" Width="14" Height="14" Stretch="Uniform"
+                              VerticalAlignment="Center" Margin="8,0,0,0" Visibility="Collapsed"/>
                     </StackPanel>
 
                     <!-- Large Time — split into Hour : Minute for depth control -->
@@ -431,10 +436,15 @@
                     <TextBlock.RenderTransform><CompositeTransform/></TextBlock.RenderTransform>
                 </TextBlock>
 
-                <!-- Battery & Charging info — top right -->
+                <!-- Battery & Charging & Alarm info — top right -->
                 <StackPanel Orientation="Horizontal"
                             HorizontalAlignment="Right" VerticalAlignment="Top"
                             Margin="0,5,12,0">
+                    <!-- Alarm icon in status bar -->
+                    <Path x:Name="AlarmStatusIcon"
+                          Data="F1M8.643,2.107C7.176,0.058 4.922,-0.85 2.209,1.015 -0.496,2.875 -0.464,5.334 0.95,7.451 2.659,4.748 5.409,2.769 8.643,2.107 M15.586,14.966C16.227,14.966 16.745,14.449 16.745,13.81 16.745,13.171 16.227,12.656 15.586,12.656L12.198,12.656 12.198,8.421C12.198,7.783 11.68,7.263 11.041,7.263 10.403,7.263 9.885,7.783 9.885,8.421L9.885,13.81C9.885,14.449,10.403,14.966,11.041,14.966z M11.041,5.662C15.534,5.662 19.19,9.318 19.19,13.81 19.19,18.304 15.534,21.957 11.041,21.957 6.549,21.957 2.897,18.304 2.897,13.81 2.897,9.318 6.549,5.662 11.041,5.662 M11.041,24.269C16.809,24.269 21.502,19.578 21.502,13.81 21.502,8.044 16.809,3.351 11.041,3.351 5.274,3.351 0.584,8.044 0.584,13.81 0.584,19.578 5.274,24.269 11.041,24.269 M12.916,2.027C14.385,0.037 16.61,-0.825 19.288,1.015 21.795,2.738 21.942,4.974 20.827,6.978 19.006,4.378 16.178,2.543 12.916,2.027"
+                          Fill="#CCFFFFFF" Width="13" Height="13" Stretch="Uniform"
+                          VerticalAlignment="Center" Margin="0,0,8,0" Visibility="Collapsed"/>
                     <!-- Charging icon -->
                     <TextBlock x:Name="ChargingIcon" Text="⚡" FontSize="16" Foreground="#AAFFCC00"
                         VerticalAlignment="Center" Margin="0,0,2,0" Visibility="Collapsed"/>
@@ -449,8 +459,39 @@
                         VerticalAlignment="Center" Visibility="Collapsed"/>
                 </StackPanel>
 
+                <!-- ═══ NOTIFICATIONS & BADGES CONTAINER (HyperOS Glass Style) ═══ -->
+                <StackPanel x:Name="NotificationContainer"
+                            VerticalAlignment="Bottom" HorizontalAlignment="Center"
+                            Margin="0,0,0,84" Visibility="Collapsed">
+                    <!-- Detailed Status Card (Calendar event or latest message) -->
+                    <Border x:Name="DetailedNotificationCard"
+                            Background="#33000000" CornerRadius="16"
+                            BorderBrush="#25FFFFFF" BorderThickness="1"
+                            Padding="14,8" Margin="20,0,20,8"
+                            HorizontalAlignment="Center" MaxWidth="440"
+                            Visibility="Collapsed">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <Border Width="26" Height="26" CornerRadius="13" Background="#33FFFFFF" Margin="0,0,10,0" VerticalAlignment="Center">
+                                <TextBlock Text="✦" FontSize="13" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock x:Name="DetailedNotificationText"
+                                       Text=""
+                                       FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"
+                                       FontSize="13.5" Foreground="#EEFFFFFF"
+                                       TextWrapping="Wrap" MaxWidth="350"
+                                       VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
 
-
+                    <!-- Quick Status Badges Tray -->
+                    <Border x:Name="BadgesTray"
+                            Background="#2E000000" CornerRadius="18"
+                            BorderBrush="#20FFFFFF" BorderThickness="1"
+                            Padding="10,5" HorizontalAlignment="Center"
+                            Visibility="Collapsed">
+                        <StackPanel x:Name="BadgesPanel" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                </StackPanel>
 
                 <!-- Quick shortcuts — bottom corners (HyperOS style) -->
                 <!-- Flashlight (left) -->

@@ -43,6 +43,17 @@
                     <toolkit:ToggleSwitch x:Name="LockToggle" Grid.Column="1"
                         Checked="LockToggle_Changed" Unchecked="LockToggle_Changed"/>
                 </Grid>
+                <Grid Background="#14FFFFFF" Margin="0,4,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="System Badges &amp; Alarm" FontSize="15" Foreground="White"
+                        FontFamily="/Assets/Fonts/MiSans-Regular.ttf#MiSans"
+                        VerticalAlignment="Center" Margin="12,0,0,0"/>
+                    <toolkit:ToggleSwitch x:Name="BadgesToggle" Grid.Column="1"
+                        Checked="BadgesToggle_Changed" Unchecked="BadgesToggle_Changed"/>
+                </Grid>
 
                 <!-- SECURITY -->
                 <TextBlock Text="SECURITY" FontSize="13" Foreground="#55FFFFFF"
