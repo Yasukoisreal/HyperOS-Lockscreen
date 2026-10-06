@@ -4,6 +4,7 @@ using System.Windows;
 using System.Windows.Media;
 using Microsoft.Phone.Controls;
 using Windows.Phone.System.LockScreenExtensibility;
+using HyperOS.Helpers;
 
 namespace HyperOS.Pages
 {
@@ -23,8 +24,7 @@ namespace HyperOS.Pages
             var s = IsolatedStorageSettings.ApplicationSettings;
 
             // Lock screen
-            try { LockToggle.IsChecked = ExtensibilityApp.IsLockScreenApplicationRegistered(); }
-            catch { }
+            LockToggle.IsChecked = ExtensibilityHelper.IsRegistered();
 
             // Security
             bool pinOn = Get(s, "bIsPasswordEnabled", false);
@@ -114,8 +114,7 @@ namespace HyperOS.Pages
                     {
                         if (store.FileExists("Background.jpg"))
                         {
-                            if (!ExtensibilityApp.IsLockScreenApplicationRegistered())
-                                ExtensibilityApp.RegisterLockScreenApplication();
+                            ExtensibilityHelper.Register();
                         }
                         else
                         {
@@ -127,13 +126,13 @@ namespace HyperOS.Pages
                 }
                 else
                 {
-                    if (ExtensibilityApp.IsLockScreenApplicationRegistered())
+                    if (ExtensibilityHelper.IsRegistered())
                     {
                         var result = MessageBox.Show(
                             "Remove HyperOS as your live lock screen?",
                             "Remove", MessageBoxButton.OKCancel);
                         if (result == MessageBoxResult.OK)
-                            ExtensibilityApp.UnregisterLockScreenApplication();
+                            ExtensibilityHelper.Unregister();
                         else
                             LockToggle.IsChecked = true;
                     }

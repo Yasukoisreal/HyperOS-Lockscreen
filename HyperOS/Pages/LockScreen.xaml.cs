@@ -25,7 +25,9 @@ namespace HyperOS.Pages
     {
         // Timers
         private DispatcherTimer timer;
+        private DispatcherTimer minuteSyncTimer;
         private DispatcherTimer batteryTimer;
+        private bool isUnlockingStarted = false;
 
         // Settings flags
         private bool bIsPasswordEnabled;
@@ -133,10 +135,21 @@ namespace HyperOS.Pages
             // Cache battery reference once
             try { cachedBattery = Windows.Phone.Devices.Power.Battery.GetDefault(); } catch { }
 
-            // Main clock timer (one-time setup)
-            timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
-            timer.Tick += (s, a) => UpdateTime();
-            timer.Start();
+            // Main clock timer (synchronized minute-aligned delay)
+            StartClockTimer();
+
+            // Hardware Start key hook via reflection
+            StartButtonHelper.RegisterStartKey(OnStartKeyPressed);
+
+            // Hook frame Obscured / Unobscured lifecycle for battery preservation
+            var frame = Application.Current.RootVisual as PhoneApplicationFrame;
+            if (frame != null)
+            {
+                frame.Obscured -= RootFrame_Obscured;
+                frame.Obscured += RootFrame_Obscured;
+                frame.Unobscured -= RootFrame_Unobscured;
+                frame.Unobscured += RootFrame_Unobscured;
+            }
 
             // Battery timer
             batteryTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(30) };
@@ -178,9 +191,12 @@ namespace HyperOS.Pages
                 msForeground = null;
             
             // Stop timers to save battery while screen is off
-            if (timer != null) timer.Stop();
+            StopClockTimer();
             if (batteryTimer != null) batteryTimer.Stop();
             if (weatherTimer != null) weatherTimer.Stop();
+
+            StartButtonHelper.UnregisterStartKey(OnStartKeyPressed);
+            FlashlightHelper.TurnOff();
         }
 
         protected override void OnNavigatedTo(System.Windows.Navigation.NavigationEventArgs e)
@@ -259,7 +275,7 @@ namespace HyperOS.Pages
 
         private void EnsureTimersRunning()
         {
-            if (timer != null && !timer.IsEnabled) timer.Start();
+            if (timer == null || !timer.IsEnabled) StartClockTimer();
             if (batteryTimer != null && !batteryTimer.IsEnabled) batteryTimer.Start();
 
             if (weatherTimer != null)
@@ -273,6 +289,92 @@ namespace HyperOS.Pages
                     weatherTimer.Stop();
                 }
             }
+        }
+
+        private void StartClockTimer()
+        {
+            StopClockTimer();
+            UpdateTime();
+
+            DateTime now = DateTime.Now;
+            int msUntilNextMinute = (60 - now.Second) * 1000 + (1000 - now.Millisecond);
+            if (msUntilNextMinute <= 0) msUntilNextMinute = 1000;
+
+            minuteSyncTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(msUntilNextMinute) };
+            minuteSyncTimer.Tick += (s, e) =>
+            {
+                if (minuteSyncTimer != null)
+                {
+                    minuteSyncTimer.Stop();
+                    minuteSyncTimer = null;
+                }
+                UpdateTime();
+
+                timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(60) };
+                timer.Tick += (st, et) => UpdateTime();
+                timer.Start();
+            };
+            minuteSyncTimer.Start();
+        }
+
+        private void StopClockTimer()
+        {
+            if (minuteSyncTimer != null)
+            {
+                minuteSyncTimer.Stop();
+                minuteSyncTimer = null;
+            }
+            if (timer != null)
+            {
+                timer.Stop();
+                timer = null;
+            }
+        }
+
+        private void RootFrame_Obscured(object sender, Microsoft.Phone.Controls.ObscuredEventArgs e)
+        {
+            StopClockTimer();
+            if (batteryTimer != null) batteryTimer.Stop();
+            if (weatherTimer != null) weatherTimer.Stop();
+            FlashlightHelper.TurnOff();
+        }
+
+        private void RootFrame_Unobscured(object sender, EventArgs e)
+        {
+            StartClockTimer();
+            if (batteryTimer != null) batteryTimer.Start();
+            if (weatherTimer != null && showWeather) weatherTimer.Start();
+            UpdateBattery();
+        }
+
+        private void OnStartKeyPressed(object sender, EventArgs e)
+        {
+            Dispatcher.BeginInvoke(() =>
+            {
+                if (VisualStateManager.GoToState(this, "Normal", true))
+                {
+                    passwordText = "";
+                    UpdatePassCodeInd();
+                }
+
+                var t = (CompositeTransform)OverlayInformationPanel.RenderTransform;
+                if (t != null && t.TranslateY != 0)
+                {
+                    var anim = new DoubleAnimation
+                    {
+                        To = 0,
+                        Duration = TimeSpan.FromMilliseconds(250),
+                        EasingFunction = new CircleEase { EasingMode = EasingMode.EaseOut }
+                    };
+                    var sb = new Storyboard();
+                    Storyboard.SetTarget(anim, t);
+                    Storyboard.SetTargetProperty(anim, new PropertyPath("TranslateY"));
+                    sb.Children.Add(anim);
+                    sb.Begin();
+                }
+                ExtensibilityHelper.EndUnlock();
+                isUnlockingStarted = false;
+            });
         }
 
         private void PlayEntryAnimations()
@@ -526,6 +628,12 @@ namespace HyperOS.Pages
         private void OverlayInformationPanel_ManipulationDelta(
             object sender, ManipulationDeltaEventArgs e)
         {
+            if (!isUnlockingStarted)
+            {
+                isUnlockingStarted = true;
+                ExtensibilityHelper.BeginUnlock();
+            }
+
             var t = (CompositeTransform)OverlayInformationPanel.RenderTransform;
             double newY = t.TranslateY + e.DeltaManipulation.Translation.Y;
             if (newY <= 0)
@@ -545,8 +653,10 @@ namespace HyperOS.Pages
             object sender, ManipulationCompletedEventArgs e)
         {
             var t = (CompositeTransform)OverlayInformationPanel.RenderTransform;
-            if (Math.Abs(t.TranslateY) > yToUnlock)
+            bool isFlick = e.FinalVelocities.LinearVelocity.Y < -1500.0;
+            if (Math.Abs(t.TranslateY) > yToUnlock || isFlick)
             {
+                isUnlockingStarted = false;
                 if (!bIsPasswordEnabled && !bIsPatternOn)
                 {
                     // No security — unlock directly
@@ -561,6 +671,9 @@ namespace HyperOS.Pages
             }
             else
             {
+                isUnlockingStarted = false;
+                ExtensibilityHelper.EndUnlock();
+
                 // Snap back with animation
                 try
                 {
@@ -671,10 +784,9 @@ namespace HyperOS.Pages
 
         #region Quick Shortcuts
 
-        private void FlashlightShortcut_Tap(object sender, System.Windows.Input.GestureEventArgs e)
+        private async void FlashlightShortcut_Tap(object sender, System.Windows.Input.GestureEventArgs e)
         {
-            // Unlock screen — WP8.1 doesn't allow direct flashlight access from lock
-            RequestScreenUnlock();
+            await FlashlightHelper.ToggleAsync();
         }
 
         private void CameraShortcut_Tap(object sender, System.Windows.Input.GestureEventArgs e)

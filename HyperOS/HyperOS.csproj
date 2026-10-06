@@ -98,6 +98,11 @@
     </Compile>
     <Compile Include="Helpers\ClockRenderer.cs" />
     <Compile Include="Helpers\FilterHelper.cs" />
+    <Compile Include="Helpers\ExtensibilityHelper.cs" />
+    <Compile Include="Helpers\StartButtonHelper.cs" />
+    <Compile Include="Helpers\FlashlightHelper.cs" />
+    <Compile Include="Helpers\BingWallpaperHelper.cs" />
+    <Compile Include="Helpers\CalendarHelper.cs" />
     <Compile Include="LocalizedStrings.cs" />
     <Compile Include="LockScreenPage.xaml.cs">
       <DependentUpon>LockScreenPage.xaml</DependentUpon>
