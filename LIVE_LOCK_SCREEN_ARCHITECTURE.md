@@ -1185,7 +1185,7 @@ private void StartClockTimer()
     UpdateTime(); // Initial instant render
 
     DateTime now = DateTime.Now;
-    int msUntilNextMinute = (60 - now.Second) * 1000 + (1000 - now.Millisecond);
+    int msUntilNextMinute = 60000 - (now.Second * 1000 + now.Millisecond);
     if (msUntilNextMinute <= 0) msUntilNextMinute = 1000;
 
     // Stage 1: One-shot timer to align with minute boundary
@@ -1236,7 +1236,7 @@ namespace LockScreen.Utils
         private static readonly string[] _teens = 
             { "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen" };
         private static readonly string[] _teensOrdinal = 
-            { "tenth", "eleventh", "twelfth", "thirteenth", "fourteenth", "fifteenth", "sixteenth", "seventeenth", "eighteenth", "nineteen" };
+            { "tenth", "eleventh", "twelfth", "thirteenth", "fourteenth", "fifteenth", "sixteenth", "seventeenth", "eighteenth", "nineteenth" };
         private static readonly string[] _tens = 
             { "", "ten", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety" };
         private static readonly string[] _tensOrdinal = 
@@ -2009,7 +2009,7 @@ namespace MyLockScreen
 | Capability / API | ❌ Banned (WinRT / UWP) | ✅ Required (WP8.1 Silverlight) |
 |---|---|---|
 | **UI Framework** | `Windows.UI.Xaml.*` | `System.Windows.*` |
-| **Lock Screen Registration** | `Windows.ApplicationModel.LockScreen.*` | `Windows.Phone.System.LockScreenExtensibility.ExtensibilityApp` |
+| **Live Lock Registration** | `Windows.ApplicationModel.LockScreen.*` | `Windows.Phone.System.LockScreenExtensibility.ExtensibilityApp` *(Internal framework)* |
 | **File Storage** | `Windows.Storage.StorageFile` | `System.IO.IsolatedStorage.IsolatedStorageFile` |
 | **Settings Storage** | `Windows.Storage.ApplicationData` | `System.IO.IsolatedStorage.IsolatedStorageSettings` |
 | **Photo Chooser** | `Windows.Storage.Pickers.FileOpenPicker` | `Microsoft.Phone.Tasks.PhotoChooserTask` |
@@ -2018,7 +2018,7 @@ namespace MyLockScreen
 | **UI Thread Dispatch** | `CoreDispatcher` | `Deployment.Current.Dispatcher.BeginInvoke(...)` |
 | **Lock Screen Unlock** | `Application.Current.Exit()` | `SystemProtection.RequestScreenUnlock()` |
 | **Battery Percentage** | `Windows.Devices.Power.Battery` | `Windows.Phone.Devices.Power.Battery.GetDefault()` |
-| **Network Carrier** | `Windows.Networking.Connectivity.*` | `Microsoft.Phone.Net.NetworkInformation.DeviceNetworkInformation` |
+| **Cellular Carrier Name** | Not exposed in WinRT `NetworkInformation` | `Microsoft.Phone.Net.NetworkInformation.DeviceNetworkInformation.CellularMobileOperator` |
 
 ---
 

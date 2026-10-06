@@ -312,7 +312,7 @@ namespace HyperOS.Pages
             UpdateTime();
 
             DateTime now = DateTime.Now;
-            int msUntilNextMinute = (60 - now.Second) * 1000 + (1000 - now.Millisecond);
+            int msUntilNextMinute = 60000 - (now.Second * 1000 + now.Millisecond);
             if (msUntilNextMinute <= 0) msUntilNextMinute = 1000;
 
             minuteSyncTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(msUntilNextMinute) };
